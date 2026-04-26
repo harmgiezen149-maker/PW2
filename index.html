@@ -12,15 +12,15 @@
   #app { display:flex; flex-direction:column; height:100%; background:#fff; }
   .hdr { display:flex; align-items:center; gap:12px; padding:0 16px; height:54px; background:var(--g); flex-shrink:0; }
   .hdr-logo { width:32px; height:32px; background:#fff; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:16px; }
-  .hdr-name { font-family:'Source Serif 4',serif; font-size:0.92rem; font-weight:700; color:#fff; line-height:1.1; }
+  .hdr-name { font-family:'Source Serif 4',serif; font-size:clamp(0.82rem,2.5vw,1.05rem); font-weight:700; color:#fff; line-height:1.1; }
   .hdr-sub { font-size:0.6rem; color:rgba(255,255,255,0.65); text-transform:uppercase; letter-spacing:0.05em; display:block; }
   .hdr-right { margin-left:auto; display:flex; align-items:center; gap:8px; }
   .hdr-season { background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.3); color:#fff; padding:3px 9px; border-radius:20px; font-size:0.65rem; }
   .hdr-ver { color:rgba(255,255,255,0.35); font-size:0.6rem; }
   .sub { background:var(--gp); border-bottom:1px solid var(--b); padding:10px 14px; flex-shrink:0; }
   .sub-title { font-family:'Source Serif 4',serif; font-size:0.86rem; font-weight:600; color:var(--g); margin-bottom:8px; }
-  .grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
-  .chip { background:var(--gl); border:1.5px solid var(--g); color:var(--g); padding:7px 9px; border-radius:8px; font-size:0.73rem; font-weight:600; cursor:pointer; font-family:'Source Sans 3',sans-serif; text-align:left; line-height:1.3; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:6px; }
+  .chip { background:var(--gl); border:1.5px solid var(--g); color:var(--g); padding:clamp(5px,1.5vw,9px) clamp(7px,2vw,12px); border-radius:8px; font-size:clamp(0.65rem,1.8vw,0.85rem); font-weight:600; cursor:pointer; font-family:'Source Sans 3',sans-serif; text-align:left; line-height:1.3; }
   .chip:active { background:var(--g); color:#fff; }
   .err { margin:6px 14px; padding:9px 13px; background:#fdf2f2; border:1px solid #e8c5c5; border-radius:8px; font-size:0.77rem; color:#c0392b; flex-shrink:0; display:none; }
   #chat { flex:1; overflow-y:auto; padding:14px; display:flex; flex-direction:column; gap:12px; }
@@ -33,7 +33,7 @@
   .msg.user { flex-direction:row-reverse; }
   .av { width:28px; height:28px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:13px; margin-top:2px; }
   .av.bot { background:var(--g); } .av.usr { background:var(--b); }
-  .bub { padding:9px 12px; border-radius:12px; font-size:0.86rem; line-height:1.65; max-width:calc(100% - 40px); }
+  .bub { padding:clamp(8px,2vw,12px) clamp(10px,2.5vw,15px); border-radius:12px; font-size:clamp(0.82rem,2vw,1rem); line-height:1.65; max-width:calc(100% - 40px); }
   .msg.bot .bub { background:var(--gp); border:1px solid var(--b); border-top-left-radius:3px; }
   .msg.user .bub { background:var(--g); border-top-right-radius:3px; color:#fff; }
   .bub b { color:var(--g); font-weight:600; } .msg.user .bub b { color:#fff; }
@@ -48,7 +48,7 @@
   @keyframes bl { 0%,60%,100%{opacity:0.3;transform:translateY(0)} 30%{opacity:1;transform:translateY(-4px)} }
   .inp-area { border-top:1px solid var(--b); background:#fff; padding:10px 14px; flex-shrink:0; }
   .inp-row { display:flex; gap:7px; align-items:flex-end; }
-  #txt { flex:1; background:#fff; border:1.5px solid var(--b); border-radius:8px; padding:9px 12px; color:var(--t); font-family:'Source Sans 3',sans-serif; font-size:0.87rem; resize:none; outline:none; min-height:40px; max-height:96px; line-height:1.5; transition:border-color 0.2s; }
+  #txt { flex:1; background:#fff; border:1.5px solid var(--b); border-radius:8px; padding:9px 12px; color:var(--t); font-family:'Source Sans 3',sans-serif; font-size:clamp(0.82rem,2vw,1rem); resize:none; outline:none; min-height:40px; max-height:96px; line-height:1.5; transition:border-color 0.2s; }
   #txt::placeholder { color:var(--tl); } #txt:focus { border-color:var(--g); }
   #btn { height:40px; padding:0 15px; border-radius:8px; border:none; background:var(--g); color:#fff; font-family:'Source Sans 3',sans-serif; font-size:0.84rem; font-weight:600; cursor:pointer; }
   #btn:disabled { background:var(--b); color:var(--tl); cursor:not-allowed; }
@@ -64,7 +64,7 @@
     </div>
     <div class="hdr-right">
       <span class="hdr-season" id="season"></span>
-      <span class="hdr-ver">v25</span>
+      <span class="hdr-ver">v26</span>
     </div>
   </div>
   <div class="sub">
@@ -76,7 +76,7 @@
       <button class="chip" onclick="ask('vogels veluwe')">🐦 Actuele vogels</button>
       <button class="chip" onclick="ask('begrazing')">🐑 Begrazing</button>
       <button class="chip" onclick="ask('planten paddenstoelen')">🍄 Planten & paddenstoelen</button>
-      <button class="chip" onclick="ask('wolf planken wanbuis actueel')">🐺 De wolf</button>
+      <button class="chip" onclick="ask('wolf planken wambuis actueel')">🐺 De wolf</button>
     </div>
   </div>
   <div class="err" id="err"></div>
