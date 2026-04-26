@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Planken Wambuis</title>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;600;700&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root { --g:#1a5c38; --gl:#e8f2ec; --gp:#f2f8f4; --t:#1a1a1a; --tm:#4a4a4a; --tl:#767676; --b:#d0ddd5; }
+  * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+  html,body { height:100%; overflow:hidden; font-family:'Source Sans 3',sans-serif; color:var(--t); }
+  #app { display:flex; flex-direction:column; height:100%; background:#fff; }
+  .hdr { display:flex; align-items:center; gap:12px; padding:0 16px; height:54px; background:var(--g); flex-shrink:0; }
+  .hdr-logo { width:32px; height:32px; background:#fff; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:16px; }
+  .hdr-name { font-family:'Source Serif 4',serif; font-size:0.92rem; font-weight:700; color:#fff; line-height:1.1; }
+  .hdr-sub { font-size:0.6rem; color:rgba(255,255,255,0.65); text-transform:uppercase; letter-spacing:0.05em; display:block; }
+  .hdr-right { margin-left:auto; display:flex; align-items:center; gap:8px; }
+  .hdr-season { background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.3); color:#fff; padding:3px 9px; border-radius:20px; font-size:0.65rem; }
+  .hdr-ver { color:rgba(255,255,255,0.35); font-size:0.6rem; }
+  .sub { background:var(--gp); border-bottom:1px solid var(--b); padding:10px 14px; flex-shrink:0; }
+  .sub-title { font-family:'Source Serif 4',serif; font-size:0.86rem; font-weight:600; color:var(--g); margin-bottom:8px; }
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+  .chip { background:var(--gl); border:1.5px solid var(--g); color:var(--g); padding:7px 9px; border-radius:8px; font-size:0.73rem; font-weight:600; cursor:pointer; font-family:'Source Sans 3',sans-serif; text-align:left; line-height:1.3; }
+  .chip:active { background:var(--g); color:#fff; }
+  .err { margin:6px 14px; padding:9px 13px; background:#fdf2f2; border:1px solid #e8c5c5; border-radius:8px; font-size:0.77rem; color:#c0392b; flex-shrink:0; display:none; }
+  #chat { flex:1; overflow-y:auto; padding:14px; display:flex; flex-direction:column; gap:12px; }
+  .welcome { background:var(--gl); border-left:4px solid var(--g); border-radius:0 8px 8px 0; padding:14px; }
+  .welcome-top { display:flex; align-items:center; gap:9px; margin-bottom:6px; }
+  .welcome h2 { font-family:'Source Serif 4',serif; font-size:1rem; font-weight:700; color:var(--g); }
+  .welcome p { font-size:0.81rem; color:var(--tm); line-height:1.6; }
+  .msg { display:flex; gap:8px; animation:up 0.2s ease; }
+  @keyframes up { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:translateY(0)} }
+  .msg.user { flex-direction:row-reverse; }
+  .av { width:28px; height:28px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:13px; margin-top:2px; }
+  .av.bot { background:var(--g); } .av.usr { background:var(--b); }
+  .bub { padding:9px 12px; border-radius:12px; font-size:0.86rem; line-height:1.65; max-width:calc(100% - 40px); }
+  .msg.bot .bub { background:var(--gp); border:1px solid var(--b); border-top-left-radius:3px; }
+  .msg.user .bub { background:var(--g); border-top-right-radius:3px; color:#fff; }
+  .bub b { color:var(--g); font-weight:600; } .msg.user .bub b { color:#fff; }
+  .bh { font-family:'Source Serif 4',serif; font-size:0.91rem; color:var(--g); font-weight:700; margin:9px 0 3px; display:block; }
+  .bh:first-child { margin-top:0; }
+  .bl { display:flex; gap:6px; margin-bottom:3px; align-items:flex-start; }
+  .bl::before { content:'●'; color:var(--g); font-size:0.4rem; flex-shrink:0; margin-top:7px; }
+  .typ { display:flex; gap:8px; }
+  .typ-bub { padding:11px 14px; background:var(--gp); border:1px solid var(--b); border-radius:12px; border-top-left-radius:3px; display:flex; gap:5px; align-items:center; }
+  .dot { width:6px; height:6px; border-radius:50%; background:var(--g); animation:bl 1.2s infinite; opacity:0.4; }
+  .dot:nth-child(2){animation-delay:.2s} .dot:nth-child(3){animation-delay:.4s}
+  @keyframes bl { 0%,60%,100%{opacity:0.3;transform:translateY(0)} 30%{opacity:1;transform:translateY(-4px)} }
+  .inp-area { border-top:1px solid var(--b); background:#fff; padding:10px 14px; flex-shrink:0; }
+  .inp-row { display:flex; gap:7px; align-items:flex-end; }
+  #txt { flex:1; background:#fff; border:1.5px solid var(--b); border-radius:8px; padding:9px 12px; color:var(--t); font-family:'Source Sans 3',sans-serif; font-size:0.87rem; resize:none; outline:none; min-height:40px; max-height:96px; line-height:1.5; transition:border-color 0.2s; }
+  #txt::placeholder { color:var(--tl); } #txt:focus { border-color:var(--g); }
+  #btn { height:40px; padding:0 15px; border-radius:8px; border:none; background:var(--g); color:#fff; font-family:'Source Sans 3',sans-serif; font-size:0.84rem; font-weight:600; cursor:pointer; }
+  #btn:disabled { background:var(--b); color:var(--tl); cursor:not-allowed; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="hdr">
+    <div class="hdr-logo">🌿</div>
+    <div>
+      <div class="hdr-name">Natuurmonumenten</div>
+      <span class="hdr-sub">Planken Wambuis</span>
+    </div>
+    <div class="hdr-right">
+      <span class="hdr-season" id="season"></span>
+      <span class="hdr-ver">v24</span>
+    </div>
+  </div>
+  <div class="sub">
+    <div class="sub-title">Boswachter Assistent</div>
+    <div class="grid">
+      <button class="chip" onclick="ask('flora fauna nu')">🌿 Wat is er nu te zien?</button>
+      <button class="chip" onclick="ask('talking points seizoen')">📋 Talking points</button>
+      <button class="chip" onclick="ask('heidebeheer')">🔥 Heidebeheer</button>
+      <button class="chip" onclick="ask('vogels veluwe')">🐦 Actuele vogels</button>
+      <button class="chip" onclick="ask('begrazing')">🐑 Begrazing</button>
+      <button class="chip" onclick="ask('planten paddenstoelen')">🍄 Planten & paddenstoelen</button>
+    </div>
+  </div>
+  <div class="err" id="err"></div>
+  <div id="chat">
+    <div class="welcome">
+      <div class="welcome-top">
+        <span style="font-size:1.4rem">🌲</span>
+        <h2 id="greet"></h2>
+      </div>
+      <p>Gebruik de knoppen of stel een eigen vraag over natuur of bezoekersgesprekken.</p>
+    </div>
+  </div>
+  <div class="inp-area">
+    <div class="inp-row">
+      <textarea id="txt" rows="1" placeholder="Stel een vraag..."></textarea>
+      <button id="btn" onclick="sendTxt()">Verstuur</button>
+    </div>
+  </div>
+</div>
+<script>
+function season() {
+  var m = new Date().getMonth();
+  if (m>=2&&m<=4) return '🌸 Lente';
+  if (m>=5&&m<=7) return '☀️ Zomer';
+  if (m>=8&&m<=10) return '🍂 Herfst';
+  return '❄️ Winter';
+}
+function greet() {
+  var h = new Date().getHours();
+  if (h>=5&&h<12) return 'Goedemorgen, boswachter';
+  if (h>=12&&h<18) return 'Goedemiddag, boswachter';
+  if (h>=18&&h<23) return 'Goedenavond, boswachter';
+  return 'Goedenacht, boswachter';
+}
+document.getElementById('season').textContent = season();
+document.getElementById('greet').textContent = greet();
+document.getElementById('txt').addEventListener('input', function() {
+  this.style.height = 'auto';
+  this.style.height = Math.min(this.scrollHeight, 96) + 'px';
+});
+document.getElementById('txt').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendTxt(); }
+});
+function sendTxt() {
+  var t = document.getElementById('txt').value.trim();
+  if (!t) return;
+  document.getElementById('txt').value = '';
+  document.getElementById('txt').style.height = 'auto';
+  ask(t);
+}
+function showErr(msg) {
+  var el = document.getElementById('err');
+  el.textContent = msg;
+  el.style.display = 'block';
+  setTimeout(function() { el.style.display = 'none'; }, 8000);
+}
+function addUser(text) {
+  var chat = document.getElementById('chat');
+  var w = document.createElement('div'); w.className = 'msg user';
+  var av = document.createElement('div'); av.className = 'av usr'; av.textContent = '👤';
+  var b = document.createElement('div'); b.className = 'bub'; b.textContent = text;
+  w.appendChild(av); w.appendChild(b);
+  chat.appendChild(w); chat.scrollTop = chat.scrollHeight;
+}
+function addBot(text) {
+  var chat = document.getElementById('chat');
+  var w = document.createElement('div'); w.className = 'msg bot';
+  var av = document.createElement('div'); av.className = 'av bot'; av.textContent = '🌿';
+  var b = document.createElement('div'); b.className = 'bub';
+  b.innerHTML = render(text);
+  w.appendChild(av); w.appendChild(b);
+  chat.appendChild(w); chat.scrollTop = chat.scrollHeight;
+}
+function showTyping() {
+  var chat = document.getElementById('chat');
+  var w = document.createElement('div'); w.className = 'typ'; w.id = 'typ';
+  w.innerHTML = '<div class="av bot">🌿</div><div class="typ-bub"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>';
+  chat.appendChild(w); chat.scrollTop = chat.scrollHeight;
+}
+function hideTyping() { var t = document.getElementById('typ'); if (t) t.remove(); }
+function render(text) {
+  var html = '';
+  text.split('\n').forEach(function(line) {
+    if (/^#{1,3} /.test(line)) {
+      html += '<span class="bh">' + line.replace(/^#{1,3} /,'') + '</span>';
+    } else if (/^[-*] /.test(line)) {
+      html += '<div class="bl">' + line.replace(/^[-*] /,'').replace(/\*\*(.*?)\*\*/g,'<b>$1</b>') + '</div>';
+    } else if (line.trim() === '') {
+      html += '<div style="height:4px"></div>';
+    } else {
+      html += '<div>' + line.replace(/\*\*(.*?)\*\*/g,'<b>$1</b>') + '</div>';
+    }
+  });
+  return html;
+}
+function ask(q) {
+  document.getElementById('btn').disabled = true;
+  addUser(q);
+  showTyping();
+  fetch('/api/chat?' + Date.now(), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ messages: [{ role: 'user', content: q }] })
+  })
+  .then(function(res) { return res.json(); })
+  .then(function(data) {
+    hideTyping();
+    if (data.error) {
+      showErr('Fout: ' + data.error);
+    } else {
+      var raw = '';
+      for (var i = 0; i < data.content.length; i++) {
+        if (data.content[i].type === 'text') raw += data.content[i].text;
+      }
+      addBot(raw);
+    }
+    document.getElementById('btn').disabled = false;
+  })
+  .catch(function(e) {
+    hideTyping();
+    showErr('Verbindingsfout: ' + e.message);
+    document.getElementById('btn').disabled = false;
+  });
+}
+</script>
+</body>
+</html>
