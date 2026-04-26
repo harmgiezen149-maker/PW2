@@ -66,7 +66,18 @@
     </div>
     <div class="hdr-right">
       <span class="hdr-season" id="season"></span>
-      <span class="hdr-ver">v27</span>
+      <span class="hdr-ver">v28</span>
+    </div>
+  </div>
+  <div class="err" id="err"></div>
+  <div id="chat">
+    <div class="welcome">
+      <div class="welcome-top">
+        <span style="font-size:1.4rem">🌲</span>
+        <h2 id="greet"></h2>
+      </div>
+      <div id="weldate" style="font-size:0.78rem;color:var(--tm);margin-top:3px;"></div>
+      <p style="margin-top:8px;">Gebruik de knoppen of stel een eigen vraag over natuur of bezoekersgesprekken.</p>
     </div>
   </div>
   <div class="sub">
@@ -78,17 +89,7 @@
       <button class="chip" onclick="ask('vogels veluwe')">🐦 Actuele vogels</button>
       <button class="chip" onclick="ask('begrazing')">🐑 Begrazing</button>
       <button class="chip" onclick="ask('planten paddenstoelen')">🍄 Planten & paddenstoelen</button>
-      <button class="chip" onclick="ask('wolf planken wanbuis actueel')">🐺 De wolf</button>
-    </div>
-  </div>
-  <div class="err" id="err"></div>
-  <div id="chat">
-    <div class="welcome">
-      <div class="welcome-top">
-        <span style="font-size:1.4rem">🌲</span>
-        <h2 id="greet"></h2>
-      </div>
-      <p>Gebruik de knoppen of stel een eigen vraag over natuur of bezoekersgesprekken.</p>
+      <button class="chip" onclick="ask('wolf Planken Wambuis actueel')">🐺 De wolf</button>
     </div>
   </div>
   <div class="inp-area">
@@ -115,6 +116,7 @@ function greet() {
 }
 document.getElementById('season').textContent = season();
 document.getElementById('greet').textContent = greet();
+document.getElementById('weldate').textContent = new Date().toLocaleDateString('nl-NL', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
 document.getElementById('txt').addEventListener('input', function() {
   this.style.height = 'auto';
   this.style.height = Math.min(this.scrollHeight, 96) + 'px';
