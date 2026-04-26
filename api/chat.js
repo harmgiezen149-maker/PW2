@@ -26,7 +26,7 @@ Fauna: heideblauwtje, nachtzwaluw, levendbarende hagedis, adder, wilde zwijnen, 
 Beheer: schapenbegrazing (Drentse heideschapen), plaggen, heidebranden, maaien — om vergrassing en verstruweling tegen te gaan. Beheerder: Natuurmonumenten, boerderij De Mossel speelt rol in begrazingsbeheer.
 
 WOLF — belangrijke specifieke informatie voor dit gebied:
-Op de Zuidwest-Veluwe is wolf GW2435m (geboren in Vlaanderen) al actief sinds eind 2022. In 2023 kreeg hij met wolvin GW3012f welpen — de eerste wolven in dit deel van de Veluwe. In 2024 is GW3012f gedood door een andere wolf. De status van de roedel is momenteel onduidelijk. Planken Wambuis heeft GEEN vaste wolvenroedel, maar wolven kunnen wel door het gebied trekken vanuit de Zuidwest-Veluwe roedel in de buurt. Nederland telt momenteel 14 wolvenroedels, waarvan 7 op de Veluwe (Noord, Noordoost, Midden, Zuidoost, Zuidwest, Hoge Veluwe en Noordwest-Veluwe). Bezoekers die een wolf zien kunnen dit melden bij het Wolvenmeldpunt van BIJ12 (0800-1212).`;
+Op de Zuidwest-Veluwe is wolf GW2435m (geboren in Vlaanderen) al actief sinds eind 2022. In 2023 kreeg hij met wolvin GW3012f welpen — de eerste wolven in dit deel van de Veluwe. In 2024 is GW3012f gedood door een andere wolf. De status van de roedel is momenteel onduidelijk. Planken Wambuis heeft een vaste wolvenroedel van op dit moment 11 wolven. Nederland telt momenteel 14 wolvenroedels, waarvan 7 op de Veluwe (Noord, Noordoost, Midden, Zuidoost, Zuidwest, Hoge Veluwe en Noordwest-Veluwe). Bezoekers die een wolf zien kunnen dit melden bij het Wolvenmeldpunt van BIJ12 (0800-1212).`;
 }
 
 export default async function handler(req, res) {
