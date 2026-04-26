@@ -43,6 +43,10 @@
   .bl::before { content:'●'; color:var(--g); font-size:0.4rem; flex-shrink:0; margin-top:7px; }
   .bl-sub { display:flex; gap:6px; margin-bottom:2px; margin-left:18px; align-items:flex-start; color:var(--tm); }
   .bl-sub::before { content:'–'; color:var(--tl); flex-shrink:0; font-size:0.75rem; margin-top:1px; }
+  .photos { display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; padding-top:10px; border-top:1px solid var(--b); }
+  .photo-card { flex:1; min-width:100px; max-width:160px; border-radius:8px; overflow:hidden; border:1px solid var(--b); background:#fff; }
+  .photo-card img { width:100%; height:90px; object-fit:cover; display:block; }
+  .photo-card span { display:block; padding:4px 6px; font-size:0.68rem; color:var(--tm); font-style:italic; line-height:1.3; }
   .typ { display:flex; gap:8px; }
   .typ-bub { padding:11px 14px; background:var(--gp); border:1px solid var(--b); border-radius:12px; border-top-left-radius:3px; display:flex; gap:5px; align-items:center; }
   .dot { width:6px; height:6px; border-radius:50%; background:var(--g); animation:bl 1.2s infinite; opacity:0.4; }
@@ -66,7 +70,7 @@
     </div>
     <div class="hdr-right">
       <span class="hdr-season" id="season"></span>
-      <span class="hdr-ver">v28</span>
+      <span class="hdr-ver">v29</span>
     </div>
   </div>
   <div class="err" id="err"></div>
@@ -146,11 +150,25 @@ function addUser(text) {
   chat.appendChild(w); chat.scrollTop = chat.scrollHeight;
 }
 function addBot(text) {
+  // Haal soorten JSON van laatste regel
+  var soorten = [];
+  var mainText = text;
+  var lines = text.trim().split('\n');
+  var lastLine = lines[lines.length - 1].trim();
+  try {
+    var json = JSON.parse(lastLine);
+    if (json.soorten && Array.isArray(json.soorten)) {
+      soorten = json.soorten;
+      mainText = lines.slice(0, lines.length - 1).join('\n').trim();
+    }
+  } catch(e) {}
+
   var chat = document.getElementById('chat');
   var w = document.createElement('div'); w.className = 'msg bot';
   var av = document.createElement('div'); av.className = 'av bot'; av.textContent = '🌿';
   var b = document.createElement('div'); b.className = 'bub';
-  b.innerHTML = render(text);
+  b.innerHTML = render(mainText);
+  if (soorten.length > 0) loadPhotos(soorten, b);
   w.appendChild(av); w.appendChild(b);
   chat.appendChild(w); chat.scrollTop = chat.scrollHeight;
 }
@@ -178,6 +196,51 @@ function render(text) {
   });
   return html;
 }
+function getPhoto(naam) {
+  return fetch('https://nl.wikipedia.org/w/api.php?action=query&list=search&srsearch=' + encodeURIComponent(naam) + '&srlimit=1&format=json&origin=*')
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
+    var title = (d.query.search.length > 0) ? d.query.search[0].title : naam;
+    return fetch('https://nl.wikipedia.org/w/api.php?action=query&titles=' + encodeURIComponent(title) + '&prop=pageimages&format=json&pithumbsize=300&origin=*');
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
+    var pages = d.query.pages;
+    var page = pages[Object.keys(pages)[0]];
+    if (page && page.thumbnail) return page.thumbnail.source;
+    // Fallback EN wikipedia
+    return fetch('https://en.wikipedia.org/w/api.php?action=query&titles=' + encodeURIComponent(naam) + '&prop=pageimages&format=json&pithumbsize=300&origin=*')
+    .then(function(r) { return r.json(); })
+    .then(function(d2) {
+      var p2 = d2.query.pages;
+      var pg = p2[Object.keys(p2)[0]];
+      return (pg && pg.thumbnail) ? pg.thumbnail.source : null;
+    });
+  })
+  .catch(function() { return null; });
+}
+
+function loadPhotos(soorten, container) {
+  var div = document.createElement('div');
+  div.className = 'photos';
+  container.appendChild(div);
+  soorten.forEach(function(naam) {
+    getPhoto(naam).then(function(url) {
+      if (!url) return;
+      var card = document.createElement('div');
+      card.className = 'photo-card';
+      var img = document.createElement('img');
+      img.src = url;
+      img.alt = naam;
+      var label = document.createElement('span');
+      label.textContent = naam;
+      card.appendChild(img);
+      card.appendChild(label);
+      div.appendChild(card);
+    });
+  });
+}
+
 function ask(q) {
   document.getElementById('btn').disabled = true;
   addUser(q);
