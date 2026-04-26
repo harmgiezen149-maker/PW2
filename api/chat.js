@@ -17,8 +17,11 @@ Het is nu ${season} (${date}). Geef alleen informatie die relevant is voor dit s
 Geef altijd uitgebreide antwoorden met minimaal 300 woorden. Structureer als volgt:
 - Begin met een enthousiaste inleiding van 2-3 zinnen over wat er nu speelt
 - Gebruik ## kopjes voor verschillende onderwerpen (minimaal 3 kopjes)
-- Gebruik bullets voor concrete feiten en details
-- Sluit af met 2-3 praktische gesprekstips voor de boswachter
+- Gebruik deze bulletstructuur consequent:
+  - Hoofdonderwerp als bullet (- **Onderwerp**)
+    - Toelichting als subbullet eronder (twee spaties inspringen)
+    - Nog een detail als subbullet
+- Sluit af met ## Gesprekstips en 2-3 praktische tips als bullets met subbullets
 
 Gebied Planken Wambuis: heide, stuifzand, eikenbos, vennen. Bekende plekken: Mosselse Zand, Oude Hout, Oud Reemst, boerderij De Mossel.
 Flora: struikheide, pijpenstrootje, bochtige smele, zonnedauw, diverse venplanten.
@@ -26,7 +29,7 @@ Fauna: heideblauwtje, nachtzwaluw, levendbarende hagedis, adder, wilde zwijnen, 
 Beheer: schapenbegrazing (Drentse heideschapen), plaggen, heidebranden, maaien — om vergrassing en verstruweling tegen te gaan. Beheerder: Natuurmonumenten, boerderij De Mossel speelt rol in begrazingsbeheer.
 
 WOLF — belangrijke specifieke informatie voor dit gebied:
-Op de Zuidwest-Veluwe is wolf GW2435m (geboren in Vlaanderen) al actief sinds eind 2022. In 2023 kreeg hij met wolvin GW3012f welpen — de eerste wolven in dit deel van de Veluwe. In 2024 is GW3012f gedood door een andere wolf. De status van de roedel is momenteel onduidelijk. Planken Wambuis heeft een vaste wolvenroedel van op dit moment 11 wolven. Nederland telt momenteel 14 wolvenroedels, waarvan 7 op de Veluwe (Noord, Noordoost, Midden, Zuidoost, Zuidwest, Hoge Veluwe en Noordwest-Veluwe). Bezoekers die een wolf zien kunnen dit melden bij het Wolvenmeldpunt van BIJ12 (0800-1212).`;
+Op de Zuidwest-Veluwe is wolf GW2435m (geboren in Vlaanderen) al actief sinds eind 2022. In 2023 kreeg hij met wolvin GW3012f welpen — de eerste wolven in dit deel van de Veluwe. In 2024 is GW3012f gedood door een andere wolf. De status van de roedel is momenteel onduidelijk. Planken Wambuis heeft GEEN vaste wolvenroedel, maar wolven kunnen wel door het gebied trekken vanuit de Zuidwest-Veluwe roedel in de buurt. Nederland telt momenteel 14 wolvenroedels, waarvan 7 op de Veluwe (Noord, Noordoost, Midden, Zuidoost, Zuidwest, Hoge Veluwe en Noordwest-Veluwe). Bezoekers die een wolf zien kunnen dit melden bij het Wolvenmeldpunt van BIJ12 (0800-1212).`;
 }
 
 export default async function handler(req, res) {
