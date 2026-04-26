@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Wikimedia Test</title>
+<title>Wikimedia Test 2</title>
 <style>
   body { font-family: sans-serif; padding: 24px; max-width: 500px; margin: 0 auto; background: #f5f5f5; }
   input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem; margin-bottom: 10px; box-sizing: border-box; }
@@ -15,37 +15,59 @@
 </style>
 </head>
 <body>
-<h2>🌿 Wikimedia afbeelding test</h2>
-<input type="text" id="soort" placeholder="Typ een soortnaam, bijv. Struikheide" value="Struikheide" />
+<h2>🌿 Wikimedia afbeelding test v2</h2>
+<input type="text" id="soort" placeholder="Typ een soortnaam" value="Struikheide" />
 <button onclick="zoek()">Zoek afbeelding</button>
 <div id="result"></div>
 
 <script>
+function getThumb(wiki, naam) {
+  return fetch('https://' + wiki + '.wikipedia.org/w/api.php?action=query&titles=' + encodeURIComponent(naam) + '&prop=pageimages&format=json&pithumbsize=400&origin=*')
+  .then(function(res) { return res.json(); })
+  .then(function(data) {
+    var pages = data.query.pages;
+    var page = pages[Object.keys(pages)[0]];
+    return (page && page.thumbnail) ? page.thumbnail.source : null;
+  });
+}
+
+// Zoek via Wikipedia redirect/zoekfunctie naar de juiste paginatitel
+function searchTitle(naam) {
+  return fetch('https://nl.wikipedia.org/w/api.php?action=query&list=search&srsearch=' + encodeURIComponent(naam) + '&srlimit=1&format=json&origin=*')
+  .then(function(res) { return res.json(); })
+  .then(function(data) {
+    if (data.query.search.length > 0) {
+      return data.query.search[0].title;
+    }
+    return null;
+  });
+}
+
 function zoek() {
   var soort = document.getElementById('soort').value.trim();
   var result = document.getElementById('result');
   result.innerHTML = 'Zoeken...';
 
-  fetch('https://en.wikipedia.org/w/api.php?action=query&titles=' + encodeURIComponent(soort) + '&prop=pageimages&format=json&pithumbsize=400&origin=*')
-  .then(function(res) { return res.json(); })
-  .then(function(data) {
-    var pages = data.query.pages;
-    var page = pages[Object.keys(pages)[0]];
-    if (page.thumbnail) {
-      result.innerHTML = '<img src="' + page.thumbnail.source + '" alt="' + soort + '"><p>' + soort + ' — via Wikimedia Commons</p>';
+  // Stap 1: probeer NL wikipedia direct
+  getThumb('nl', soort)
+  .then(function(url) {
+    if (url) return url;
+    // Stap 2: zoek via NL wikipedia zoekfunctie
+    return searchTitle(soort).then(function(title) {
+      if (!title) return null;
+      return getThumb('nl', title);
+    });
+  })
+  .then(function(url) {
+    if (url) return url;
+    // Stap 3: probeer EN wikipedia
+    return getThumb('en', soort);
+  })
+  .then(function(url) {
+    if (url) {
+      result.innerHTML = '<img src="' + url + '" alt="' + soort + '"><p>' + soort + ' — via Wikimedia Commons</p>';
     } else {
-      // Probeer Nederlandse Wikipedia
-      return fetch('https://nl.wikipedia.org/w/api.php?action=query&titles=' + encodeURIComponent(soort) + '&prop=pageimages&format=json&pithumbsize=400&origin=*')
-      .then(function(res) { return res.json(); })
-      .then(function(data2) {
-        var pages2 = data2.query.pages;
-        var page2 = pages2[Object.keys(pages2)[0]];
-        if (page2.thumbnail) {
-          result.innerHTML = '<img src="' + page2.thumbnail.source + '" alt="' + soort + '"><p>' + soort + ' — via Wikimedia Commons</p>';
-        } else {
-          result.innerHTML = '<p class="err">Geen afbeelding gevonden voor "' + soort + '"</p>';
-        }
-      });
+      result.innerHTML = '<p class="err">Geen afbeelding gevonden voor "' + soort + '"</p>';
     }
   })
   .catch(function(e) {
