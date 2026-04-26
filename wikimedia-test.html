@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wikimedia Test</title>
+<style>
+  body { font-family: sans-serif; padding: 24px; max-width: 500px; margin: 0 auto; background: #f5f5f5; }
+  input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem; margin-bottom: 10px; box-sizing: border-box; }
+  button { background: #1a5c38; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-size: 1rem; cursor: pointer; }
+  #result { margin-top: 20px; }
+  #result img { width: 100%; border-radius: 10px; }
+  #result p { font-size: 0.85rem; color: #555; margin-top: 6px; }
+  #result .err { color: red; }
+</style>
+</head>
+<body>
+<h2>🌿 Wikimedia afbeelding test</h2>
+<input type="text" id="soort" placeholder="Typ een soortnaam, bijv. Struikheide" value="Struikheide" />
+<button onclick="zoek()">Zoek afbeelding</button>
+<div id="result"></div>
+
+<script>
+function zoek() {
+  var soort = document.getElementById('soort').value.trim();
+  var result = document.getElementById('result');
+  result.innerHTML = 'Zoeken...';
+
+  fetch('https://en.wikipedia.org/w/api.php?action=query&titles=' + encodeURIComponent(soort) + '&prop=pageimages&format=json&pithumbsize=400&origin=*')
+  .then(function(res) { return res.json(); })
+  .then(function(data) {
+    var pages = data.query.pages;
+    var page = pages[Object.keys(pages)[0]];
+    if (page.thumbnail) {
+      result.innerHTML = '<img src="' + page.thumbnail.source + '" alt="' + soort + '"><p>' + soort + ' — via Wikimedia Commons</p>';
+    } else {
+      // Probeer Nederlandse Wikipedia
+      return fetch('https://nl.wikipedia.org/w/api.php?action=query&titles=' + encodeURIComponent(soort) + '&prop=pageimages&format=json&pithumbsize=400&origin=*')
+      .then(function(res) { return res.json(); })
+      .then(function(data2) {
+        var pages2 = data2.query.pages;
+        var page2 = pages2[Object.keys(pages2)[0]];
+        if (page2.thumbnail) {
+          result.innerHTML = '<img src="' + page2.thumbnail.source + '" alt="' + soort + '"><p>' + soort + ' — via Wikimedia Commons</p>';
+        } else {
+          result.innerHTML = '<p class="err">Geen afbeelding gevonden voor "' + soort + '"</p>';
+        }
+      });
+    }
+  })
+  .catch(function(e) {
+    result.innerHTML = '<p class="err">Fout: ' + e.message + '</p>';
+  });
+}
+</script>
+</body>
+</html>
