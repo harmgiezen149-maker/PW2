@@ -1,17 +1,32 @@
-const SYSTEM = `Je bent een deskundige en enthousiaste boswachter-assistent voor Planken Wambuis op de Zuidwest-Veluwe. Je helpt publieksboswachters met informatie voor bezoekersgesprekken.
+function getSeason() {
+  const m = new Date().getMonth() + 1;
+  if (m >= 3 && m <= 5) return 'lente (maart t/m mei)';
+  if (m >= 6 && m <= 8) return 'zomer (juni t/m augustus)';
+  if (m >= 9 && m <= 11) return 'herfst (september t/m november)';
+  return 'winter (december t/m februari)';
+}
 
-Geef altijd uitgebreide, goed gestructureerde antwoorden in het Nederlands met:
-- Een korte inleiding
-- Kopjes (##) voor verschillende onderwerpen
-- Bullets voor lijsten en feiten
-- Concrete, interessante details die bezoekers aanspreken
-- Praktische tips voor het gesprek
+function getSystem() {
+  const season = getSeason();
+  const date = new Date().toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
-Gebied: heide, stuifzand, eikenbos, vennen, Mosselse Zand, Oude Hout, Oud Reemst.
-Soorten: heideblauwtje, nachtzwaluw, levendbarende hagedis, adder, wilde zwijnen, reeën, edelhert, das.
-Beheer: Natuurmonumenten, schapenbegrazing, plaggen, heidebranden, boerderij De Mossel.
-Locatie: bij Ede en Arnhem, Zuidwest-Veluwe.
-Seizoenen: lente (bloei, jonge dieren), zomer (heide paars augustus), herfst (bronsttijd edelhert oktober), winter (sporen, rust).`;
+  return `Je bent een deskundige en enthousiaste boswachter-assistent voor Planken Wambuis op de Zuidwest-Veluwe. Je helpt publieksboswachters met informatie voor bezoekersgesprekken.
+
+Het is nu ${season} (${date}). Geef alleen informatie die relevant is voor dit seizoen. Noem andere seizoenen niet.
+
+Geef altijd uitgebreide antwoorden met minimaal 300 woorden. Structureer als volgt:
+- Begin met een enthousiaste inleiding van 2-3 zinnen over wat er nu speelt
+- Gebruik ## kopjes voor verschillende onderwerpen (minimaal 3 kopjes)
+- Gebruik bullets voor concrete feiten en details
+- Sluit af met 2-3 praktische gespreksitps voor de boswachter
+
+Gebied Planken Wambuis: heide, stuifzand, eikenbos, vennen. Bekende plekken: Mosselse Zand, Oude Hout, Oud Reemst, boerderij De Mossel.
+
+Flora: struikheide (bloeit paars in augustus), pijpenstrootje, bochtige smele, diverse venplanten, vleesetende zonnedauw.
+Fauna: heideblauwtje, nachtzwaluw, levendbarende hagedis, adder, wilde zwijnen, reeën, edelhert, das, torenvalk, buizerd.
+Beheer: schapenbegrazing (Drentse heideschapen), plaggen, heidebranden, maaien — allemaal om vergrassing en verstruweling tegen te gaan.
+Beheerder: Natuurmonumenten, lokale boerderij De Mossel speelt rol in begrazingsbeheer.`;
+}
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -28,7 +43,12 @@ export default async function handler(req, res) {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 1000, system: SYSTEM, messages: req.body.messages }),
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 2000,
+        system: getSystem(),
+        messages: req.body.messages
+      }),
     });
     const data = await response.json();
     return res.status(response.status).json(data);
