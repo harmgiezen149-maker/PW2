@@ -77,7 +77,7 @@
     </div>
     <div class="hdr-right">
       <span class="hdr-season" id="season"></span>
-      <span class="hdr-ver">v31</span>
+      <span class="hdr-ver">v32</span>
     </div>
   </div>
   <div class="err" id="err"></div>
@@ -110,6 +110,12 @@
     </div>
   </div>
 </div>
+<div id="lightbox" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:999;align-items:center;justify-content:center;flex-direction:column;gap:10px;cursor:zoom-out;" onclick="closeLightbox()">
+  <img id="lbImg" src="" alt="" style="max-width:92vw;max-height:80vh;border-radius:10px;object-fit:contain;" onclick="event.stopPropagation()" />
+  <span id="lbLabel" style="color:rgba(255,255,255,0.75);font-size:0.85rem;font-style:italic;"></span>
+  <span style="color:rgba(255,255,255,0.5);font-size:0.75rem;">Tik om te sluiten</span>
+</div>
+
 <script>
 function season() {
   var m = new Date().getMonth();
@@ -212,10 +218,10 @@ function render(text) {
 function openLightbox(src, label) {
   document.getElementById('lbImg').src = src;
   document.getElementById('lbLabel').textContent = label;
-  document.getElementById('lightbox').classList.add('open');
+  document.getElementById('lightbox').style.display = 'flex';
 }
 function closeLightbox() {
-  document.getElementById('lightbox').classList.remove('open');
+  document.getElementById('lightbox').style.display = 'none';
 }
 
 function getPhoto(naam) {
