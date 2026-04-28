@@ -10,6 +10,7 @@ export default async function handler(req, res) {
 
   try {
     const { corrections } = req.body;
+    // Sla array direct op als JSON string, geen extra nesting
     await fetch(`${url}/set/corrections`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
