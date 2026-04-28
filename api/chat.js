@@ -6,9 +6,29 @@ function getSeason() {
   return 'winter (december t/m februari)';
 }
 
-function getSystem() {
+async function getCorrections() {
+  try {
+    const url = process.env.KV_REST_API_URL;
+    const token = process.env.KV_REST_API_TOKEN;
+    const r = await fetch(`${url}/get/corrections`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const data = await r.json();
+    return data.result ? JSON.parse(data.result) : [];
+  } catch(e) {
+    return [];
+  }
+}
+
+function getSystem(corrections) {
   const season = getSeason();
   const date = new Date().toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+  let correctionsText = '';
+  if (corrections && corrections.length > 0) {
+    correctionsText = '\n\nACTUELE CORRECTIES EN AANVULLINGEN (hebben prioriteit boven andere informatie):\n' +
+      corrections.map((c, i) => `${i+1}. ${c}`).join('\n');
+  }
 
   return `Je bent een deskundige en enthousiaste boswachter-assistent voor Planken Wambuis op de Zuidwest-Veluwe. Je helpt publieksboswachters met informatie voor bezoekersgesprekken.
 
@@ -27,31 +47,30 @@ Geef altijd uitgebreide antwoorden met minimaal 300 woorden. Structureer als vol
 Gebied Planken Wambuis: heide, stuifzand, eikenbos, vennen. Bekende plekken: Mosselse Zand, Oude Hout, Oud Reemst, boerderij De Mossel.
 Flora: struikheide, pijpenstrootje, bochtige smele, zonnedauw, diverse venplanten.
 Fauna: heideblauwtje, nachtzwaluw, levendbarende hagedis, adder, wilde zwijnen, reeën, edelhert, das, torenvalk, buizerd.
-Beheer: schapenbegrazing (Drentse heideschapen), plaggen, heidebranden, maaien — om vergrassing en verstruweling tegen te gaan. Beheerder: Natuurmonumenten, boerderij De Mossel speelt rol in begrazingsbeheer.
+Beheer: schapenbegrazing (Drentse heideschapen), plaggen, heidebranden, maaien. Beheerder: Natuurmonumenten, boerderij De Mossel.
 
-WOLF — belangrijke specifieke informatie voor dit gebied:
-Planken Wambuis heeft WEL degelijk een vaste wolvenroedel. De Zuidwest-Veluwe roedel heeft haar territorium in de bos- en heidegebieden tussen Otterlo en Ede, waaronder Planken Wambuis, Mossel, Oud Reemst en De Ginkel. De roedel bestaat momenteel uit twee ouderdieren, twee jaarlingen en negen welpen (totaal ca. 13 wolven). Wolf GW2435m (geboren in Vlaanderen) is al actief sinds eind 2022. Boswachter Frank Theunissen van Natuurmonumenten volgt de roedel al jaren via wildcamera's. Natuurmonumenten heeft speciale wolvenexcursies en heeft tijdelijk paden afgesloten om de jonge welpen te beschermen. Bezoekers zien wolven zelden — ze zijn schuw en actief vooral in de schemering en nacht. Bezoekers die een wolf zien kunnen dit melden bij het Wolvenmeldpunt van BIJ12 (0800-1212). Nederland telt momenteel 14 wolvenroedels, waarvan 7 op de Veluwe.`;
+WOLF — Planken Wambuis heeft een vaste wolvenroedel. De Zuidwest-Veluwe roedel heeft haar territorium in Planken Wambuis, Mossel, Oud Reemst en De Ginkel. De roedel bestaat uit twee ouderdieren, twee jaarlingen en negen welpen (totaal ca. 13 wolven). Wolf GW2435m actief sinds eind 2022. Meldingen via BIJ12 Wolvenmeldpunt (0800-1212).${correctionsText}`;
 }
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-  if (req.method === 'OPTIONS') { return res.status(200).end(); }
-  if (req.method !== 'POST') { return res.status(405).json({ error: 'Method Not Allowed' }); }
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
 
   const key = process.env.ANTHROPIC_API_KEY;
-  if (!key) { return res.status(500).json({ error: 'API key niet gevonden' }); }
+  if (!key) return res.status(500).json({ error: 'API key niet gevonden' });
 
   try {
+    const corrections = await getCorrections();
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
         max_tokens: 2000,
-        system: getSystem(),
+        system: getSystem(corrections),
         messages: req.body.messages
       }),
     });
