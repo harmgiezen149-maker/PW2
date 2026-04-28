@@ -15,17 +15,21 @@ export default async function handler(req, res) {
 
     let corrections = [];
     if (data.result) {
-      // result kan een string zijn die JSON bevat, of al een array
-      if (typeof data.result === 'string') {
-        try { corrections = JSON.parse(data.result); } catch(e) { corrections = []; }
-      } else if (Array.isArray(data.result)) {
-        corrections = data.result;
+      try {
+        // result is een string met {"value":"[...]"} erin
+        var parsed = typeof data.result === 'string' ? JSON.parse(data.result) : data.result;
+        // parsed kan {"value":"[...]"} zijn of direct een array
+        if (parsed.value !== undefined) {
+          corrections = typeof parsed.value === 'string' ? JSON.parse(parsed.value) : parsed.value;
+        } else if (Array.isArray(parsed)) {
+          corrections = parsed;
+        }
+      } catch(e) {
+        corrections = [];
       }
     }
 
-    // Zorg dat het altijd een array is
     if (!Array.isArray(corrections)) corrections = [];
-
     return res.status(200).json({ corrections });
   } catch(e) {
     return res.status(500).json({ error: e.message, corrections: [] });
