@@ -90,7 +90,7 @@
     </div>
     <div class="hdr-right">
       <span class="hdr-season" id="season"></span>
-      <span class="hdr-ver">v33</span>
+      <span class="hdr-ver">v34</span>
       <button onclick="toggleBeheer()" style="background:none;border:1px solid rgba(255,255,255,0.3);color:rgba(255,255,255,0.7);border-radius:6px;padding:2px 8px;font-size:0.62rem;cursor:pointer;font-family:'Source Sans 3',sans-serif;">⚙️</button>
     </div>
   </div>
@@ -187,14 +187,36 @@ function addCorrection() {
   var input = document.getElementById('corrInput');
   var text = input.value.trim();
   if (!text) return;
-  corrections.push(text);
-  input.value = '';
-  saveCorrections();
+  // Haal eerst actuele lijst op, dan toevoegen
+  fetch('/api/corrections-get')
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    corrections = data.corrections || [];
+    corrections.push(text);
+    input.value = '';
+    return fetch('/api/corrections-set', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ corrections: corrections })
+    });
+  })
+  .then(function() { renderCorrections(); })
+  .catch(function(e) { alert('Fout bij opslaan: ' + e.message); });
 }
 
 function deleteCorrection(i) {
-  corrections.splice(i, 1);
-  saveCorrections();
+  fetch('/api/corrections-get')
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    corrections = data.corrections || [];
+    corrections.splice(i, 1);
+    return fetch('/api/corrections-set', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ corrections: corrections })
+    });
+  })
+  .then(function() { renderCorrections(); });
 }
 
 function saveCorrections() {
