@@ -12,9 +12,22 @@ export default async function handler(req, res) {
       headers: { Authorization: `Bearer ${token}` }
     });
     const data = await r.json();
-    const corrections = data.result ? JSON.parse(data.result) : [];
+
+    let corrections = [];
+    if (data.result) {
+      // result kan een string zijn die JSON bevat, of al een array
+      if (typeof data.result === 'string') {
+        try { corrections = JSON.parse(data.result); } catch(e) { corrections = []; }
+      } else if (Array.isArray(data.result)) {
+        corrections = data.result;
+      }
+    }
+
+    // Zorg dat het altijd een array is
+    if (!Array.isArray(corrections)) corrections = [];
+
     return res.status(200).json({ corrections });
   } catch(e) {
-    return res.status(500).json({ error: e.message });
+    return res.status(500).json({ error: e.message, corrections: [] });
   }
 }
