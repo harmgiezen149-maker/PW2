@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Planken Wambuis - 2</title>
+<title>Planken Wambuis</title>
 <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;600;700&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
   :root { --g:#1a5c38; --gl:#e8f2ec; --gp:#f2f8f4; --t:#1a1a1a; --tm:#4a4a4a; --tl:#767676; --b:#d0ddd5; }
@@ -46,6 +46,19 @@
   .photos { display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; padding-top:10px; border-top:1px solid var(--b); }
   .scroll-top { display:block; margin-top:10px; padding:6px 12px; background:var(--gl); border:1.5px solid var(--g); color:var(--g); border-radius:20px; font-size:0.72rem; font-weight:600; cursor:pointer; font-family:'Source Sans 3',sans-serif; text-align:center; }
   .scroll-top:active { background:var(--g); color:#fff; }
+  .beheer { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:998; align-items:flex-end; justify-content:center; }
+  .beheer.open { display:flex; }
+  .beheer-panel { background:#fff; border-radius:16px 16px 0 0; padding:20px; width:100%; max-width:600px; max-height:80vh; overflow-y:auto; }
+  .beheer-panel h3 { font-family:'Source Serif 4',serif; color:var(--g); font-size:1rem; margin-bottom:4px; }
+  .beheer-panel p { font-size:0.78rem; color:var(--tm); margin-bottom:12px; }
+  .corr-item { display:flex; gap:8px; align-items:flex-start; margin-bottom:8px; padding:8px 10px; background:var(--gp); border-radius:8px; border:1px solid var(--b); }
+  .corr-item span { flex:1; font-size:0.82rem; color:var(--t); line-height:1.5; }
+  .corr-del { background:none; border:1px solid #e8c5c5; color:#c0392b; border-radius:6px; padding:3px 8px; font-size:0.72rem; cursor:pointer; flex-shrink:0; }
+  .corr-add { display:flex; gap:8px; margin-top:12px; }
+  .corr-add textarea { flex:1; border:1.5px solid var(--b); border-radius:8px; padding:8px 10px; font-size:0.82rem; font-family:'Source Sans 3',sans-serif; resize:none; outline:none; min-height:60px; }
+  .corr-add textarea:focus { border-color:var(--g); }
+  .corr-add button { background:var(--g); color:#fff; border:none; border-radius:8px; padding:8px 14px; font-size:0.82rem; font-weight:600; cursor:pointer; flex-shrink:0; }
+  .beheer-close { display:block; width:100%; margin-top:14px; padding:10px; background:var(--gl); border:1.5px solid var(--g); color:var(--g); border-radius:8px; font-size:0.85rem; font-weight:600; cursor:pointer; font-family:'Source Sans 3',sans-serif; }
   .lightbox { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.88); z-index:999; align-items:center; justify-content:center; flex-direction:column; gap:10px; cursor:zoom-out; }
   .lightbox.open { display:flex; }
   .lightbox img { max-width:92vw; max-height:80vh; border-radius:10px; object-fit:contain; }
@@ -77,7 +90,8 @@
     </div>
     <div class="hdr-right">
       <span class="hdr-season" id="season"></span>
-      <span class="hdr-ver">v32</span>
+      <span class="hdr-ver">v33</span>
+      <button onclick="toggleBeheer()" style="background:none;border:1px solid rgba(255,255,255,0.3);color:rgba(255,255,255,0.7);border-radius:6px;padding:2px 8px;font-size:0.62rem;cursor:pointer;font-family:'Source Sans 3',sans-serif;">⚙️</button>
     </div>
   </div>
   <div class="err" id="err"></div>
@@ -110,6 +124,19 @@
     </div>
   </div>
 </div>
+<div class="beheer" id="beheer" onclick="if(event.target===this)toggleBeheer()">
+  <div class="beheer-panel">
+    <h3>⚙️ Correcties & aanvullingen</h3>
+    <p>Voeg correcties toe die bij elke vraag worden meegestuurd naar de assistent. Zichtbaar voor alle gebruikers.</p>
+    <div id="corrList"></div>
+    <div class="corr-add">
+      <textarea id="corrInput" placeholder="Bijv: Er zijn sinds maart 2025 ook bevers gesignaleerd in het ven bij Oud Reemst"></textarea>
+      <button onclick="addCorrection()">Toevoegen</button>
+    </div>
+    <button class="beheer-close" onclick="toggleBeheer()">Sluiten</button>
+  </div>
+</div>
+
 <div id="lightbox" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:999;align-items:center;justify-content:center;flex-direction:column;gap:10px;cursor:zoom-out;" onclick="closeLightbox()">
   <img id="lbImg" src="" alt="" style="max-width:92vw;max-height:80vh;border-radius:10px;object-fit:contain;" onclick="event.stopPropagation()" />
   <span id="lbLabel" style="color:rgba(255,255,255,0.75);font-size:0.85rem;font-style:italic;"></span>
@@ -117,6 +144,68 @@
 </div>
 
 <script>
+// Beheer & correcties
+var corrections = [];
+
+function toggleBeheer() {
+  var el = document.getElementById('beheer');
+  if (el.classList.contains('open')) {
+    el.classList.remove('open');
+  } else {
+    loadCorrections();
+    el.classList.add('open');
+  }
+}
+
+function loadCorrections() {
+  fetch('/api/corrections-get')
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    corrections = data.corrections || [];
+    renderCorrections();
+  });
+}
+
+function renderCorrections() {
+  var list = document.getElementById('corrList');
+  if (corrections.length === 0) {
+    list.innerHTML = '<p style="font-size:0.78rem;color:var(--tl);font-style:italic;">Nog geen correcties toegevoegd.</p>';
+    return;
+  }
+  list.innerHTML = '';
+  corrections.forEach(function(c, i) {
+    var div = document.createElement('div'); div.className = 'corr-item';
+    var span = document.createElement('span'); span.textContent = c;
+    var btn = document.createElement('button'); btn.className = 'corr-del'; btn.textContent = 'Verwijder';
+    btn.onclick = function() { deleteCorrection(i); };
+    div.appendChild(span); div.appendChild(btn);
+    list.appendChild(div);
+  });
+}
+
+function addCorrection() {
+  var input = document.getElementById('corrInput');
+  var text = input.value.trim();
+  if (!text) return;
+  corrections.push(text);
+  input.value = '';
+  saveCorrections();
+}
+
+function deleteCorrection(i) {
+  corrections.splice(i, 1);
+  saveCorrections();
+}
+
+function saveCorrections() {
+  fetch('/api/corrections-set', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ corrections: corrections })
+  })
+  .then(function() { renderCorrections(); });
+}
+
 function season() {
   var m = new Date().getMonth();
   if (m>=2&&m<=4) return '🌸 Lente';
