@@ -14,7 +14,12 @@ async function getCorrections() {
       headers: { Authorization: `Bearer ${token}` }
     });
     const data = await r.json();
-    return data.result ? JSON.parse(data.result) : [];
+    if (!data.result) return [];
+    let parsed = typeof data.result === 'string' ? JSON.parse(data.result) : data.result;
+    if (parsed.value !== undefined) {
+      parsed = typeof parsed.value === 'string' ? JSON.parse(parsed.value) : parsed.value;
+    }
+    return Array.isArray(parsed) ? parsed : [];
   } catch(e) {
     return [];
   }
