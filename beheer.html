@@ -112,9 +112,9 @@ function renderPending(list) {
     var span = document.createElement('span'); span.textContent = c;
     var actions = document.createElement('div'); actions.className = 'actions';
     var approve = document.createElement('button'); approve.className = 'btn-approve'; approve.textContent = '✓ Accorderen';
-    approve.onclick = function() { doAction('approve', i); };
+    approve.onclick = (function(idx) { return function() { doAction('approve', idx); }; })(i);
     var reject = document.createElement('button'); reject.className = 'btn-reject'; reject.textContent = '✗ Afwijzen';
-    reject.onclick = function() { doAction('reject', i); };
+    reject.onclick = (function(idx) { return function() { doAction('reject', idx); }; })(i);
     actions.appendChild(approve); actions.appendChild(reject);
     div.appendChild(span); div.appendChild(actions);
     el.appendChild(div);
@@ -127,11 +127,13 @@ function renderApproved(list) {
   el.innerHTML = '';
   list.forEach(function(c, i) {
     var div = document.createElement('div'); div.className = 'item';
-    var badge = document.createElement('span'); badge.className = 'approved-badge'; badge.textContent = 'actief';
     var span = document.createElement('span'); span.textContent = c;
+    var actions = document.createElement('div'); actions.className = 'actions';
+    var badge = document.createElement('span'); badge.className = 'approved-badge'; badge.textContent = '✓ actief';
     var del = document.createElement('button'); del.className = 'btn-delete'; del.textContent = 'Verwijder';
-    del.onclick = function() { doAction('delete-approved', i); };
-    div.appendChild(badge); div.appendChild(span); div.appendChild(del);
+    del.onclick = (function(idx) { return function() { doAction('delete-approved', idx); }; })(i);
+    actions.appendChild(badge); actions.appendChild(del);
+    div.appendChild(span); div.appendChild(actions);
     el.appendChild(div);
   });
 }
