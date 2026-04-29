@@ -8,30 +8,29 @@ export default async function handler(req, res) {
   const token = process.env.KV_REST_API_TOKEN;
 
   try {
-    const r = await fetch(`${url}/get/corrections`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    const data = await r.json();
+    // Haal pending en approved op
+    const [rp, ra] = await Promise.all([
+      fetch(`${url}/get/pending`, { headers: { Authorization: `Bearer ${token}` } }),
+      fetch(`${url}/get/approved`, { headers: { Authorization: `Bearer ${token}` } })
+    ]);
+    const [dp, da] = await Promise.all([rp.json(), ra.json()]);
 
-    let corrections = [];
-    if (data.result) {
+    const parse = (d) => {
+      if (!d.result) return [];
       try {
-        // result is een string met {"value":"[...]"} erin
-        var parsed = typeof data.result === 'string' ? JSON.parse(data.result) : data.result;
-        // parsed kan {"value":"[...]"} zijn of direct een array
-        if (parsed.value !== undefined) {
-          corrections = typeof parsed.value === 'string' ? JSON.parse(parsed.value) : parsed.value;
-        } else if (Array.isArray(parsed)) {
-          corrections = parsed;
-        }
-      } catch(e) {
-        corrections = [];
-      }
-    }
+        let p = typeof d.result === 'string' ? JSON.parse(d.result) : d.result;
+        if (p.value !== undefined) p = typeof p.value === 'string' ? JSON.parse(p.value) : p.value;
+        return Array.isArray(p) ? p : [];
+      } catch(e) { return []; }
+    };
 
-    if (!Array.isArray(corrections)) corrections = [];
-    return res.status(200).json({ corrections });
+    return res.status(200).json({
+      pending: parse(dp),
+      approved: parse(da),
+      // Voor backwards compat: corrections = alle actieve (pending + approved)
+      corrections: [...parse(dp), ...parse(da)]
+    });
   } catch(e) {
-    return res.status(500).json({ error: e.message, corrections: [] });
+    return res.status(500).json({ error: e.message, pending: [], approved: [], corrections: [] });
   }
 }
