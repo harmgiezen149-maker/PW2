@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beheer · Planken Wambuis</title>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;600;700&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root { --g:#1a5c38; --gl:#e8f2ec; --gp:#f2f8f4; --t:#1a1a1a; --tm:#4a4a4a; --tl:#767676; --b:#d0ddd5; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'Source Sans 3',sans-serif; background:var(--gp); color:var(--t); min-height:100vh; }
+
+  #login { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; padding:24px; }
+  #login .icon { font-size:3rem; margin-bottom:16px; }
+  #login h1 { font-family:'Source Serif 4',serif; font-size:1.3rem; color:var(--g); margin-bottom:6px; }
+  #login p { font-size:0.82rem; color:var(--tm); margin-bottom:24px; }
+  #login input { width:100%; max-width:320px; border:1.5px solid var(--b); border-radius:8px; padding:11px 14px; font-size:0.88rem; font-family:'Source Sans 3',sans-serif; outline:none; margin-bottom:10px; }
+  #login input:focus { border-color:var(--g); }
+  #login button { width:100%; max-width:320px; background:var(--g); color:#fff; border:none; border-radius:8px; padding:12px; font-size:0.9rem; font-weight:600; cursor:pointer; font-family:'Source Sans 3',sans-serif; }
+  #login .err { color:#c0392b; font-size:0.78rem; margin-top:8px; display:none; }
+
+  #app { display:none; max-width:700px; margin:0 auto; padding:24px 16px; }
+  .page-header { display:flex; align-items:center; gap:12px; margin-bottom:24px; padding-bottom:16px; border-bottom:2px solid var(--g); }
+  .page-header h1 { font-family:'Source Serif 4',serif; font-size:1.2rem; color:var(--g); }
+  .page-header a { margin-left:auto; font-size:0.78rem; color:var(--tl); text-decoration:none; }
+
+  .section { background:#fff; border-radius:12px; border:1px solid var(--b); padding:18px; margin-bottom:20px; }
+  .section h2 { font-family:'Source Serif 4',serif; font-size:1rem; color:var(--g); margin-bottom:4px; }
+  .section p { font-size:0.78rem; color:var(--tm); margin-bottom:14px; line-height:1.5; }
+
+  .item { display:flex; gap:10px; align-items:flex-start; padding:10px 12px; background:var(--gp); border-radius:8px; border:1px solid var(--b); margin-bottom:8px; }
+  .item span { flex:1; font-size:0.83rem; color:var(--t); line-height:1.5; }
+  .item .actions { display:flex; gap:6px; flex-shrink:0; }
+  .btn-approve { background:var(--g); color:#fff; border:none; border-radius:6px; padding:4px 10px; font-size:0.72rem; font-weight:600; cursor:pointer; font-family:'Source Sans 3',sans-serif; }
+  .btn-reject { background:#fff; color:#c0392b; border:1px solid #e8c5c5; border-radius:6px; padding:4px 10px; font-size:0.72rem; cursor:pointer; font-family:'Source Sans 3',sans-serif; }
+  .btn-delete { background:#fff; color:#c0392b; border:1px solid #e8c5c5; border-radius:6px; padding:4px 10px; font-size:0.72rem; cursor:pointer; font-family:'Source Sans 3',sans-serif; }
+  .approved-badge { background:var(--gl); color:var(--g); font-size:0.65rem; font-weight:600; padding:2px 7px; border-radius:10px; border:1px solid var(--g); flex-shrink:0; margin-top:2px; }
+  .empty { font-size:0.78rem; color:var(--tl); font-style:italic; }
+  .loading { font-size:0.78rem; color:var(--tl); }
+</style>
+</head>
+<body>
+
+<div id="login">
+  <div class="icon">🌲</div>
+  <h1>Beheer Planken Wambuis</h1>
+  <p>Voer het beheerwachtwoord in om door te gaan.</p>
+  <input type="password" id="pwInput" placeholder="Wachtwoord" onkeydown="if(event.key==='Enter')login()" />
+  <button onclick="login()">Inloggen</button>
+  <p class="err" id="loginErr">Ongeldig wachtwoord</p>
+</div>
+
+<div id="app">
+  <div class="page-header">
+    <span style="font-size:1.6rem">🌲</span>
+    <h1>Correctiebeheer · Planken Wambuis</h1>
+    <a href="/">← Terug naar app</a>
+  </div>
+
+  <div class="section">
+    <h2>📥 Openstaande suggesties</h2>
+    <p>Deze suggesties worden al gebruikt in antwoorden. Keur ze goed (worden onzichtbaar maar actief) of wijs ze af (verdwijnen volledig).</p>
+    <div id="pendingList"><p class="loading">Laden...</p></div>
+  </div>
+
+  <div class="section">
+    <h2>✅ Geaccordeerde correcties</h2>
+    <p>Deze correcties zijn actief op de achtergrond en onzichtbaar voor gebruikers. Je kunt ze hier verwijderen.</p>
+    <div id="approvedList"><p class="loading">Laden...</p></div>
+  </div>
+</div>
+
+<script>
+var ww = '';
+
+function login() {
+  var pw = document.getElementById('pwInput').value;
+  // Test wachtwoord door een beheer-actie te proberen
+  fetch('/api/corrections-set', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'approve', index: -1, password: pw })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    if (data.error === 'Ongeldig wachtwoord') {
+      document.getElementById('loginErr').style.display = 'block';
+    } else {
+      ww = pw;
+      document.getElementById('login').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
+      loadAll();
+    }
+  });
+}
+
+function loadAll() {
+  fetch('/api/corrections-get')
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    renderPending(data.pending || []);
+    renderApproved(data.approved || []);
+  });
+}
+
+function renderPending(list) {
+  var el = document.getElementById('pendingList');
+  if (list.length === 0) { el.innerHTML = '<p class="empty">Geen openstaande suggesties.</p>'; return; }
+  el.innerHTML = '';
+  list.forEach(function(c, i) {
+    var div = document.createElement('div'); div.className = 'item';
+    var span = document.createElement('span'); span.textContent = c;
+    var actions = document.createElement('div'); actions.className = 'actions';
+    var approve = document.createElement('button'); approve.className = 'btn-approve'; approve.textContent = '✓ Accorderen';
+    approve.onclick = function() { doAction('approve', i); };
+    var reject = document.createElement('button'); reject.className = 'btn-reject'; reject.textContent = '✗ Afwijzen';
+    reject.onclick = function() { doAction('reject', i); };
+    actions.appendChild(approve); actions.appendChild(reject);
+    div.appendChild(span); div.appendChild(actions);
+    el.appendChild(div);
+  });
+}
+
+function renderApproved(list) {
+  var el = document.getElementById('approvedList');
+  if (list.length === 0) { el.innerHTML = '<p class="empty">Geen geaccordeerde correcties.</p>'; return; }
+  el.innerHTML = '';
+  list.forEach(function(c, i) {
+    var div = document.createElement('div'); div.className = 'item';
+    var badge = document.createElement('span'); badge.className = 'approved-badge'; badge.textContent = 'actief';
+    var span = document.createElement('span'); span.textContent = c;
+    var del = document.createElement('button'); del.className = 'btn-delete'; del.textContent = 'Verwijder';
+    del.onclick = function() { doAction('delete-approved', i); };
+    div.appendChild(badge); div.appendChild(span); div.appendChild(del);
+    el.appendChild(div);
+  });
+}
+
+function doAction(action, index) {
+  fetch('/api/corrections-set', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: action, index: index, password: ww })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    if (data.error) { alert('Fout: ' + data.error); return; }
+    loadAll();
+  });
+}
+</script>
+</body>
+</html>
