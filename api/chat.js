@@ -10,16 +10,22 @@ async function getCorrections() {
   try {
     const url = process.env.KV_REST_API_URL;
     const token = process.env.KV_REST_API_TOKEN;
-    const r = await fetch(`${url}/get/corrections`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    const data = await r.json();
-    if (!data.result) return [];
-    let parsed = typeof data.result === 'string' ? JSON.parse(data.result) : data.result;
-    if (parsed.value !== undefined) {
-      parsed = typeof parsed.value === 'string' ? JSON.parse(parsed.value) : parsed.value;
-    }
-    return Array.isArray(parsed) ? parsed : [];
+
+    const parse = (d) => {
+      if (!d.result) return [];
+      try {
+        let p = typeof d.result === 'string' ? JSON.parse(d.result) : d.result;
+        if (p.value !== undefined) p = typeof p.value === 'string' ? JSON.parse(p.value) : p.value;
+        return Array.isArray(p) ? p : [];
+      } catch(e) { return []; }
+    };
+
+    const [rp, ra] = await Promise.all([
+      fetch(`${url}/get/pending`, { headers: { Authorization: `Bearer ${token}` } }),
+      fetch(`${url}/get/approved`, { headers: { Authorization: `Bearer ${token}` } })
+    ]);
+    const [dp, da] = await Promise.all([rp.json(), ra.json()]);
+    return [...parse(dp), ...parse(da)];
   } catch(e) {
     return [];
   }
@@ -54,7 +60,7 @@ Flora: struikheide, pijpenstrootje, bochtige smele, zonnedauw, diverse venplante
 Fauna: heideblauwtje, nachtzwaluw, levendbarende hagedis, adder, wilde zwijnen, reeën, edelhert, das, torenvalk, buizerd.
 Beheer: schapenbegrazing (Drentse heideschapen), plaggen, heidebranden, maaien. Beheerder: Natuurmonumenten, boerderij De Mossel.
 
-WOLF — Planken Wambuis heeft een vaste wolvenroedel. De Zuidwest-Veluwe roedel heeft haar territorium in Planken Wambuis, Mossel, Oud Reemst en De Ginkel. De roedel bestaat uit twee ouderdieren, twee jaarlingen en negen welpen (totaal ca. 13 wolven). Wolf GW2435m actief sinds eind 2022. Meldingen via BIJ12 Wolvenmeldpunt (0800-1212).${correctionsText}`;
+WOLF — Planken Wambuis heeft een vaste wolvenroedel. De Zuidwest-Veluwe roedel heeft haar territorium in Planken Wambuis, Mossel, Oud Reemst en De Ginkel. Meldingen via BIJ12 Wolvenmeldpunt (0800-1212).${correctionsText}`;
 }
 
 export default async function handler(req, res) {
