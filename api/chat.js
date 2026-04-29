@@ -11,12 +11,14 @@ async function getCorrections() {
     const url = process.env.KV_REST_API_URL;
     const token = process.env.KV_REST_API_TOKEN;
 
-    const parse = (d) => {
-      if (!d.result) return [];
+    const parse = (raw) => {
       try {
+        const d = JSON.parse(raw);
+        if (!d.result) return [];
         let p = typeof d.result === 'string' ? JSON.parse(d.result) : d.result;
-        if (p.value !== undefined) p = typeof p.value === 'string' ? JSON.parse(p.value) : p.value;
-        return Array.isArray(p) ? p : [];
+        if (p && p.value !== undefined) p = typeof p.value === 'string' ? JSON.parse(p.value) : p.value;
+        if (!Array.isArray(p)) return [];
+        return p.filter(x => x !== null && x !== undefined);
       } catch(e) { return []; }
     };
 
@@ -24,8 +26,8 @@ async function getCorrections() {
       fetch(`${url}/get/pending`, { headers: { Authorization: `Bearer ${token}` } }),
       fetch(`${url}/get/approved`, { headers: { Authorization: `Bearer ${token}` } })
     ]);
-    const [dp, da] = await Promise.all([rp.json(), ra.json()]);
-    return [...parse(dp), ...parse(da)];
+    const [tp, ta] = await Promise.all([rp.text(), ra.text()]);
+    return [...parse(tp), ...parse(ta)];
   } catch(e) {
     return [];
   }
@@ -60,7 +62,7 @@ Flora: struikheide, pijpenstrootje, bochtige smele, zonnedauw, diverse venplante
 Fauna: heideblauwtje, nachtzwaluw, levendbarende hagedis, adder, wilde zwijnen, reeën, edelhert, das, torenvalk, buizerd.
 Beheer: schapenbegrazing (Drentse heideschapen), plaggen, heidebranden, maaien. Beheerder: Natuurmonumenten, boerderij De Mossel.
 
-WOLF — Planken Wambuis heeft een vaste wolvenroedel. De Zuidwest-Veluwe roedel heeft haar territorium in Planken Wambuis, Mossel, Oud Reemst en De Ginkel. Meldingen via BIJ12 Wolvenmeldpunt (0800-1212).${correctionsText}`;
+WOLF — Planken Wambuis heeft een vaste wolvenroedel. De Zuidwest-Veluwe roedel heeft haar territorium in Planken Wambuis, Mossel, Oud Reemst en De Ginkel. De roedel bestaat uit twee ouderdieren, twee jaarlingen en negen welpen (totaal ca. 13 wolven). Wolf GW2435m actief sinds eind 2022. Meldingen via BIJ12 Wolvenmeldpunt (0800-1212).${correctionsText}`;
 }
 
 export default async function handler(req, res) {
