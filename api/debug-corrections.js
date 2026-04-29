@@ -5,25 +5,17 @@ export default async function handler(req, res) {
   const token = process.env.KV_REST_API_TOKEN;
 
   try {
-    const r = await fetch(`${url}/get/corrections`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    const raw = await r.text();
-    const data = JSON.parse(raw);
+    const [rp, ra, rc] = await Promise.all([
+      fetch(`${url}/get/pending`, { headers: { Authorization: `Bearer ${token}` } }),
+      fetch(`${url}/get/approved`, { headers: { Authorization: `Bearer ${token}` } }),
+      fetch(`${url}/get/corrections`, { headers: { Authorization: `Bearer ${token}` } })
+    ]);
+    const [dp, da, dc] = await Promise.all([rp.text(), ra.text(), rc.text()]);
     
-    let corrections = [];
-    if (data.result) {
-      if (typeof data.result === 'string') {
-        try { corrections = JSON.parse(data.result); } catch(e) { corrections = ['parse fout: ' + e.message]; }
-      } else {
-        corrections = data.result;
-      }
-    }
-
     return res.status(200).json({ 
-      raw: raw.substring(0, 500),
-      result_type: typeof data.result,
-      corrections: corrections
+      pending_raw: dp,
+      approved_raw: da,
+      corrections_raw: dc
     });
   } catch(e) {
     return res.status(500).json({ error: e.message });
