@@ -90,7 +90,7 @@
     </div>
     <div class="hdr-right">
       <span class="hdr-season" id="season"></span>
-      <span class="hdr-ver">v35</span>
+      <span class="hdr-ver">v36</span>
       <button onclick="toggleBeheer()" style="background:none;border:1px solid rgba(255,255,255,0.3);color:rgba(255,255,255,0.7);border-radius:6px;padding:2px 8px;font-size:0.62rem;cursor:pointer;font-family:'Source Sans 3',sans-serif;">⚙️</button>
     </div>
   </div>
@@ -126,15 +126,13 @@
 </div>
 <div class="beheer" id="beheer" onclick="if(event.target===this)toggleBeheer()">
   <div class="beheer-panel">
-    <h3>⚙️ Correcties & aanvullingen</h3>
-    <p>Voeg correcties toe die bij elke vraag worden meegestuurd naar de assistent. Zichtbaar voor alle gebruikers.</p>
+    <h3>💡 Suggestie indienen</h3>
+    <p>Dien een suggestie of correctie in. Deze wordt direct gebruikt in antwoorden en is zichtbaar totdat een beheerder hem accordeert.</p>
     <div id="corrList"></div>
     <div class="corr-add">
       <textarea id="corrInput" placeholder="Bijv: Er zijn sinds maart 2025 ook bevers gesignaleerd in het ven bij Oud Reemst"></textarea>
-      <button onclick="addCorrection()">Toevoegen</button>
+      <button onclick="addSuggestion()">Indienen</button>
     </div>
-    <button onclick="testCorrections()" style="display:block;width:100%;margin-bottom:8px;padding:8px;background:#f5f5f5;border:1px solid #ccc;border-radius:8px;font-size:0.75rem;cursor:pointer;">🔧 Test verbinding</button>
-    <div id="testResult" style="font-size:0.72rem;color:#666;margin-bottom:8px;white-space:pre-wrap;"></div>
     <button class="beheer-close" onclick="toggleBeheer()">Sluiten</button>
   </div>
 </div>
@@ -163,87 +161,38 @@ function loadCorrections() {
   fetch('/api/corrections-get')
   .then(function(r) { return r.json(); })
   .then(function(data) {
-    corrections = data.corrections || [];
-    renderCorrections();
+    var pending = data.pending || [];
+    var list = document.getElementById('corrList');
+    if (pending.length === 0) {
+      list.innerHTML = '<p style="font-size:0.78rem;color:var(--tl);font-style:italic;margin-bottom:8px;">Geen openstaande suggesties.</p>';
+      return;
+    }
+    list.innerHTML = '<p style="font-size:0.78rem;color:var(--tm);margin-bottom:6px;">Openstaande suggesties (worden al gebruikt in antwoorden):</p>';
+    pending.forEach(function(c) {
+      var div = document.createElement('div'); div.className = 'corr-item';
+      var span = document.createElement('span'); span.textContent = c;
+      div.appendChild(span);
+      list.appendChild(div);
+    });
   });
 }
 
-function renderCorrections() {
-  var list = document.getElementById('corrList');
-  if (corrections.length === 0) {
-    list.innerHTML = '<p style="font-size:0.78rem;color:var(--tl);font-style:italic;">Nog geen correcties toegevoegd.</p>';
-    return;
-  }
-  list.innerHTML = '';
-  corrections.forEach(function(c, i) {
-    var div = document.createElement('div'); div.className = 'corr-item';
-    var span = document.createElement('span'); span.textContent = c;
-    var btn = document.createElement('button'); btn.className = 'corr-del'; btn.textContent = 'Verwijder';
-    btn.onclick = function() { deleteCorrection(i); };
-    div.appendChild(span); div.appendChild(btn);
-    list.appendChild(div);
-  });
-}
-
-function addCorrection() {
+function addSuggestion() {
   var input = document.getElementById('corrInput');
   var text = input.value.trim();
   if (!text) return;
-  // Haal eerst actuele lijst op, dan toevoegen
-  fetch('/api/corrections-get')
-  .then(function(r) { return r.json(); })
-  .then(function(data) {
-    corrections = data.corrections || [];
-    corrections.push(text);
-    input.value = '';
-    return fetch('/api/corrections-set', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ corrections: corrections })
-    });
-  })
-  .then(function() { renderCorrections(); })
-  .catch(function(e) { alert('Fout bij opslaan: ' + e.message); });
-}
-
-function deleteCorrection(i) {
-  fetch('/api/corrections-get')
-  .then(function(r) { return r.json(); })
-  .then(function(data) {
-    corrections = data.corrections || [];
-    corrections.splice(i, 1);
-    return fetch('/api/corrections-set', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ corrections: corrections })
-    });
-  })
-  .then(function() { renderCorrections(); });
-}
-
-function saveCorrections() {
   fetch('/api/corrections-set', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ corrections: corrections })
+    body: JSON.stringify({ action: 'add-pending', text: text })
   })
-  .then(function() { renderCorrections(); });
-}
-
-function testCorrections() {
-  var out = document.getElementById('testResult');
-  out.textContent = 'GET testen...';
-  fetch('/api/corrections-get')
-  .then(function(r) {
-    out.textContent += ' status=' + r.status;
-    return r.text();
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    if (data.error) { alert('Fout: ' + data.error); return; }
+    input.value = '';
+    loadCorrections();
   })
-  .then(function(t) {
-    out.textContent += '\nResponse: ' + t.substring(0,200);
-  })
-  .catch(function(e) {
-    out.textContent += '\nFOUT: ' + e.message;
-  });
+  .catch(function(e) { alert('Fout: ' + e.message); });
 }
 
 function season() {
