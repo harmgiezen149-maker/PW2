@@ -46,6 +46,19 @@
   .photos { display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; padding-top:10px; border-top:1px solid var(--b); }
   .scroll-top { display:block; margin-top:10px; padding:6px 12px; background:var(--gl); border:1.5px solid var(--g); color:var(--g); border-radius:20px; font-size:0.72rem; font-weight:600; cursor:pointer; font-family:'Source Sans 3',sans-serif; text-align:center; }
   .scroll-top:active { background:var(--g); color:#fff; }
+  /* Weer paneel */
+  .weer { background:#fff; border-bottom:1px solid var(--b); padding:10px 14px; flex-shrink:0; }
+  .weer-huidig { display:flex; align-items:center; gap:12px; margin-bottom:8px; }
+  .weer-icon { font-size:1.8rem; line-height:1; }
+  .weer-temp { font-family:'Source Serif 4',serif; font-size:1.4rem; font-weight:700; color:var(--g); line-height:1; }
+  .weer-details { font-size:0.72rem; color:var(--tm); line-height:1.6; }
+  .weer-locatie { font-size:0.68rem; color:var(--tl); margin-left:auto; text-align:right; line-height:1.4; }
+  .weer-dagen { display:grid; grid-template-columns:repeat(5,1fr); gap:4px; }
+  .weer-dag { background:var(--gp); border-radius:6px; padding:5px 4px; text-align:center; border:1px solid var(--b); }
+  .weer-dag-naam { font-size:0.62rem; color:var(--tl); font-weight:600; text-transform:uppercase; letter-spacing:0.05em; }
+  .weer-dag-icon { font-size:1.1rem; margin:2px 0; }
+  .weer-dag-temp { font-size:0.68rem; color:var(--t); font-weight:600; }
+  .weer-dag-regen { font-size:0.6rem; color:#3a7abf; }
   .beheer { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:998; align-items:flex-end; justify-content:center; }
   .beheer.open { display:flex; }
   .beheer-panel { background:#fff; border-radius:16px 16px 0 0; padding:20px; width:100%; max-width:600px; max-height:80vh; overflow-y:auto; }
@@ -90,9 +103,20 @@
     </div>
     <div class="hdr-right">
       <span class="hdr-season" id="season"></span>
-      <span class="hdr-ver">v36</span>
+      <span class="hdr-ver">v37</span>
       <button onclick="toggleBeheer()" style="background:none;border:1px solid rgba(255,255,255,0.3);color:rgba(255,255,255,0.7);border-radius:6px;padding:2px 8px;font-size:0.62rem;cursor:pointer;font-family:'Source Sans 3',sans-serif;">⚙️</button>
     </div>
+  </div>
+  <div class="weer" id="weer">
+    <div class="weer-huidig">
+      <span class="weer-icon" id="wIcon">⏳</span>
+      <div>
+        <div class="weer-temp" id="wTemp">--°</div>
+        <div class="weer-details" id="wDetails">Laden...</div>
+      </div>
+      <div class="weer-locatie">Planken Wambuis<br>Zuidwest-Veluwe</div>
+    </div>
+    <div class="weer-dagen" id="wDagen"></div>
   </div>
   <div class="err" id="err"></div>
   <div id="chat">
@@ -194,6 +218,79 @@ function addSuggestion() {
   })
   .catch(function(e) { alert('Fout: ' + e.message); });
 }
+
+// Weercode naar emoji
+function weerEmoji(code) {
+  if (code === 0) return '☀️';
+  if (code <= 2) return '🌤️';
+  if (code === 3) return '☁️';
+  if (code <= 49) return '🌫️';
+  if (code <= 59) return '🌦️';
+  if (code <= 69) return '🌧️';
+  if (code <= 79) return '🌨️';
+  if (code <= 82) return '🌧️';
+  if (code <= 86) return '❄️';
+  if (code <= 99) return '⛈️';
+  return '🌡️';
+}
+
+function weerOmschrijving(code) {
+  if (code === 0) return 'Helder';
+  if (code <= 2) return 'Licht bewolkt';
+  if (code === 3) return 'Bewolkt';
+  if (code <= 49) return 'Mist';
+  if (code <= 59) return 'Motregen';
+  if (code <= 69) return 'Regen';
+  if (code <= 79) return 'Sneeuw';
+  if (code <= 82) return 'Buien';
+  if (code <= 86) return 'Sneeuwbuien';
+  if (code <= 99) return 'Onweer';
+  return 'Onbekend';
+}
+
+function dagNaam(dateStr, i) {
+  if (i === 0) return 'Vandaag';
+  if (i === 1) return 'Morgen';
+  const dagen = ['Zo','Ma','Di','Wo','Do','Vr','Za'];
+  return dagen[new Date(dateStr).getDay()];
+}
+
+function laadWeer() {
+  fetch('/api/weather')
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    if (data.error) return;
+    var c = data.current;
+    var d = data.daily;
+
+    document.getElementById('wIcon').textContent = weerEmoji(c.weather_code);
+    document.getElementById('wTemp').textContent = Math.round(c.temperature_2m) + '°C';
+    document.getElementById('wDetails').textContent =
+      'Voelt als ' + Math.round(c.apparent_temperature) + '°C · ' +
+      weerOmschrijving(c.weather_code) + ' · ' +
+      'Wind ' + Math.round(c.wind_speed_10m) + ' km/u';
+
+    var dagenEl = document.getElementById('wDagen');
+    dagenEl.innerHTML = '';
+    for (var i = 0; i < 5; i++) {
+      var dag = document.createElement('div');
+      dag.className = 'weer-dag';
+      var regen = d.precipitation_sum[i] > 0 ? '💧' + d.precipitation_sum[i].toFixed(1) + 'mm' : '';
+      dag.innerHTML =
+        '<div class="weer-dag-naam">' + dagNaam(d.time[i], i) + '</div>' +
+        '<div class="weer-dag-icon">' + weerEmoji(d.weather_code[i]) + '</div>' +
+        '<div class="weer-dag-temp">' + Math.round(d.temperature_2m_max[i]) + '° / ' + Math.round(d.temperature_2m_min[i]) + '°</div>' +
+        '<div class="weer-dag-regen">' + regen + '</div>';
+      dagenEl.appendChild(dag);
+    }
+  })
+  .catch(function() {
+    document.getElementById('wDetails').textContent = 'Weer niet beschikbaar';
+  });
+}
+
+// Laad weer bij start
+window.addEventListener('load', function() { laadWeer(); });
 
 function season() {
   var m = new Date().getMonth();
