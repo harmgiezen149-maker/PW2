@@ -110,7 +110,7 @@
     </div>
     <div class="hdr-right">
       <span class="hdr-season" id="season"></span>
-      <span class="hdr-ver">v38</span>
+      <span class="hdr-ver">v40</span>
       <button onclick="toggleBeheer()" style="background:none;border:1px solid rgba(255,255,255,0.3);color:rgba(255,255,255,0.7);border-radius:6px;padding:2px 8px;font-size:0.62rem;cursor:pointer;font-family:'Source Sans 3',sans-serif;">⚙️</button>
     </div>
   </div>
@@ -121,9 +121,9 @@
         <span id="wTempSmall" style="font-weight:700;color:var(--g);font-size:0.9rem;">--°C</span>
         <span id="wSummary" style="font-size:0.72rem;color:var(--tm);">Laden...</span>
       </div>
-      <button class="toggle-btn" onclick="toggleWeer()" id="weerToggle">▲ inklappen</button>
+      <button class="toggle-btn" onclick="toggleWeer()" id="weerToggle">▼ uitklappen</button>
     </div>
-    <div class="weer-body" id="weerBody">
+    <div class="weer-body collapsed" id="weerBody">
       <div class="weer-huidig">
         <span class="weer-icon" id="wIcon">⏳</span>
         <div>
@@ -149,9 +149,9 @@
   <div class="sub">
     <div class="section-header">
       <div class="sub-title">Boswachter Assistent</div>
-      <button class="toggle-btn" onclick="toggleKnoppen()" id="knoppenToggle">▲ inklappen</button>
+      <button class="toggle-btn" onclick="toggleKnoppen()" id="knoppenToggle">▲ uitklappen</button>
     </div>
-    <div class="sub-body" id="knoppenBody">
+    <div class="sub-body collapsed" id="knoppenBody">
     <div class="grid">
       <button class="chip" onclick="ask('Wat is er actueel te zien op Planken Wambuis qua flora en fauna deze tijd van het jaar?')">🌿 Wat is er nu te zien?</button>
       <button class="chip" onclick="ask('Geef actuele talking points voor bezoekersgesprekken op Planken Wambuis deze tijd van het jaar')">📋 Talking points</button>
@@ -293,10 +293,10 @@ function toggleKnoppen() {
   var btn = document.getElementById('knoppenToggle');
   if (body.classList.contains('collapsed')) {
     body.classList.remove('collapsed');
-    btn.textContent = '▲ inklappen';
+    btn.textContent = '▼ inklappen';
   } else {
     body.classList.add('collapsed');
-    btn.textContent = '▼ uitklappen';
+    btn.textContent = '▲ uitklappen';
   }
 }
 
