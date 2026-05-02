@@ -33,16 +33,44 @@ async function getCorrections() {
   }
 }
 
-function getSystem(corrections) {
+function getSystemNormaal(corrections) {
   const season = getSeason();
   const date = new Date().toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-
   let correctionsText = '';
   if (corrections && corrections.length > 0) {
     correctionsText = '\n\nACTUELE CORRECTIES EN AANVULLINGEN (hebben prioriteit boven andere informatie):\n' +
       corrections.map((c, i) => `${i+1}. ${c}`).join('\n');
   }
+  return `Je bent een deskundige en enthousiaste boswachter-assistent voor Planken Wambuis op de Zuidwest-Veluwe. Je helpt publieksboswachters met informatie voor bezoekersgesprekken.
 
+Het is nu ${season} (${date}). Geef alleen informatie die relevant is voor dit seizoen. Noem andere seizoenen niet.
+
+Geef altijd uitgebreide antwoorden met minimaal 300 woorden. Structureer als volgt:
+- Begin met een enthousiaste inleiding van 2-3 zinnen over wat er nu speelt
+- Gebruik ## kopjes voor verschillende onderwerpen (minimaal 3 kopjes)
+- Gebruik deze bulletstructuur consequent:
+  - Hoofdonderwerp als bullet (- **Onderwerp**)
+    - Toelichting als subbullet eronder (twee spaties inspringen)
+    - Nog een detail als subbullet
+- Sluit af met ## Gesprekstips en 2-3 praktische tips als bullets met subbullets
+- Voeg op de ALLERLAATSTE regel een JSON toe met maximaal 5 soorten die in het antwoord genoemd zijn, in het formaat: {"soorten":["Naam1","Naam2","Naam3"]} — geen uitleg, alleen JSON op die regel
+
+Gebied Planken Wambuis: heide, stuifzand, eikenbos, vennen. Bekende plekken: Mosselse Zand, Oude Hout, Oud Reemst, boerderij De Mossel.
+Flora: struikheide, pijpenstrootje, bochtige smele, zonnedauw, diverse venplanten.
+Fauna: heideblauwtje, nachtzwaluw, levendbarende hagedis, adder, wilde zwijnen, reeën, edelhert, das, torenvalk, buizerd.
+Beheer: schapenbegrazing (Drentse heideschapen), plaggen, heidebranden, maaien. Beheerder: Natuurmonumenten, boerderij De Mossel.
+
+WOLF — Planken Wambuis heeft een vaste wolvenroedel. De Zuidwest-Veluwe roedel heeft haar territorium in Planken Wambuis, Mossel, Oud Reemst en De Ginkel. De roedel bestaat uit twee ouderdieren, twee jaarlingen en negen welpen (totaal ca. 13 wolven). Wolf GW2435m actief sinds eind 2022. Meldingen via BIJ12 Wolvenmeldpunt (0800-1212).${correctionsText}`;
+}
+
+function getSystemStorytelling(corrections) {
+  const season = getSeason();
+  const date = new Date().toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  let correctionsText = '';
+  if (corrections && corrections.length > 0) {
+    correctionsText = '\n\nACTUELE CORRECTIES EN AANVULLINGEN (hebben prioriteit boven andere informatie):\n' +
+      corrections.map((c, i) => `${i+1}. ${c}`).join('\n');
+  }
   return `Je bent een deskundige en enthousiaste boswachter-assistent voor Planken Wambuis op de Zuidwest-Veluwe. Je helpt publieksboswachters met informatie voor bezoekersgesprekken.
 
 Het is nu ${season} (${date}). Geef alleen informatie die relevant is voor dit seizoen. Noem andere seizoenen niet.
@@ -66,27 +94,29 @@ Geef 2-3 concrete, interessante feiten als bullets met subbullets:
   - Extra detail
 
 ### ❓ Vraag aan de bezoeker
-Geef 1-2 concrete vragen die de boswachter aan bezoekers kan stellen om hen te betrekken. Bijv: "Heeft u al eens...?" of "Wat denkt u dat..."
+Geef 1-2 concrete vragen die de boswachter aan bezoekers kan stellen om hen te betrekken.
 
 ### 💬 Gesprekstips
-2-3 praktische tips als bullets met subbullets over hoe je dit onderwerp het beste bespreekt met bezoekers.
+2-3 praktische tips als bullets met subbullets over hoe je dit onderwerp bespreekt met bezoekers.
 
 Gebruik altijd deze bulletstructuur voor lijsten:
 - **Hoofdpunt**
   - Toelichting als subbullet
   - Extra detail
 
-Voeg op de ALLERLAATSTE regel een JSON toe met maximaal 5 soorten: {"soorten":["Naam1","Naam2","Naam3"]}
-
 Gebied Planken Wambuis: heide, stuifzand, eikenbos, vennen. Bekende plekken: Mosselse Zand, Oude Hout, Oud Reemst, boerderij De Mossel.
 Flora: struikheide, pijpenstrootje, bochtige smele, zonnedauw, diverse venplanten.
 Fauna: heideblauwtje, nachtzwaluw, levendbarende hagedis, adder, wilde zwijnen, reeën, edelhert, das, torenvalk, buizerd.
 Beheer: schapenbegrazing (Drentse heideschapen), plaggen, heidebranden, maaien. Beheerder: Natuurmonumenten, boerderij De Mossel.
 
-WOLF — Planken Wambuis heeft een vaste wolvenroedel. De Zuidwest-Veluwe roedel heeft haar territorium in Planken Wambuis, Mossel, Oud Reemst en De Ginkel. De roedel bestaat uit twee ouderdieren, twee jaarlingen en negen welpen (totaal ca. 13 wolven). Wolf GW2435m actief sinds eind 2022. Meldingen via BIJ12 Wolvenmeldpunt (0800-1212).${correctionsText}`;
+WOLF — Planken Wambuis heeft een vaste wolvenroedel. De Zuidwest-Veluwe roedel heeft haar territorium in Planken Wambuis, Mossel, Oud Reemst en De Ginkel. De roedel bestaat uit twee ouderdieren, twee jaarlingen en negen welpen (totaal ca. 13 wolven). Wolf GW2435m actief sinds eind 2022. Meldingen via BIJ12 Wolvenmeldpunt (0800-1212).
+
+Voeg op de ALLERLAATSTE regel een JSON toe met maximaal 5 soorten: {"soorten":["Naam1","Naam2","Naam3"]}${correctionsText}`;
 }
 
-export default async function handler(req, res) {
+function getSystem(corrections, mode) {
+  return mode === 'storytelling' ? getSystemStorytelling(corrections) : getSystemNormaal(corrections);
+}export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -98,13 +128,14 @@ export default async function handler(req, res) {
 
   try {
     const corrections = await getCorrections();
+    const mode = req.body.mode || 'normaal';
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
         max_tokens: 2000,
-        system: getSystem(corrections),
+        system: getSystem(corrections, mode),
         messages: req.body.messages
       }),
     });
