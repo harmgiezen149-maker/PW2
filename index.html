@@ -36,7 +36,7 @@
   .bub { padding:clamp(8px,2vw,12px) clamp(10px,2.5vw,15px); border-radius:12px; font-size:clamp(0.82rem,2vw,1rem); line-height:1.65; max-width:calc(100% - 40px); }
   .msg.bot .bub { background:var(--gp); border:1px solid var(--b); border-top-left-radius:3px; }
   .msg.user .bub { background:var(--g); border-top-right-radius:3px; color:#fff; }
-  .bub b { color:var(--g); font-weight:600; } .msg.user .bub b { color:#fff; }
+  .bub b { color:var(--g); font-weight:600; display:inline; } .msg.user .bub b { color:#fff; }
   .bh { font-family:'Source Serif 4',serif; font-size:0.91rem; color:var(--g); font-weight:700; margin:9px 0 3px; display:block; }
   .bh:first-child { margin-top:0; }
   .bl { display:flex; gap:6px; margin-bottom:3px; align-items:flex-start; }
@@ -110,7 +110,7 @@
     </div>
     <div class="hdr-right">
       <span class="hdr-season" id="season"></span>
-      <span class="hdr-ver">v40</span>
+      <span class="hdr-ver">v41</span>
       <button onclick="toggleBeheer()" style="background:none;border:1px solid rgba(255,255,255,0.3);color:rgba(255,255,255,0.7);border-radius:6px;padding:2px 8px;font-size:0.62rem;cursor:pointer;font-family:'Source Sans 3',sans-serif;">⚙️</button>
     </div>
   </div>
@@ -421,19 +421,24 @@ function showTyping() {
   chat.appendChild(w); chat.scrollTop = chat.scrollHeight;
 }
 function hideTyping() { var t = document.getElementById('typ'); if (t) t.remove(); }
+function fmt(line) {
+  // Vervang **bold** inline, zorg dat <b> nooit een block breekt
+  return line.replace(/\*\*(.*?)\*\*/g, '<b style="color:var(--g);font-weight:600;">$1</b>');
+}
+
 function render(text) {
   var html = '';
   text.split('\n').forEach(function(line) {
     if (/^#{1,3} /.test(line)) {
-      html += '<span class="bh">' + line.replace(/^#{1,3} /,'') + '</span>';
+      html += '<span class="bh">' + fmt(line.replace(/^#{1,3} /,'')) + '</span>';
     } else if (/^  +[-*] /.test(line)) {
-      html += '<div class="bl-sub">' + line.replace(/^  +[-*] /,'').replace(/\*\*(.*?)\*\*/g,'<b>$1</b>') + '</div>';
+      html += '<div class="bl-sub">' + fmt(line.replace(/^  +[-*] /,'')) + '</div>';
     } else if (/^[-*] /.test(line)) {
-      html += '<div class="bl">' + line.replace(/^[-*] /,'').replace(/\*\*(.*?)\*\*/g,'<b>$1</b>') + '</div>';
+      html += '<div class="bl">' + fmt(line.replace(/^[-*] /,'')) + '</div>';
     } else if (line.trim() === '') {
       html += '<div style="height:4px"></div>';
     } else {
-      html += '<div>' + line.replace(/\*\*(.*?)\*\*/g,'<b>$1</b>') + '</div>';
+      html += '<div>' + fmt(line) + '</div>';
     }
   });
   return html;
