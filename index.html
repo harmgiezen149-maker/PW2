@@ -110,7 +110,7 @@
     </div>
     <div class="hdr-right">
       <span class="hdr-season" id="season"></span>
-      <span class="hdr-ver">v42</span>
+      <span class="hdr-ver">v43</span>
       <button onclick="toggleBeheer()" style="background:none;border:1px solid rgba(255,255,255,0.3);color:rgba(255,255,255,0.7);border-radius:6px;padding:2px 8px;font-size:0.62rem;cursor:pointer;font-family:'Source Sans 3',sans-serif;">⚙️</button>
     </div>
   </div>
@@ -383,7 +383,11 @@ function addUser(text) {
   var av = document.createElement('div'); av.className = 'av usr'; av.textContent = '👤';
   var b = document.createElement('div'); b.className = 'bub'; b.textContent = text;
   w.appendChild(av); w.appendChild(b);
-  chat.appendChild(w); chat.scrollTop = chat.scrollHeight;
+  chat.appendChild(w);
+  // Scroll naar begin van dit antwoord
+  setTimeout(function() {
+    w.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 100);
 }
 function addBot(text) {
   // Haal soorten JSON van laatste regel
@@ -412,7 +416,11 @@ function addBot(text) {
   scrollBtn.onclick = function() { w.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
   b.appendChild(scrollBtn);
   w.appendChild(av); w.appendChild(b);
-  chat.appendChild(w); chat.scrollTop = chat.scrollHeight;
+  chat.appendChild(w);
+  // Scroll naar begin van dit antwoord
+  setTimeout(function() {
+    w.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 100);
 }
 function showTyping() {
   var chat = document.getElementById('chat');
