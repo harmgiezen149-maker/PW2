@@ -53,6 +53,11 @@
   .sub-body { transition: all 0.2s ease; }
   .sub-body.collapsed { display:none; }
   .toggle-btn { background:none; border:none; cursor:pointer; font-size:0.7rem; color:var(--tl); padding:0 0 0 6px; line-height:1; }
+  .story-toggle { display:flex; align-items:center; gap:5px; background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.25); border-radius:20px; padding:3px 9px; cursor:pointer; }
+  .story-toggle span { font-size:0.65rem; color:rgba(255,255,255,0.8); white-space:nowrap; }
+  .story-toggle .dot { width:10px; height:10px; border-radius:50%; background:rgba(255,255,255,0.3); transition:background 0.2s; flex-shrink:0; }
+  .story-toggle.on .dot { background:#fff; }
+  .story-toggle.on span { color:#fff; }
   .section-header { display:flex; align-items:center; margin-bottom:6px; }
   .section-header .sub-title { margin-bottom:0; }
   .weer-huidig { display:flex; align-items:center; gap:12px; margin-bottom:8px; }
@@ -110,7 +115,11 @@
     </div>
     <div class="hdr-right">
       <span class="hdr-season" id="season"></span>
-      <span class="hdr-ver">v43</span>
+      <span class="hdr-ver">v44</span>
+      <div class="story-toggle" id="storyToggle" onclick="toggleStorytelling()">
+        <div class="dot"></div>
+        <span id="storyLabel">Verhaal</span>
+      </div>
       <button onclick="toggleBeheer()" style="background:none;border:1px solid rgba(255,255,255,0.3);color:rgba(255,255,255,0.7);border-radius:6px;padding:2px 8px;font-size:0.62rem;cursor:pointer;font-family:'Source Sans 3',sans-serif;">⚙️</button>
     </div>
   </div>
@@ -275,6 +284,29 @@ function dagNaam(dateStr, i) {
   const dagen = ['Zo','Ma','Di','Wo','Do','Vr','Za'];
   return dagen[new Date(dateStr).getDay()];
 }
+
+var storyMode = localStorage.getItem('storyMode') === 'on';
+
+function toggleStorytelling() {
+  storyMode = !storyMode;
+  localStorage.setItem('storyMode', storyMode ? 'on' : 'off');
+  updateStoryToggle();
+}
+
+function updateStoryToggle() {
+  var el = document.getElementById('storyToggle');
+  var label = document.getElementById('storyLabel');
+  if (storyMode) {
+    el.classList.add('on');
+    label.textContent = 'Verhaal aan';
+  } else {
+    el.classList.remove('on');
+    label.textContent = 'Verhaal uit';
+  }
+}
+
+// Init toggle op juiste staat
+window.addEventListener('load', function() { updateStoryToggle(); });
 
 function toggleWeer() {
   var body = document.getElementById('weerBody');
@@ -513,7 +545,7 @@ function ask(q) {
   fetch('/api/chat?' + Date.now(), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ messages: [{ role: 'user', content: q }] })
+    body: JSON.stringify({ messages: [{ role: 'user', content: q }], mode: storyMode ? 'storytelling' : 'normaal' })
   })
   .then(function(res) { return res.json(); })
   .then(function(data) {
