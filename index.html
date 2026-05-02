@@ -48,6 +48,13 @@
   .scroll-top:active { background:var(--g); color:#fff; }
   /* Weer paneel */
   .weer { background:#fff; border-bottom:1px solid var(--b); padding:10px 14px; flex-shrink:0; }
+  .weer-body { transition: all 0.2s ease; }
+  .weer-body.collapsed { display:none; }
+  .sub-body { transition: all 0.2s ease; }
+  .sub-body.collapsed { display:none; }
+  .toggle-btn { background:none; border:none; cursor:pointer; font-size:0.7rem; color:var(--tl); padding:0 0 0 6px; line-height:1; }
+  .section-header { display:flex; align-items:center; margin-bottom:6px; }
+  .section-header .sub-title { margin-bottom:0; }
   .weer-huidig { display:flex; align-items:center; gap:12px; margin-bottom:8px; }
   .weer-icon { font-size:1.8rem; line-height:1; }
   .weer-temp { font-family:'Source Serif 4',serif; font-size:1.4rem; font-weight:700; color:var(--g); line-height:1; }
@@ -103,20 +110,30 @@
     </div>
     <div class="hdr-right">
       <span class="hdr-season" id="season"></span>
-      <span class="hdr-ver">v37</span>
+      <span class="hdr-ver">v38</span>
       <button onclick="toggleBeheer()" style="background:none;border:1px solid rgba(255,255,255,0.3);color:rgba(255,255,255,0.7);border-radius:6px;padding:2px 8px;font-size:0.62rem;cursor:pointer;font-family:'Source Sans 3',sans-serif;">⚙️</button>
     </div>
   </div>
   <div class="weer" id="weer">
-    <div class="weer-huidig">
-      <span class="weer-icon" id="wIcon">⏳</span>
-      <div>
-        <div class="weer-temp" id="wTemp">--°</div>
-        <div class="weer-details" id="wDetails">Laden...</div>
+    <div class="section-header">
+      <div style="display:flex;align-items:center;gap:8px;flex:1;">
+        <span id="wIconSmall">⏳</span>
+        <span id="wTempSmall" style="font-weight:700;color:var(--g);font-size:0.9rem;">--°C</span>
+        <span id="wSummary" style="font-size:0.72rem;color:var(--tm);">Laden...</span>
       </div>
-      <div class="weer-locatie">Planken Wambuis<br>Zuidwest-Veluwe</div>
+      <button class="toggle-btn" onclick="toggleWeer()" id="weerToggle">▲ inklappen</button>
     </div>
-    <div class="weer-dagen" id="wDagen"></div>
+    <div class="weer-body" id="weerBody">
+      <div class="weer-huidig">
+        <span class="weer-icon" id="wIcon">⏳</span>
+        <div>
+          <div class="weer-temp" id="wTemp">--°</div>
+          <div class="weer-details" id="wDetails">Laden...</div>
+        </div>
+        <div class="weer-locatie">Planken Wambuis<br>Zuidwest-Veluwe</div>
+      </div>
+      <div class="weer-dagen" id="wDagen"></div>
+    </div>
   </div>
   <div class="err" id="err"></div>
   <div id="chat">
@@ -130,7 +147,11 @@
     </div>
   </div>
   <div class="sub">
-    <div class="sub-title">Boswachter Assistent</div>
+    <div class="section-header">
+      <div class="sub-title">Boswachter Assistent</div>
+      <button class="toggle-btn" onclick="toggleKnoppen()" id="knoppenToggle">▲ inklappen</button>
+    </div>
+    <div class="sub-body" id="knoppenBody">
     <div class="grid">
       <button class="chip" onclick="ask('Wat is er actueel te zien op Planken Wambuis qua flora en fauna deze tijd van het jaar?')">🌿 Wat is er nu te zien?</button>
       <button class="chip" onclick="ask('Geef actuele talking points voor bezoekersgesprekken op Planken Wambuis deze tijd van het jaar')">📋 Talking points</button>
@@ -255,6 +276,30 @@ function dagNaam(dateStr, i) {
   return dagen[new Date(dateStr).getDay()];
 }
 
+function toggleWeer() {
+  var body = document.getElementById('weerBody');
+  var btn = document.getElementById('weerToggle');
+  if (body.classList.contains('collapsed')) {
+    body.classList.remove('collapsed');
+    btn.textContent = '▲ inklappen';
+  } else {
+    body.classList.add('collapsed');
+    btn.textContent = '▼ uitklappen';
+  }
+}
+
+function toggleKnoppen() {
+  var body = document.getElementById('knoppenBody');
+  var btn = document.getElementById('knoppenToggle');
+  if (body.classList.contains('collapsed')) {
+    body.classList.remove('collapsed');
+    btn.textContent = '▲ inklappen';
+  } else {
+    body.classList.add('collapsed');
+    btn.textContent = '▼ uitklappen';
+  }
+}
+
 function laadWeer() {
   fetch('/api/weather')
   .then(function(r) { return r.json(); })
@@ -264,7 +309,10 @@ function laadWeer() {
     var d = data.daily;
 
     document.getElementById('wIcon').textContent = weerEmoji(c.weather_code);
+    document.getElementById('wIconSmall').textContent = weerEmoji(c.weather_code);
     document.getElementById('wTemp').textContent = Math.round(c.temperature_2m) + '°C';
+    document.getElementById('wTempSmall').textContent = Math.round(c.temperature_2m) + '°C';
+    document.getElementById('wSummary').textContent = weerOmschrijving(c.weather_code) + ' · Wind ' + Math.round(c.wind_speed_10m) + ' km/u';
     document.getElementById('wDetails').textContent =
       'Voelt als ' + Math.round(c.apparent_temperature) + '°C · ' +
       weerOmschrijving(c.weather_code) + ' · ' +
