@@ -1,6 +1,15 @@
-import { setSecurityHeaders } from './_helpers.js';
+const ALLOWED_ORIGIN = 'https://pwpb2.vercel.app';
 
-export default async function handler(req, res) {
+function setSecurityHeaders(res, origin) {
+  if (origin === ALLOWED_ORIGIN) {
+    res.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
+  }
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Cache-Control', 'no-store');
+}
+
+module.exports = async function handler(req, res) {
   setSecurityHeaders(res, req.headers.origin);
   if (req.method === 'OPTIONS') return res.status(200).end();
 
@@ -31,4 +40,4 @@ export default async function handler(req, res) {
   } catch(e) {
     return res.status(500).json({ error: e.message, pending: [], approved: [] });
   }
-}
+};

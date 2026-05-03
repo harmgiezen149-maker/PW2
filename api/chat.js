@@ -1,4 +1,66 @@
-import { setSecurityHeaders, getIp, checkRateLimit, sanitizeText } from './_helpers.js';
+const ALLOWED_ORIGIN = 'https://pwpb2.vercel.app';
+
+function setSecurityHeaders(res, origin) {
+  if (origin === ALLOWED_ORIGIN) {
+    res.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
+  }
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Cache-Control', 'no-store');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'strict-origin');
+}
+
+function getIp(req) {
+  return (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || 
+         req.headers['x-real-ip'] || 'unknown';
+}
+
+async function checkRateLimit(ip, endpoint, maxRequests, windowSeconds) {
+  const url = process.env.KV_REST_API_URL;
+  const token = process.env.KV_REST_API_TOKEN;
+  if (!url || !token) return { ok: true };
+
+  const key = `rl:${endpoint}:${ip}`;
+  const now = Math.floor(Date.now() / 1000);
+  const windowStart = now - windowSeconds;
+
+  try {
+    const r = await fetch(`${url}/get/${key}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const data = await r.json();
+    let timestamps = [];
+    if (data.result) {
+      try {
+        let p = typeof data.result === 'string' ? JSON.parse(data.result) : data.result;
+        if (p && p.value !== undefined) p = typeof p.value === 'string' ? JSON.parse(p.value) : p.value;
+        if (Array.isArray(p)) timestamps = p.filter(t => t > windowStart);
+      } catch(e) {}
+    }
+
+    if (timestamps.length >= maxRequests) {
+      return { ok: false, retryAfter: timestamps[0] + windowSeconds - now };
+    }
+
+    timestamps.push(now);
+    const encoded = encodeURIComponent(JSON.stringify(timestamps));
+    await fetch(`${url}/set/${key}/${encoded}?EX=${windowSeconds}`, {
+      method: 'GET',
+      headers: { Authorization: `Bearer ${token}` }
+    });
+
+    return { ok: true };
+  } catch(e) {
+    return { ok: true };
+  }
+}
+
+function sanitizeText(text, maxLength) {
+  if (typeof text !== 'string') return '';
+  return text.trim().slice(0, maxLength);
+}
 
 function getSeason() {
   const m = new Date().getMonth() + 1;
@@ -36,31 +98,30 @@ function getSystemNormaal(corrections) {
   const date = new Date().toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   let correctionsText = '';
   if (corrections && corrections.length > 0) {
-    correctionsText = '\n\nACTUELE CORRECTIES EN AANVULLINGEN (hebben prioriteit boven andere informatie):\n' +
+    correctionsText = '\n\nACTUELE CORRECTIES EN AANVULLINGEN:\n' +
       corrections.map((c, i) => `${i+1}. ${c}`).join('\n');
   }
-  return `Je bent een deskundige en enthousiaste boswachter-assistent voor Planken Wambuis op de Zuidwest-Veluwe. Je helpt publieksboswachters met informatie voor bezoekersgesprekken.
+  return `Je bent een deskundige boswachter-assistent voor Planken Wambuis op de Zuidwest-Veluwe.
 
-Het is nu ${season} (${date}). Geef alleen informatie die relevant is voor dit seizoen. Noem andere seizoenen niet.
+Het is nu ${season} (${date}). Geef alleen seizoensrelevante info.
 
-Geef altijd uitgebreide antwoorden met minimaal 300 woorden. Structureer als volgt:
-- Begin met een enthousiaste inleiding van 2-3 zinnen over wat er nu speelt
-- Gebruik ## kopjes voor verschillende onderwerpen (minimaal 3 kopjes)
-- Gebruik deze bulletstructuur consequent:
-  - Hoofdonderwerp als bullet (- **Onderwerp**)
-    - Toelichting als subbullet eronder (twee spaties inspringen)
-    - Nog een detail als subbullet
-- Sluit af met ## Gesprekstips en 2-3 praktische tips als bullets met subbullets
-- Voeg op de ALLERLAATSTE regel een JSON toe met maximaal 5 soorten die in het antwoord genoemd zijn, in het formaat: {"soorten":["Naam1","Naam2","Naam3"]}
+Geef uitgebreide antwoorden met minimaal 300 woorden. Structureer:
+- Enthousiaste inleiding van 2-3 zinnen
+- ## kopjes voor onderwerpen (minimaal 3)
+- Bulletstructuur:
+  - Hoofdonderwerp (- **Onderwerp**)
+    - Toelichting als subbullet
+    - Detail
+- Sluit af met ## Gesprekstips
+- Op de ALLERLAATSTE regel: {"soorten":["Naam1","Naam2"]}
 
-Gebied Planken Wambuis: heide, stuifzand, eikenbos, vennen. Bekende plekken: Mosselse Zand, Oude Hout, Oud Reemst, boerderij De Mossel, Wolfhezerheide.
-Flora: struikheide, pijpenstrootje, bochtige smele, zonnedauw, diverse venplanten.
-Fauna: heideblauwtje, nachtzwaluw, levendbarende hagedis, adder, wilde zwijnen, reeën, edelhert, das, torenvalk, buizerd.
-Beheer: schapenbegrazing (Drentse heideschapen), plaggen, heidebranden, maaien. Beheerder: Natuurmonumenten, boerderij De Mossel.
+Gebied: heide, stuifzand, eikenbos, vennen. Plekken: Mosselse Zand, Oude Hout, Oud Reemst, De Mossel, Wolfhezerheide.
+Soorten: heideblauwtje, nachtzwaluw, hagedis, adder, zwijn, ree, edelhert, das, torenvalk, buizerd.
+Beheer: schapenbegrazing, plaggen, branden, maaien door Natuurmonumenten.
 
-LEDEN WERVEN — Natuurmonumenten heeft ca. 750.000 leden en is daarmee de grootste natuurbeschermingsorganisatie van Nederland. Een lidmaatschap kost vanaf €2,50 per maand. Leden krijgen gratis toegang tot alle Natuurmonumenten-terreinen, ontvangen het magazine 'Puur Natuur', en dragen direct bij aan aankoop en beheer van natuur. Op Planken Wambuis betaalt het lidmaatschap direct mee aan heidebeheer, wolvenmonitoring en het beschermen van de zeldzame nachtzwaluw. Aanmelden via nm.nl of ter plekke via de boswachter.
+LEDEN: NM heeft 750.000 leden. Lid v.a. €2,50/mnd. Aanmelden via nm.nl.
 
-WOLF — Planken Wambuis heeft een vaste wolvenroedel. De Zuidwest-Veluwe roedel heeft haar territorium in Planken Wambuis, Mossel, Oud Reemst en De Ginkel. De roedel bestaat uit twee ouderdieren, twee jaarlingen en negen welpen (totaal ca. 13 wolven). Wolf GW2435m actief sinds eind 2022. Meldingen via BIJ12 Wolvenmeldpunt (0800-1212).${correctionsText}`;
+WOLF: vaste roedel van ca. 13 wolven (2 ouders, 2 jaarlingen, 9 welpen) in Planken Wambuis sinds 2022. GW2435m actief. Meldingen BIJ12 (0800-1212).${correctionsText}`;
 }
 
 function getSystemStorytelling(corrections) {
@@ -68,18 +129,17 @@ function getSystemStorytelling(corrections) {
   const date = new Date().toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   let correctionsText = '';
   if (corrections && corrections.length > 0) {
-    correctionsText = '\n\nACTUELE CORRECTIES EN AANVULLINGEN:\n' +
-      corrections.map((c, i) => `${i+1}. ${c}`).join('\n');
+    correctionsText = '\n\nACTUELE CORRECTIES:\n' + corrections.map((c, i) => `${i+1}. ${c}`).join('\n');
   }
-  return `Je bent een deskundige en enthousiaste boswachter-assistent voor Planken Wambuis op de Zuidwest-Veluwe.
+  return `Je bent een deskundige boswachter-assistent voor Planken Wambuis op de Zuidwest-Veluwe.
 
-Het is nu ${season} (${date}). Geef alleen informatie die relevant is voor dit seizoen.
+Het is nu ${season} (${date}). Alleen seizoensrelevante info.
 
-Geef uitgebreide antwoorden met minimaal 300 woorden, opgebouwd als verhaal:
+Geef uitgebreide verhaal-antwoorden minimaal 300 woorden:
 
 ## [Pakkende titel]
 
-Korte sfeervolle opening met zintuigen.
+Sfeervolle opening met zintuigen.
 
 ### 🌿 Beleving
 Tastbare beschrijving van het moment.
@@ -96,32 +156,26 @@ Tastbare beschrijving van het moment.
 1-2 vragen om bezoekers te betrekken.
 
 ### 💬 Gesprekstips
-2-3 praktische tips als bullets met subbullets.
+2-3 tips als bullets.
 
 Gebied: heide, stuifzand, eikenbos, vennen. Plekken: Mosselse Zand, Oude Hout, Oud Reemst, De Mossel, Wolfhezerheide.
 Soorten: heideblauwtje, nachtzwaluw, hagedis, adder, zwijn, ree, edelhert, das, torenvalk, buizerd.
-Wolvenroedel Zuidwest-Veluwe: 13 wolven actief in Planken Wambuis sinds 2022.
+Wolvenroedel: 13 wolven sinds 2022.
 
-Voeg op de ALLERLAATSTE regel een JSON toe met max 5 soorten: {"soorten":["Naam1","Naam2"]}${correctionsText}`;
+Op ALLERLAATSTE regel: {"soorten":["Naam1","Naam2"]}${correctionsText}`;
 }
 
-function getSystem(corrections, mode) {
-  return mode === 'storytelling' ? getSystemStorytelling(corrections) : getSystemNormaal(corrections);
-}
-
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   setSecurityHeaders(res, req.headers.origin);
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
 
-  // Rate limit: max 30 vragen per IP per uur
   const ip = getIp(req);
   const limit = await checkRateLimit(ip, 'chat', 30, 3600);
   if (!limit.ok) {
-    return res.status(429).json({ error: `Te veel verzoeken. Probeer het over ${limit.retryAfter} seconden opnieuw.` });
+    return res.status(429).json({ error: `Te veel verzoeken. Probeer over ${limit.retryAfter}s opnieuw.` });
   }
 
-  // Validatie
   if (!req.body || !Array.isArray(req.body.messages)) {
     return res.status(400).json({ error: 'Ongeldig bericht' });
   }
@@ -141,13 +195,14 @@ export default async function handler(req, res) {
   try {
     const corrections = await getCorrections();
     const mode = req.body.mode || 'normaal';
+    const sys = mode === 'storytelling' ? getSystemStorytelling(corrections) : getSystemNormaal(corrections);
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
         max_tokens: 2000,
-        system: getSystem(corrections, mode),
+        system: sys,
         messages: messages
       }),
     });
@@ -156,4 +211,4 @@ export default async function handler(req, res) {
   } catch (err) {
     return res.status(500).json({ error: 'Fetch mislukt: ' + err.message });
   }
-}
+};
