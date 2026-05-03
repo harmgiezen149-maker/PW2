@@ -120,7 +120,7 @@
     </div>
     <div class="hdr-right">
       <span class="hdr-season" id="season"></span>
-      <span class="hdr-ver">v46</span>
+      <span class="hdr-ver">v48</span>
       <div class="story-toggle" id="storyToggle" onclick="toggleStorytelling()">
         <div class="dot"></div>
         <span id="storyLabel">Verhaal</span>
@@ -324,6 +324,7 @@ var VOGELS = ['nachtzwaluw','torenvalk','buizerd','boomleeuwerik','boompieper',
 var currentAudio = null;
 var currentBtn = null;
 
+// Nederlandse naar Latijnse vogelnamen voor Wikimedia zoekactie
 var LATIJN = {
   'nachtzwaluw':'Caprimulgus europaeus','torenvalk':'Falco tinnunculus',
   'buizerd':'Buteo buteo','boomleeuwerik':'Lullula arborea',
@@ -336,12 +337,70 @@ var LATIJN = {
   'ransuil':'Asio otus','bosuil':'Strix aluco','kerkuil':'Tyto alba',
   'wespendief':'Pernis apivorus','havik':'Accipiter gentilis',
   'sperwer':'Accipiter nisus','boomvalk':'Falco subbuteo',
-  'ijsvogel':'Alcedo atthis','houtsnip':'Scolopax rusticola',
   'gaai':'Garrulus glandarius','merel':'Turdus merula',
   'roodborst':'Erithacus rubecula','koolmees':'Parus major',
   'pimpelmees':'Cyanistes caeruleus','tjiftjaf':'Phylloscopus collybita',
-  'fitis':'Phylloscopus trochilus','vink':'Fringilla coelebs'
+  'vink':'Fringilla coelebs','havik':'Accipiter gentilis'
 };
+
+var audioCache = {};
+
+function speelAudio(url, btn) {
+  var audio = new Audio(url);
+  audio.play().then(function() {
+    btn.textContent = '■';
+    btn.classList.add('playing');
+    currentAudio = audio;
+    currentBtn = btn;
+    audio.onended = function() {
+      btn.textContent = '▶'; btn.classList.remove('playing');
+      currentAudio = null; currentBtn = null;
+    };
+  }).catch(function(e) {
+    console.log('Audio fout:', e);
+    btn.textContent = '✕';
+    setTimeout(function(){ btn.textContent = '▶'; }, 2000);
+    currentAudio = null; currentBtn = null;
+  });
+  audio.onerror = function() {
+    btn.textContent = '✕'; btn.classList.remove('playing');
+    setTimeout(function(){ btn.textContent = '▶'; }, 2000);
+    currentAudio = null; currentBtn = null;
+  };
+}
+
+function zoekEnSpeelAudio(latijn, btn) {
+  // Zoek OGG audiobestand via Wikimedia Commons API (vanuit browser - CORS toegestaan)
+  var query = latijn.replace(' ', '_');
+  fetch('https://commons.wikimedia.org/w/api.php?action=query&list=search&srsearch=' + encodeURIComponent(latijn + ' song') + '&srnamespace=6&format=json&srlimit=5&origin=*')
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    var results = (data.query && data.query.search) || [];
+    // Filter op ogg bestanden
+    var ogg = results.filter(function(r) { return r.title.toLowerCase().indexOf('.ogg') > -1; });
+    if (ogg.length === 0) {
+      btn.textContent = '✕'; setTimeout(function(){ btn.textContent = '▶'; }, 2000); return;
+    }
+    // Haal directe URL op
+    var titel = ogg[0].title.replace('File:', '');
+    return fetch('https://commons.wikimedia.org/w/api.php?action=query&titles=File:' + encodeURIComponent(titel) + '&prop=imageinfo&iiprop=url&format=json&origin=*');
+  })
+  .then(function(r) { if (r) return r.json(); })
+  .then(function(data) {
+    if (!data) return;
+    var pages = data.query && data.query.pages;
+    var page = pages && pages[Object.keys(pages)[0]];
+    var url = page && page.imageinfo && page.imageinfo[0] && page.imageinfo[0].url;
+    if (!url) { btn.textContent = '✕'; setTimeout(function(){ btn.textContent = '▶'; }, 2000); return; }
+    audioCache[latijn] = url;
+    speelAudio(url, btn);
+  })
+  .catch(function(e) {
+    console.log('Wikimedia fout:', e);
+    btn.textContent = '✕';
+    setTimeout(function(){ btn.textContent = '▶'; }, 2000);
+  });
+}
 
 function playBirdSound(naam, btn) {
   if (currentAudio) {
@@ -352,36 +411,12 @@ function playBirdSound(naam, btn) {
   }
 
   btn.textContent = '…';
-  var zoek = LATIJN[naam.toLowerCase()] || naam;
+  var latijn = LATIJN[naam.toLowerCase()] || naam;
 
-  // Direct vanuit browser naar Xeno-canto (CORS toegestaan voor browsers)
-  fetch('https://xeno-canto.org/api/2/recordings?query=' + encodeURIComponent(zoek) + '&page=1')
-  .then(function(r) { return r.json(); })
-  .then(function(data) {
-    if (!data.recordings || data.recordings.length === 0) {
-      btn.textContent = '✕'; setTimeout(function(){ btn.textContent = '▶'; }, 2000); return;
-    }
-    var url = 'https:' + data.recordings[0].file;
-    var audio = new Audio(url);
-    audio.play();
-    btn.textContent = '■';
-    btn.classList.add('playing');
-    currentAudio = audio;
-    currentBtn = btn;
-    audio.onended = function() {
-      btn.textContent = '▶'; btn.classList.remove('playing');
-      currentAudio = null; currentBtn = null;
-    };
-    audio.onerror = function() {
-      btn.textContent = '✕'; btn.classList.remove('playing');
-      setTimeout(function(){ btn.textContent = '▶'; }, 2000);
-      currentAudio = null; currentBtn = null;
-    };
-  })
-  .catch(function() {
-    btn.textContent = '✕';
-    setTimeout(function(){ btn.textContent = '▶'; }, 2000);
-  });
+  // Gebruik cache als beschikbaar
+  if (audioCache[latijn]) { speelAudio(audioCache[latijn], btn); return; }
+
+  zoekEnSpeelAudio(latijn, btn);
 }
 
 function addBirdButtons(container) {
