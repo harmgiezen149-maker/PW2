@@ -58,11 +58,12 @@
   .bird-btn:hover { background:var(--gm, #237a4b); transform:scale(1.1); }
   .bird-btn.playing { background:#c47d0e; animation:pulse 1s infinite; }
   @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.15)} }
-  .story-toggle { display:flex; align-items:center; gap:5px; background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.25); border-radius:20px; padding:3px 9px; cursor:pointer; }
-  .story-toggle span { font-size:0.65rem; color:rgba(255,255,255,0.8); white-space:nowrap; }
-  .story-toggle .dot { width:10px; height:10px; border-radius:50%; background:rgba(255,255,255,0.3); transition:background 0.2s; flex-shrink:0; }
-  .story-toggle.on .dot { background:#fff; }
-  .story-toggle.on span { color:#fff; }
+  .story-toggle { display:flex; align-items:center; gap:6px; cursor:pointer; }
+  .story-toggle .st-label { font-size:0.65rem; color:rgba(255,255,255,0.8); white-space:nowrap; }
+  .st-switch { width:28px; height:16px; border-radius:8px; background:#c0392b; position:relative; transition:background 0.25s; flex-shrink:0; }
+  .st-switch::after { content:''; position:absolute; top:2px; left:2px; width:12px; height:12px; border-radius:50%; background:#fff; transition:transform 0.25s; box-shadow:0 1px 3px rgba(0,0,0,0.3); }
+  .story-toggle.on .st-switch { background:#2ecc71; }
+  .story-toggle.on .st-switch::after { transform:translateX(12px); }
   .section-header { display:flex; align-items:center; margin-bottom:6px; }
   .section-header .sub-title { margin-bottom:0; }
   .weer-huidig { display:flex; align-items:center; gap:12px; margin-bottom:8px; }
@@ -120,10 +121,10 @@
     </div>
     <div class="hdr-right">
       <span class="hdr-season" id="season"></span>
-      <span class="hdr-ver">v50</span>
+      <span class="hdr-ver">v51</span>
       <div class="story-toggle" id="storyToggle" onclick="toggleStorytelling()">
-        <div class="dot"></div>
-        <span id="storyLabel">Verhaal</span>
+        <span class="st-label">Verhaal</span>
+        <div class="st-switch"></div>
       </div>
       <button onclick="toggleBeheer()" style="background:none;border:1px solid rgba(255,255,255,0.3);color:rgba(255,255,255,0.7);border-radius:6px;padding:2px 8px;font-size:0.62rem;cursor:pointer;font-family:'Source Sans 3',sans-serif;">⚙️</button>
     </div>
@@ -301,13 +302,10 @@ function toggleStorytelling() {
 
 function updateStoryToggle() {
   var el = document.getElementById('storyToggle');
-  var label = document.getElementById('storyLabel');
   if (storyMode) {
     el.classList.add('on');
-    label.textContent = 'Verhaal aan';
   } else {
     el.classList.remove('on');
-    label.textContent = 'Verhaal uit';
   }
 }
 
