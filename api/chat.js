@@ -60,6 +60,8 @@ Flora: struikheide, pijpenstrootje, bochtige smele, zonnedauw, diverse venplante
 Fauna: heideblauwtje, nachtzwaluw, levendbarende hagedis, adder, wilde zwijnen, reeën, edelhert, das, torenvalk, buizerd.
 Beheer: schapenbegrazing (Drentse heideschapen), plaggen, heidebranden, maaien. Beheerder: Natuurmonumenten, boerderij De Mossel.
 
+LEDEN WERVEN — Natuurmonumenten heeft ca. 750.000 leden en is daarmee de grootste natuurbeschermingsorganisatie van Nederland. Een lidmaatschap kost vanaf €2,50 per maand. Leden krijgen gratis toegang tot alle Natuurmonumenten-terreinen met toegangspoorten, ontvangen het magazine 'Puur Natuur', en dragen direct bij aan aankoop en beheer van natuur. Op Planken Wambuis betaalt het lidmaatschap direct mee aan heidebeheer, wolvenmonitoring en het beschermen van de zeldzame nachtzwaluw. Aanmelden via nm.nl of ter plekke via de boswachter. Goede gespreksmomenten: bij de ingang, tijdens excursies, of als bezoekers enthousiast reageren op de natuur.
+
 WOLF — Planken Wambuis heeft een vaste wolvenroedel. De Zuidwest-Veluwe roedel heeft haar territorium in Planken Wambuis, Mossel, Oud Reemst en De Ginkel. De roedel bestaat uit twee ouderdieren, twee jaarlingen en negen welpen (totaal ca. 13 wolven). Wolf GW2435m actief sinds eind 2022. Meldingen via BIJ12 Wolvenmeldpunt (0800-1212).${correctionsText}`;
 }
 
@@ -108,6 +110,8 @@ Gebied Planken Wambuis: heide, stuifzand, eikenbos, vennen. Bekende plekken: Mos
 Flora: struikheide, pijpenstrootje, bochtige smele, zonnedauw, diverse venplanten.
 Fauna: heideblauwtje, nachtzwaluw, levendbarende hagedis, adder, wilde zwijnen, reeën, edelhert, das, torenvalk, buizerd.
 Beheer: schapenbegrazing (Drentse heideschapen), plaggen, heidebranden, maaien. Beheerder: Natuurmonumenten, boerderij De Mossel.
+
+LEDEN WERVEN — Natuurmonumenten heeft ca. 750.000 leden en is daarmee de grootste natuurbeschermingsorganisatie van Nederland. Een lidmaatschap kost vanaf €2,50 per maand. Leden krijgen gratis toegang tot alle Natuurmonumenten-terreinen met toegangspoorten, ontvangen het magazine 'Puur Natuur', en dragen direct bij aan aankoop en beheer van natuur. Op Planken Wambuis betaalt het lidmaatschap direct mee aan heidebeheer, wolvenmonitoring en het beschermen van de zeldzame nachtzwaluw. Aanmelden via nm.nl of ter plekke via de boswachter. Goede gespreksmomenten: bij de ingang, tijdens excursies, of als bezoekers enthousiast reageren op de natuur.
 
 WOLF — Planken Wambuis heeft een vaste wolvenroedel. De Zuidwest-Veluwe roedel heeft haar territorium in Planken Wambuis, Mossel, Oud Reemst en De Ginkel. De roedel bestaat uit twee ouderdieren, twee jaarlingen en negen welpen (totaal ca. 13 wolven). Wolf GW2435m actief sinds eind 2022. Meldingen via BIJ12 Wolvenmeldpunt (0800-1212).
 
