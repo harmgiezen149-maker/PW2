@@ -1,3 +1,5 @@
+import { setSecurityHeaders, getIp, checkRateLimit, sanitizeText } from './_helpers.js';
+
 function getSeason() {
   const m = new Date().getMonth() + 1;
   if (m >= 3 && m <= 5) return 'lente (maart t/m mei)';
@@ -10,7 +12,6 @@ async function getCorrections() {
   try {
     const url = process.env.KV_REST_API_URL;
     const token = process.env.KV_REST_API_TOKEN;
-
     const parse = (raw) => {
       try {
         const d = JSON.parse(raw);
@@ -21,16 +22,13 @@ async function getCorrections() {
         return p.filter(x => x !== null && x !== undefined);
       } catch(e) { return []; }
     };
-
     const [rp, ra] = await Promise.all([
       fetch(`${url}/get/pending`, { headers: { Authorization: `Bearer ${token}` } }),
       fetch(`${url}/get/approved`, { headers: { Authorization: `Bearer ${token}` } })
     ]);
     const [tp, ta] = await Promise.all([rp.text(), ra.text()]);
     return [...parse(tp), ...parse(ta)];
-  } catch(e) {
-    return [];
-  }
+  } catch(e) { return []; }
 }
 
 function getSystemNormaal(corrections) {
@@ -53,14 +51,14 @@ Geef altijd uitgebreide antwoorden met minimaal 300 woorden. Structureer als vol
     - Toelichting als subbullet eronder (twee spaties inspringen)
     - Nog een detail als subbullet
 - Sluit af met ## Gesprekstips en 2-3 praktische tips als bullets met subbullets
-- Voeg op de ALLERLAATSTE regel een JSON toe met maximaal 5 soorten die in het antwoord genoemd zijn, in het formaat: {"soorten":["Naam1","Naam2","Naam3"]} — geen uitleg, alleen JSON op die regel
+- Voeg op de ALLERLAATSTE regel een JSON toe met maximaal 5 soorten die in het antwoord genoemd zijn, in het formaat: {"soorten":["Naam1","Naam2","Naam3"]}
 
 Gebied Planken Wambuis: heide, stuifzand, eikenbos, vennen. Bekende plekken: Mosselse Zand, Oude Hout, Oud Reemst, boerderij De Mossel, Wolfhezerheide.
 Flora: struikheide, pijpenstrootje, bochtige smele, zonnedauw, diverse venplanten.
 Fauna: heideblauwtje, nachtzwaluw, levendbarende hagedis, adder, wilde zwijnen, reeën, edelhert, das, torenvalk, buizerd.
 Beheer: schapenbegrazing (Drentse heideschapen), plaggen, heidebranden, maaien. Beheerder: Natuurmonumenten, boerderij De Mossel.
 
-LEDEN WERVEN — Natuurmonumenten heeft ca. 750.000 leden en is daarmee de grootste natuurbeschermingsorganisatie van Nederland. Een lidmaatschap kost vanaf €2,50 per maand. Leden krijgen gratis toegang tot alle Natuurmonumenten-terreinen met toegangspoorten, ontvangen het magazine 'Puur Natuur', en dragen direct bij aan aankoop en beheer van natuur. Op Planken Wambuis betaalt het lidmaatschap direct mee aan heidebeheer, wolvenmonitoring en het beschermen van de zeldzame nachtzwaluw. Aanmelden via nm.nl of ter plekke via de boswachter. Goede gespreksmomenten: bij de ingang, tijdens excursies, of als bezoekers enthousiast reageren op de natuur.
+LEDEN WERVEN — Natuurmonumenten heeft ca. 750.000 leden en is daarmee de grootste natuurbeschermingsorganisatie van Nederland. Een lidmaatschap kost vanaf €2,50 per maand. Leden krijgen gratis toegang tot alle Natuurmonumenten-terreinen, ontvangen het magazine 'Puur Natuur', en dragen direct bij aan aankoop en beheer van natuur. Op Planken Wambuis betaalt het lidmaatschap direct mee aan heidebeheer, wolvenmonitoring en het beschermen van de zeldzame nachtzwaluw. Aanmelden via nm.nl of ter plekke via de boswachter.
 
 WOLF — Planken Wambuis heeft een vaste wolvenroedel. De Zuidwest-Veluwe roedel heeft haar territorium in Planken Wambuis, Mossel, Oud Reemst en De Ginkel. De roedel bestaat uit twee ouderdieren, twee jaarlingen en negen welpen (totaal ca. 13 wolven). Wolf GW2435m actief sinds eind 2022. Meldingen via BIJ12 Wolvenmeldpunt (0800-1212).${correctionsText}`;
 }
@@ -70,65 +68,75 @@ function getSystemStorytelling(corrections) {
   const date = new Date().toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   let correctionsText = '';
   if (corrections && corrections.length > 0) {
-    correctionsText = '\n\nACTUELE CORRECTIES EN AANVULLINGEN (hebben prioriteit boven andere informatie):\n' +
+    correctionsText = '\n\nACTUELE CORRECTIES EN AANVULLINGEN:\n' +
       corrections.map((c, i) => `${i+1}. ${c}`).join('\n');
   }
-  return `Je bent een deskundige en enthousiaste boswachter-assistent voor Planken Wambuis op de Zuidwest-Veluwe. Je helpt publieksboswachters met informatie voor bezoekersgesprekken.
+  return `Je bent een deskundige en enthousiaste boswachter-assistent voor Planken Wambuis op de Zuidwest-Veluwe.
 
-Het is nu ${season} (${date}). Geef alleen informatie die relevant is voor dit seizoen. Noem andere seizoenen niet.
+Het is nu ${season} (${date}). Geef alleen informatie die relevant is voor dit seizoen.
 
-Geef altijd uitgebreide antwoorden met minimaal 300 woorden, opgebouwd als een verhaal voor een boswachter die bezoekers wil betoveren. Gebruik de volgende structuur:
+Geef uitgebreide antwoorden met minimaal 300 woorden, opgebouwd als verhaal:
 
 ## [Pakkende titel]
 
-Begin met een korte, sfeervolle opening die de bezoeker meteen meeneemt in de beleving van het moment. Gebruik zintuigen: wat zie, hoor, ruik je nu op de heide?
+Korte sfeervolle opening met zintuigen.
 
 ### 🌿 Beleving
-Beschrijf hoe het voelt om nu in dit gebied te zijn. Stem, sfeer, seizoen. Maak het tastbaar.
+Tastbare beschrijving van het moment.
 
 ### ⚡ Verrassing
-Geef één verrassend of weinig bekend feit dat bezoekers versteld doet staan. Begin met "Wist je dat..." of "Wat de meeste mensen niet weten is..."
+"Wist je dat..." met verrassend feit.
 
 ### 📖 Feit
-Geef 2-3 concrete, interessante feiten als bullets met subbullets:
 - **Hoofdfeit**
   - Toelichting
-  - Extra detail
+  - Detail
 
 ### ❓ Vraag aan de bezoeker
-Geef 1-2 concrete vragen die de boswachter aan bezoekers kan stellen om hen te betrekken.
+1-2 vragen om bezoekers te betrekken.
 
 ### 💬 Gesprekstips
-2-3 praktische tips als bullets met subbullets over hoe je dit onderwerp bespreekt met bezoekers.
+2-3 praktische tips als bullets met subbullets.
 
-Gebruik altijd deze bulletstructuur voor lijsten:
-- **Hoofdpunt**
-  - Toelichting als subbullet
-  - Extra detail
+Gebied: heide, stuifzand, eikenbos, vennen. Plekken: Mosselse Zand, Oude Hout, Oud Reemst, De Mossel, Wolfhezerheide.
+Soorten: heideblauwtje, nachtzwaluw, hagedis, adder, zwijn, ree, edelhert, das, torenvalk, buizerd.
+Wolvenroedel Zuidwest-Veluwe: 13 wolven actief in Planken Wambuis sinds 2022.
 
-Gebied Planken Wambuis: heide, stuifzand, eikenbos, vennen. Bekende plekken: Mosselse Zand, Oude Hout, Oud Reemst, boerderij De Mossel, Wolfhezerheide.
-Flora: struikheide, pijpenstrootje, bochtige smele, zonnedauw, diverse venplanten.
-Fauna: heideblauwtje, nachtzwaluw, levendbarende hagedis, adder, wilde zwijnen, reeën, edelhert, das, torenvalk, buizerd.
-Beheer: schapenbegrazing (Drentse heideschapen), plaggen, heidebranden, maaien. Beheerder: Natuurmonumenten, boerderij De Mossel.
-
-LEDEN WERVEN — Natuurmonumenten heeft ca. 750.000 leden en is daarmee de grootste natuurbeschermingsorganisatie van Nederland. Een lidmaatschap kost vanaf €2,50 per maand. Leden krijgen gratis toegang tot alle Natuurmonumenten-terreinen met toegangspoorten, ontvangen het magazine 'Puur Natuur', en dragen direct bij aan aankoop en beheer van natuur. Op Planken Wambuis betaalt het lidmaatschap direct mee aan heidebeheer, wolvenmonitoring en het beschermen van de zeldzame nachtzwaluw. Aanmelden via nm.nl of ter plekke via de boswachter. Goede gespreksmomenten: bij de ingang, tijdens excursies, of als bezoekers enthousiast reageren op de natuur.
-
-WOLF — Planken Wambuis heeft een vaste wolvenroedel. De Zuidwest-Veluwe roedel heeft haar territorium in Planken Wambuis, Mossel, Oud Reemst en De Ginkel. De roedel bestaat uit twee ouderdieren, twee jaarlingen en negen welpen (totaal ca. 13 wolven). Wolf GW2435m actief sinds eind 2022. Meldingen via BIJ12 Wolvenmeldpunt (0800-1212).
-
-Voeg op de ALLERLAATSTE regel een JSON toe met maximaal 5 soorten: {"soorten":["Naam1","Naam2","Naam3"]}${correctionsText}`;
+Voeg op de ALLERLAATSTE regel een JSON toe met max 5 soorten: {"soorten":["Naam1","Naam2"]}${correctionsText}`;
 }
 
 function getSystem(corrections, mode) {
   return mode === 'storytelling' ? getSystemStorytelling(corrections) : getSystemNormaal(corrections);
-}export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+}
+
+export default async function handler(req, res) {
+  setSecurityHeaders(res, req.headers.origin);
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
 
+  // Rate limit: max 30 vragen per IP per uur
+  const ip = getIp(req);
+  const limit = await checkRateLimit(ip, 'chat', 30, 3600);
+  if (!limit.ok) {
+    return res.status(429).json({ error: `Te veel verzoeken. Probeer het over ${limit.retryAfter} seconden opnieuw.` });
+  }
+
+  // Validatie
+  if (!req.body || !Array.isArray(req.body.messages)) {
+    return res.status(400).json({ error: 'Ongeldig bericht' });
+  }
+
+  const messages = req.body.messages.map(m => ({
+    role: m.role === 'assistant' ? 'assistant' : 'user',
+    content: sanitizeText(m.content, 1000)
+  })).filter(m => m.content.length > 0);
+
+  if (messages.length === 0) {
+    return res.status(400).json({ error: 'Bericht is leeg' });
+  }
+
   const key = process.env.ANTHROPIC_API_KEY;
-  if (!key) return res.status(500).json({ error: 'API key niet gevonden' });
+  if (!key) return res.status(500).json({ error: 'API key niet geconfigureerd' });
 
   try {
     const corrections = await getCorrections();
@@ -140,7 +148,7 @@ function getSystem(corrections, mode) {
         model: 'claude-sonnet-4-6',
         max_tokens: 2000,
         system: getSystem(corrections, mode),
-        messages: req.body.messages
+        messages: messages
       }),
     });
     const data = await response.json();
