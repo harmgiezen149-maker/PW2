@@ -121,7 +121,7 @@
     </div>
     <div class="hdr-right">
       <span class="hdr-season" id="season"></span>
-      <span class="hdr-ver">v51</span>
+      <span class="hdr-ver">v52</span>
       <div class="story-toggle" id="storyToggle" onclick="toggleStorytelling()">
         <span class="st-label">Verhaal</span>
         <div class="st-switch"></div>
@@ -312,37 +312,229 @@ function updateStoryToggle() {
 // Init toggle op juiste staat
 window.addEventListener('load', function() { updateStoryToggle(); });
 
-// Vogelnamen die we herkennen voor geluiden
-var VOGELS = ['nachtzwaluw','torenvalk','buizerd','boomleeuwerik','boompieper',
-  'geelgors','roodborsttapuit','paapje','kneu','graspieper','veldleeuwerik',
-  'wielewaal','koekoek','groene specht','zwarte specht','grote bonte specht',
-  'ransuil','bosuil','kerkuil','wespendief','havik','sperwer','boomvalk',
-  'ijsvogel','watersnip','houtsnip','kraanvogel','ooievaar','reiger',
-  'fuut','meerkoet','wilde eend','slobeend','tafeleend','kuifeend'];
+// ============================================================
+// VOGELS — geordend: langere/specifiekere namen vóór kortere
+// om substring-conflicten te voorkomen (bijv. 'zwarte ooievaar'
+// vóór 'ooievaar'). Dekt alle soorten van de Zuidwest-Veluwe,
+// inclusief zeldzame maar voorkomende doortrekkers/gasten.
+// ============================================================
+var VOGELS = [
+  // Roofvogels — samengestelde namen eerst
+  'bruine kiekendief','blauwe kiekendief','grauwe kiekendief',
+  'grote bonte specht','kleine bonte specht','middelste bonte specht',
+  'gekraagde roodstaart','zwarte roodstaart',
+  'zwarte ooievaar','zwarte kraai','zwarte mees',
+  'rode wouw','zwarte wouw',
+  // Roofvogels enkelvoudig
+  'wespendief','havik','sperwer','buizerd','torenvalk','boomvalk','slechtvalk',
+  'ransuil','bosuil','kerkuil','visarend','zeearend',
+  // Spechten
+  'groene specht','zwarte specht','draaihals',
+  // Reigers & ooievaars
+  'blauwe reiger','purperreiger','ooievaar','reiger',
+  // Kraanvogel & steltlopers
+  'kraanvogel','watersnip','houtsnip','kievit','wulp','grutto','tureluur','oeverloper',
+  // Watervogels
+  'fuut','aalscholver','meerkoet','waterral','wilde eend','slobeend','tafeleend','kuifeend',
+  'ijsvogel',
+  // Duiven & zwaluwen
+  'holenduif','houtduif','zomertortel',
+  'gierzwaluw','boerenzwaluw','huiszwaluw','oeverzwaluw',
+  // Nachtzwaluw
+  'nachtzwaluw',
+  // Hop (zeldzaam)
+  'hop',
+  // Koekoek
+  'koekoek',
+  // Wielewaal
+  'wielewaal',
+  // Mezen — samengesteld eerst
+  'kuifmees','zwarte mees','staartmees','matkop','glanskop','koolmees','pimpelmees',
+  // Boomklever & boomkruipers
+  'boomklever','boomkruiper',
+  // Zangers — samengesteld eerst
+  'sprinkhaanzanger','bosrietzanger','kleine karekiet','spotvogel',
+  'braamsluiper','tuinfluiter','grasmus','zwartkop','fluiter',
+  'tjiftjaf','fitis',
+  // Lijsters & vliegenvangers
+  'beflijster','kramsvogel','koperwiek','zanglijster','merel',
+  'bonte vliegenvanger','grauwe vliegenvanger',
+  // Roodstaarten, nachtegaal, blauwborst
+  'nachtegaal','blauwborst','roodborst',
+  // Tapuit & verwanten
+  'roodborsttapuit','paapje','tapuit',
+  // Winterkoning & heggenmus
+  'winterkoning','heggenmus',
+  // Leeuweriken & piepers
+  'boomleeuwerik','veldleeuwerik',
+  'boompieper','graspieper','waterpieper',
+  // Gorzen
+  'geelgors','rietgors','ortolaan',
+  // Vinkachtigen — samengesteld eerst
+  'grote kruisbek','kruisbek','appelvink','goudvink',
+  'groenling','putter','sijsje','kneu','keep','vink',
+  // Kraaiachtigen
+  'gaai','ekster','kauw','raaf','roek',
+  // Kwikstaarten
+  'witte kwikstaart','gele kwikstaart',
+  // Overig
+  'patrijs','fazant','waterhoentje',
+  // Zeldzame gasten Veluwe
+  'draaihals','raaf','zwarte wouw','rode wouw','grauwe kiekendief','ortolaan','hop','blauwborst'
+];
 
-var currentAudio = null;
-var currentBtn = null;
-
-// Nederlandse naar Latijnse vogelnamen voor Wikimedia zoekactie
+// ============================================================
+// LATIJN — Nederlandse naam → Latijnse naam voor Wikimedia-zoekopdracht
+// ============================================================
 var LATIJN = {
-  'nachtzwaluw':'Caprimulgus europaeus','torenvalk':'Falco tinnunculus',
-  'buizerd':'Buteo buteo','boomleeuwerik':'Lullula arborea',
-  'boompieper':'Anthus trivialis','geelgors':'Emberiza citrinella',
-  'roodborsttapuit':'Saxicola rubicola','paapje':'Saxicola rubetra',
-  'kneu':'Linaria cannabina','graspieper':'Anthus pratensis',
-  'veldleeuwerik':'Alauda arvensis','wielewaal':'Oriolus oriolus',
-  'koekoek':'Cuculus canorus','groene specht':'Picus viridis',
-  'zwarte specht':'Dryocopus martius','grote bonte specht':'Dendrocopos major',
-  'ransuil':'Asio otus','bosuil':'Strix aluco','kerkuil':'Tyto alba',
-  'wespendief':'Pernis apivorus','havik':'Accipiter gentilis',
-  'sperwer':'Accipiter nisus','boomvalk':'Falco subbuteo',
-  'gaai':'Garrulus glandarius','merel':'Turdus merula',
-  'roodborst':'Erithacus rubecula','koolmees':'Parus major',
-  'pimpelmees':'Cyanistes caeruleus','tjiftjaf':'Phylloscopus collybita',
-  'vink':'Fringilla coelebs','havik':'Accipiter gentilis'
+  // Roofvogels
+  'bruine kiekendief':'Circus aeruginosus',
+  'blauwe kiekendief':'Circus cyaneus',
+  'grauwe kiekendief':'Circus pygargus',
+  'wespendief':'Pernis apivorus',
+  'havik':'Accipiter gentilis',
+  'sperwer':'Accipiter nisus',
+  'buizerd':'Buteo buteo',
+  'torenvalk':'Falco tinnunculus',
+  'boomvalk':'Falco subbuteo',
+  'slechtvalk':'Falco peregrinus',
+  'ransuil':'Asio otus',
+  'bosuil':'Strix aluco',
+  'kerkuil':'Tyto alba',
+  'visarend':'Pandion haliaetus',
+  'zeearend':'Haliaeetus albicilla',
+  'rode wouw':'Milvus milvus',
+  'zwarte wouw':'Milvus migrans',
+  // Spechten
+  'groene specht':'Picus viridis',
+  'zwarte specht':'Dryocopus martius',
+  'grote bonte specht':'Dendrocopos major',
+  'kleine bonte specht':'Dryobates minor',
+  'middelste bonte specht':'Dendrocoptes medius',
+  'draaihals':'Jynx torquilla',
+  // Reigers & ooievaars
+  'blauwe reiger':'Ardea cinerea',
+  'purperreiger':'Ardea purpurea',
+  'reiger':'Ardea cinerea',
+  'ooievaar':'Ciconia ciconia',
+  'zwarte ooievaar':'Ciconia nigra',
+  // Steltlopers & watervogels
+  'kraanvogel':'Grus grus',
+  'watersnip':'Gallinago gallinago',
+  'houtsnip':'Scolopax rusticola',
+  'kievit':'Vanellus vanellus',
+  'wulp':'Numenius arquata',
+  'grutto':'Limosa limosa',
+  'tureluur':'Tringa totanus',
+  'oeverloper':'Actitis hypoleucos',
+  'fuut':'Podiceps cristatus',
+  'aalscholver':'Phalacrocorax carbo',
+  'meerkoet':'Fulica atra',
+  'waterral':'Rallus aquaticus',
+  'waterhoentje':'Gallinula chloropus',
+  'wilde eend':'Anas platyrhynchos',
+  'slobeend':'Spatula clypeata',
+  'tafeleend':'Aythya ferina',
+  'kuifeend':'Aythya fuligula',
+  'ijsvogel':'Alcedo atthis',
+  // Duiven & zwaluwen
+  'houtduif':'Columba palumbus',
+  'holenduif':'Columba oenas',
+  'zomertortel':'Streptopelia turtur',
+  'gierzwaluw':'Apus apus',
+  'boerenzwaluw':'Hirundo rustica',
+  'huiszwaluw':'Delichon urbicum',
+  'oeverzwaluw':'Riparia riparia',
+  // Nachtzwaluw & hop
+  'nachtzwaluw':'Caprimulgus europaeus',
+  'hop':'Upupa epops',
+  // Koekoek & wielewaal
+  'koekoek':'Cuculus canorus',
+  'wielewaal':'Oriolus oriolus',
+  // Mezen
+  'koolmees':'Parus major',
+  'pimpelmees':'Cyanistes caeruleus',
+  'staartmees':'Aegithalos caudatus',
+  'matkop':'Poecile montanus',
+  'glanskop':'Poecile palustris',
+  'kuifmees':'Lophophanes cristatus',
+  'zwarte mees':'Periparus ater',
+  // Boomklever & boomkruiper
+  'boomklever':'Sitta europaea',
+  'boomkruiper':'Certhia brachydactyla',
+  // Zangers
+  'tjiftjaf':'Phylloscopus collybita',
+  'fitis':'Phylloscopus trochilus',
+  'fluiter':'Phylloscopus sibilatrix',
+  'zwartkop':'Sylvia atricapilla',
+  'grasmus':'Sylvia communis',
+  'tuinfluiter':'Sylvia borin',
+  'braamsluiper':'Curruca curruca',
+  'spotvogel':'Hippolais icterina',
+  'sprinkhaanzanger':'Locustella naevia',
+  'bosrietzanger':'Acrocephalus palustris',
+  'kleine karekiet':'Acrocephalus scirpaceus',
+  // Vliegenvangers
+  'bonte vliegenvanger':'Ficedula hypoleuca',
+  'grauwe vliegenvanger':'Muscicapa striata',
+  // Lijsters
+  'merel':'Turdus merula',
+  'zanglijster':'Turdus philomelos',
+  'kramsvogel':'Turdus pilaris',
+  'koperwiek':'Turdus iliacus',
+  'beflijster':'Turdus torquatus',
+  // Roodstaarten & verwanten
+  'gekraagde roodstaart':'Phoenicurus phoenicurus',
+  'zwarte roodstaart':'Phoenicurus ochruros',
+  'nachtegaal':'Luscinia megarhynchos',
+  'blauwborst':'Luscinia svecica',
+  'roodborst':'Erithacus rubecula',
+  // Tapuit & verwanten
+  'roodborsttapuit':'Saxicola rubicola',
+  'paapje':'Saxicola rubetra',
+  'tapuit':'Oenanthe oenanthe',
+  // Winterkoning & heggenmus
+  'winterkoning':'Troglodytes troglodytes',
+  'heggenmus':'Prunella modularis',
+  // Leeuweriken & piepers
+  'boomleeuwerik':'Lullula arborea',
+  'veldleeuwerik':'Alauda arvensis',
+  'boompieper':'Anthus trivialis',
+  'graspieper':'Anthus pratensis',
+  'waterpieper':'Anthus spinoletta',
+  // Gorzen
+  'geelgors':'Emberiza citrinella',
+  'rietgors':'Emberiza schoeniclus',
+  'ortolaan':'Emberiza hortulana',
+  // Vinkachtigen
+  'vink':'Fringilla coelebs',
+  'keep':'Fringilla montifringilla',
+  'groenling':'Chloris chloris',
+  'putter':'Carduelis carduelis',
+  'sijsje':'Spinus spinus',
+  'kneu':'Linaria cannabina',
+  'kruisbek':'Loxia curvirostra',
+  'grote kruisbek':'Loxia pytyopsittacus',
+  'appelvink':'Coccothraustes coccothraustes',
+  'goudvink':'Pyrrhula pyrrhula',
+  // Kraaiachtigen
+  'gaai':'Garrulus glandarius',
+  'ekster':'Pica pica',
+  'kauw':'Corvus monedula',
+  'roek':'Corvus frugilegus',
+  'zwarte kraai':'Corvus corone',
+  'raaf':'Corvus corax',
+  // Kwikstaarten
+  'witte kwikstaart':'Motacilla alba',
+  'gele kwikstaart':'Motacilla flava',
+  // Overig
+  'patrijs':'Perdix perdix',
+  'fazant':'Phasianus colchicus'
 };
 
 var audioCache = {};
+var currentAudio = null;
+var currentBtn = null;
 
 function speelAudio(url, btn) {
   var audio = new Audio(url);
@@ -389,7 +581,6 @@ function zoekOgg(query) {
 }
 
 function zoekEnSpeelAudio(latijn, btn) {
-  // Probeer meerdere zoekstrategieën
   var queries = [
     latijn + ' call',
     latijn + ' song',
@@ -425,14 +616,12 @@ function playBirdSound(naam, btn) {
   btn.textContent = '…';
   var latijn = LATIJN[naam.toLowerCase()] || naam;
 
-  // Gebruik cache als beschikbaar
   if (audioCache[latijn]) { speelAudio(audioCache[latijn], btn); return; }
 
   zoekEnSpeelAudio(latijn, btn);
 }
 
 function addBirdButtons(container) {
-  // Zoek alle tekst in de bubble en voeg play knoppen toe na vogelnamen
   var walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null, false);
   var nodes = [];
   var node;
@@ -444,7 +633,6 @@ function addBirdButtons(container) {
     VOGELS.forEach(function(vogel) {
       var idx = lower.indexOf(vogel);
       if (idx === -1) return;
-      // Vervang de vogelnaam door naam + knop
       var before = text.substring(0, idx + vogel.length);
       var after = text.substring(idx + vogel.length);
       var span = document.createElement('span');
@@ -459,7 +647,6 @@ function addBirdButtons(container) {
       parent.replaceChild(afterNode, textNode);
       parent.insertBefore(btn, afterNode);
       parent.insertBefore(span, btn);
-      // Update text voor volgende iteratie
       text = after;
       lower = after.toLowerCase();
       textNode = afterNode;
@@ -575,15 +762,12 @@ function addUser(text) {
   var b = document.createElement('div'); b.className = 'bub'; b.textContent = text;
   w.appendChild(av); w.appendChild(b);
   chat.appendChild(w);
-  // Voeg vogelgeluid knoppen toe
   addBirdButtons(b);
-  // Scroll naar begin van dit antwoord
   setTimeout(function() {
     w.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, 100);
 }
 function addBot(text) {
-  // Haal soorten JSON van laatste regel
   var soorten = [];
   var mainText = text;
   var lines = text.trim().split('\n');
@@ -602,7 +786,6 @@ function addBot(text) {
   var b = document.createElement('div'); b.className = 'bub';
   b.innerHTML = render(mainText);
   if (soorten.length > 0) loadPhotos(soorten, b);
-  // Scroll-naar-begin knop
   var scrollBtn = document.createElement('button');
   scrollBtn.className = 'scroll-top';
   scrollBtn.textContent = '↑ Terug naar begin van antwoord';
@@ -610,9 +793,7 @@ function addBot(text) {
   b.appendChild(scrollBtn);
   w.appendChild(av); w.appendChild(b);
   chat.appendChild(w);
-  // Voeg vogelgeluid knoppen toe
   addBirdButtons(b);
-  // Scroll naar begin van dit antwoord
   setTimeout(function() {
     w.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, 100);
