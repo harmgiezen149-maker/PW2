@@ -55,7 +55,7 @@ Geef altijd uitgebreide antwoorden met minimaal 300 woorden. Structureer als vol
 - Sluit af met ## Gesprekstips en 2-3 praktische tips als bullets met subbullets
 - Voeg op de ALLERLAATSTE regel een JSON toe met maximaal 5 soorten die in het antwoord genoemd zijn, in het formaat: {"soorten":["Naam1","Naam2","Naam3"]} — geen uitleg, alleen JSON op die regel
 
-Gebied Planken Wambuis: heide, stuifzand, eikenbos, vennen. Bekende plekken: Mosselse Zand, Oude Hout, Oud Reemst, boerderij De Mossel.
+Gebied Planken Wambuis: heide, stuifzand, eikenbos, vennen. Bekende plekken: Mosselse Zand, Oude Hout, Oud Reemst, boerderij De Mossel, Wolfhezerheide.
 Flora: struikheide, pijpenstrootje, bochtige smele, zonnedauw, diverse venplanten.
 Fauna: heideblauwtje, nachtzwaluw, levendbarende hagedis, adder, wilde zwijnen, reeën, edelhert, das, torenvalk, buizerd.
 Beheer: schapenbegrazing (Drentse heideschapen), plaggen, heidebranden, maaien. Beheerder: Natuurmonumenten, boerderij De Mossel.
@@ -106,7 +106,7 @@ Gebruik altijd deze bulletstructuur voor lijsten:
   - Toelichting als subbullet
   - Extra detail
 
-Gebied Planken Wambuis: heide, stuifzand, eikenbos, vennen. Bekende plekken: Mosselse Zand, Oude Hout, Oud Reemst, boerderij De Mossel.
+Gebied Planken Wambuis: heide, stuifzand, eikenbos, vennen. Bekende plekken: Mosselse Zand, Oude Hout, Oud Reemst, boerderij De Mossel, Wolfhezerheide.
 Flora: struikheide, pijpenstrootje, bochtige smele, zonnedauw, diverse venplanten.
 Fauna: heideblauwtje, nachtzwaluw, levendbarende hagedis, adder, wilde zwijnen, reeën, edelhert, das, torenvalk, buizerd.
 Beheer: schapenbegrazing (Drentse heideschapen), plaggen, heidebranden, maaien. Beheerder: Natuurmonumenten, boerderij De Mossel.
