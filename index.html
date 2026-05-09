@@ -143,7 +143,7 @@
     </div>
     <div class="hdr-right">
       <span class="hdr-season" id="season"></span>
-      <span class="hdr-ver">v57</span>
+      <span class="hdr-ver">v58</span>
       <div class="story-toggle" id="storyToggle" onclick="toggleStorytelling()">
         <span class="st-label">Verhaal</span>
         <div class="st-switch"></div>
@@ -700,46 +700,76 @@ function speakText(text, btn) {
     return;
   }
 
+  var synth = window.speechSynthesis;
+
   // Stop huidige
-  if (currentSpeech) {
-    window.speechSynthesis.cancel();
-    if (currentSpeech.btn) {
+  if (synth.speaking || synth.pending) {
+    synth.cancel();
+    if (currentSpeech && currentSpeech.btn) {
       currentSpeech.btn.textContent = '🔊 Voorlezen';
       currentSpeech.btn.classList.remove('speaking');
     }
-    if (currentSpeech.btn === btn) {
-      currentSpeech = null;
-      return;
-    }
+    var wasMine = currentSpeech && currentSpeech.btn === btn;
+    currentSpeech = null;
+    if (wasMine) return;
   }
 
   var clean = stripMarkdown(text);
-  var utter = new SpeechSynthesisUtterance(clean);
-  utter.lang = 'nl-NL';
-  utter.rate = 1.0;
-  utter.pitch = 1.0;
+  if (!clean) return;
 
-  // Probeer een Nederlandse stem te selecteren
-  var voices = window.speechSynthesis.getVoices();
-  var nlVoice = voices.find(function(v) { return v.lang.startsWith('nl'); });
-  if (nlVoice) utter.voice = nlVoice;
+  // Tekst opdelen in chunks van max 200 tekens (Android limiet)
+  var chunks = [];
+  var sentences = clean.match(/[^.!?]+[.!?]+/g) || [clean];
+  var current = '';
+  sentences.forEach(function(s) {
+    if ((current + s).length > 200) {
+      if (current) chunks.push(current.trim());
+      current = s;
+    } else {
+      current += s;
+    }
+  });
+  if (current) chunks.push(current.trim());
 
   btn.textContent = '⏸ Stop';
   btn.classList.add('speaking');
-  currentSpeech = { utter: utter, btn: btn };
+  currentSpeech = { btn: btn };
 
-  utter.onend = function() {
-    btn.textContent = '🔊 Voorlezen';
-    btn.classList.remove('speaking');
-    currentSpeech = null;
-  };
-  utter.onerror = function() {
-    btn.textContent = '🔊 Voorlezen';
-    btn.classList.remove('speaking');
-    currentSpeech = null;
-  };
+  var i = 0;
+  function speakNext() {
+    if (i >= chunks.length || !currentSpeech) {
+      btn.textContent = '🔊 Voorlezen';
+      btn.classList.remove('speaking');
+      currentSpeech = null;
+      return;
+    }
+    var u = new SpeechSynthesisUtterance(chunks[i]);
+    u.lang = 'nl-NL';
+    u.rate = 1.0;
 
-  window.speechSynthesis.speak(utter);
+    var voices = synth.getVoices();
+    var nl = voices.find(function(v) { return v.lang.startsWith('nl'); });
+    if (nl) u.voice = nl;
+
+    u.onend = function() {
+      i++;
+      speakNext();
+    };
+    u.onerror = function(e) {
+      console.log('Speech error:', e);
+      btn.textContent = '🔊 Voorlezen';
+      btn.classList.remove('speaking');
+      currentSpeech = null;
+    };
+    synth.speak(u);
+  }
+
+  // Force voices te laden op Android door eerst een lege call te doen
+  if (synth.getVoices().length === 0) {
+    setTimeout(speakNext, 100);
+  } else {
+    speakNext();
+  }
 }
 
 // Vooraf stemmen laden (Chrome heeft dit nodig)
