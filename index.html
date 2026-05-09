@@ -61,7 +61,9 @@
   .bl-sub::before { content:'–'; color:var(--tl); font-size:0.8rem; position:absolute; left:0; top:0; }
   .photos { display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; padding-top:10px; border-top:1px solid var(--b); }
   .scroll-top { display:block; margin-top:10px; padding:6px 12px; background:var(--gl); border:1.5px solid var(--g); color:var(--g); border-radius:20px; font-size:0.72rem; font-weight:600; cursor:pointer; font-family:'Source Sans 3',sans-serif; text-align:center; }
-  .speak-btn { display:inline-flex; align-items:center; gap:5px; margin-top:10px; margin-right:8px; padding:6px 12px; background:var(--gl); border:1.5px solid var(--g); color:var(--g); border-radius:20px; font-size:0.72rem; font-weight:600; cursor:pointer; font-family:'Source Sans 3',sans-serif; }
+  .speak-btn { display:inline-flex; align-items:center; gap:5px; margin-bottom:10px; padding:6px 12px; background:var(--gl); border:1.5px solid var(--g); color:var(--g); border-radius:20px; font-size:0.72rem; font-weight:600; cursor:pointer; font-family:'Source Sans 3',sans-serif; }
+  .speech-chunk { transition: background 0.2s; padding:2px 4px; border-radius:4px; }
+  .speech-chunk.active { background:rgba(255,235,150,0.5); }
   .speak-btn.speaking { background:var(--g); color:#fff; }
   .speak-btn:active { background:var(--g); color:#fff; }
   .scroll-top:active { background:var(--g); color:#fff; }
@@ -143,7 +145,7 @@
     </div>
     <div class="hdr-right">
       <span class="hdr-season" id="season"></span>
-      <span class="hdr-ver">v58</span>
+      <span class="hdr-ver">v59</span>
       <div class="story-toggle" id="storyToggle" onclick="toggleStorytelling()">
         <span class="st-label">Verhaal</span>
         <div class="st-switch"></div>
@@ -694,9 +696,9 @@ function stripMarkdown(text) {
     .trim();
 }
 
-function speakText(text, btn) {
+function speakText(text, btn, bubble) {
   if (!('speechSynthesis' in window)) {
-    alert('Spraakfunctie niet beschikbaar in deze browser');
+    alert('Spraakfunctie niet beschikbaar');
     return;
   }
 
@@ -705,6 +707,7 @@ function speakText(text, btn) {
   // Stop huidige
   if (synth.speaking || synth.pending) {
     synth.cancel();
+    cleanupHighlights();
     if (currentSpeech && currentSpeech.btn) {
       currentSpeech.btn.textContent = '🔊 Voorlezen';
       currentSpeech.btn.classList.remove('speaking');
@@ -717,9 +720,10 @@ function speakText(text, btn) {
   var clean = stripMarkdown(text);
   if (!clean) return;
 
-  // Tekst opdelen in chunks van max 200 tekens (Android limiet)
-  var chunks = [];
+  // Splits in zinnen
   var sentences = clean.match(/[^.!?]+[.!?]+/g) || [clean];
+  // Combineer korte zinnen tot chunks van max 200 tekens
+  var chunks = [];
   var current = '';
   sentences.forEach(function(s) {
     if ((current + s).length > 200) {
@@ -731,32 +735,41 @@ function speakText(text, btn) {
   });
   if (current) chunks.push(current.trim());
 
+  // Wikkel iedere zin in de bubble in een span voor highlighting
+  prepareBubbleForSpeech(bubble, chunks);
+
   btn.textContent = '⏸ Stop';
   btn.classList.add('speaking');
-  currentSpeech = { btn: btn };
+  currentSpeech = { btn: btn, bubble: bubble };
 
   var i = 0;
   function speakNext() {
     if (i >= chunks.length || !currentSpeech) {
+      cleanupHighlights();
       btn.textContent = '🔊 Voorlezen';
       btn.classList.remove('speaking');
       currentSpeech = null;
       return;
     }
+
+    // Highlight huidige chunk
+    cleanupHighlights();
+    var chunkEl = bubble.querySelector('.speech-chunk[data-i="' + i + '"]');
+    if (chunkEl) {
+      chunkEl.classList.add('active');
+      chunkEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
     var u = new SpeechSynthesisUtterance(chunks[i]);
     u.lang = 'nl-NL';
     u.rate = 1.0;
-
     var voices = synth.getVoices();
     var nl = voices.find(function(v) { return v.lang.startsWith('nl'); });
     if (nl) u.voice = nl;
 
-    u.onend = function() {
-      i++;
-      speakNext();
-    };
-    u.onerror = function(e) {
-      console.log('Speech error:', e);
+    u.onend = function() { i++; speakNext(); };
+    u.onerror = function() {
+      cleanupHighlights();
       btn.textContent = '🔊 Voorlezen';
       btn.classList.remove('speaking');
       currentSpeech = null;
@@ -764,12 +777,58 @@ function speakText(text, btn) {
     synth.speak(u);
   }
 
-  // Force voices te laden op Android door eerst een lege call te doen
   if (synth.getVoices().length === 0) {
     setTimeout(speakNext, 100);
   } else {
     speakNext();
   }
+}
+
+function cleanupHighlights() {
+  document.querySelectorAll('.speech-chunk.active').forEach(function(el) {
+    el.classList.remove('active');
+  });
+}
+
+function prepareBubbleForSpeech(bubble, chunks) {
+  // Verwijder oude voorbereiding
+  bubble.querySelectorAll('.speech-chunk').forEach(function(el) {
+    var parent = el.parentNode;
+    while (el.firstChild) parent.insertBefore(el.firstChild, el);
+    parent.removeChild(el);
+  });
+
+  // Wrap iedere chunk in een span
+  // We zoeken in alle text nodes naar elke chunk en vervangen
+  chunks.forEach(function(chunk, idx) {
+    var firstWords = chunk.trim().split(' ').slice(0, 4).join(' ');
+    if (firstWords.length < 8) return;
+
+    var walker = document.createTreeWalker(bubble, NodeFilter.SHOW_TEXT, null, false);
+    var node;
+    while (node = walker.nextNode()) {
+      // Skip nodes binnen al gewrapte spans
+      if (node.parentNode.classList && node.parentNode.classList.contains('speech-chunk')) continue;
+      var pos = node.textContent.indexOf(firstWords);
+      if (pos !== -1) {
+        var span = document.createElement('span');
+        span.className = 'speech-chunk';
+        span.setAttribute('data-i', idx);
+        var range = document.createRange();
+        range.setStart(node, pos);
+        // Zoek einde van de chunk in de tekst
+        var endPos = pos + chunk.length;
+        var actualEnd = Math.min(endPos, node.textContent.length);
+        range.setEnd(node, actualEnd);
+        try {
+          range.surroundContents(span);
+        } catch(e) {
+          // Range overschrijdt grens, sla over
+        }
+        break;
+      }
+    }
+  });
 }
 
 // Vooraf stemmen laden (Chrome heeft dit nodig)
@@ -910,13 +969,17 @@ function addBot(text) {
   var w = document.createElement('div'); w.className = 'msg bot';
   var av = document.createElement('div'); av.className = 'av bot'; av.textContent = '🌿';
   var b = document.createElement('div'); b.className = 'bub';
-  b.innerHTML = render(mainText);
-  if (soorten.length > 0) loadPhotos(soorten, b);
+  // Speak knop bovenaan
   var speakBtn = document.createElement('button');
   speakBtn.className = 'speak-btn';
   speakBtn.textContent = '🔊 Voorlezen';
-  speakBtn.onclick = function() { speakText(mainText, speakBtn); };
   b.appendChild(speakBtn);
+  // Content na de knop
+  var contentDiv = document.createElement('div');
+  contentDiv.innerHTML = render(mainText);
+  b.appendChild(contentDiv);
+  speakBtn.onclick = function() { speakText(mainText, speakBtn, contentDiv); };
+  if (soorten.length > 0) loadPhotos(soorten, b);
   var scrollBtn = document.createElement('button');
   scrollBtn.className = 'scroll-top';
   scrollBtn.textContent = '↑ Terug naar begin van antwoord';
