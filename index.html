@@ -145,7 +145,7 @@
     </div>
     <div class="hdr-right">
       <span class="hdr-season" id="season"></span>
-      <span class="hdr-ver">v60</span>
+      <span class="hdr-ver">v61</span>
       <div class="story-toggle" id="storyToggle" onclick="toggleStorytelling()">
         <span class="st-label">Verhaal</span>
         <div class="st-switch"></div>
@@ -805,7 +805,7 @@ function prepareBubbleForSpeech(bubble, chunks) {
   });
 
   // Verzamel alle blok-elementen (kopjes, bullets, subbullets, paragrafen)
-  var blocks = bubble.querySelectorAll('.bh, .bl, .bl-sub, > div');
+  var blocks = bubble.querySelectorAll('.bh, .bl, .bl-sub, div');
   // Als bovenstaande selector leeg is, pak alle directe children
   if (blocks.length === 0) blocks = bubble.children;
 
