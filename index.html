@@ -145,7 +145,7 @@
     </div>
     <div class="hdr-right">
       <span class="hdr-season" id="season"></span>
-      <span class="hdr-ver">v61</span>
+      <span class="hdr-ver">v62</span>
       <div class="story-toggle" id="storyToggle" onclick="toggleStorytelling()">
         <span class="st-label">Verhaal</span>
         <div class="st-switch"></div>
@@ -797,42 +797,68 @@ function cleanupHighlights() {
   });
 }
 
-// In plaats van text-spans wrappen, wijzen we elke top-level element een chunk-index toe
+// Voor elke chunk: welke blok-elementen hebben de tekst van die chunk in zich?
 function prepareBubbleForSpeech(bubble, chunks) {
-  // Reset alle markeringen
+  // Reset
   bubble.querySelectorAll('[data-chunks]').forEach(function(el) {
     el.removeAttribute('data-chunks');
   });
 
-  // Verzamel alle blok-elementen (kopjes, bullets, subbullets, paragrafen)
-  var blocks = bubble.querySelectorAll('.bh, .bl, .bl-sub, div');
-  // Als bovenstaande selector leeg is, pak alle directe children
-  if (blocks.length === 0) blocks = bubble.children;
+  // Pak alleen leaf-blokken (geen wrappers)
+  var allLeafs = [];
+  function collectLeafs(el) {
+    var hasBlockChild = false;
+    Array.prototype.forEach.call(el.children, function(child) {
+      if (child.tagName === 'DIV' || child.tagName === 'SPAN' || child.tagName === 'P') {
+        // Check of het een leaf is
+        var hasGrandBlocks = child.querySelectorAll('div, .bl, .bl-sub, .bh').length > 0;
+        if (!hasGrandBlocks) {
+          allLeafs.push(child);
+          hasBlockChild = true;
+        } else {
+          collectLeafs(child);
+          hasBlockChild = true;
+        }
+      }
+    });
+    if (!hasBlockChild && el !== bubble) allLeafs.push(el);
+  }
+  collectLeafs(bubble);
 
-  var blockArray = Array.prototype.slice.call(blocks);
-  // Bouw een map: voor elke chunk welke elementen bevatten welke woorden
-  // We doen het andersom: voor elk element kijken we welke chunks erin liggen
-  var elementTexts = blockArray.map(function(el) {
-    return { el: el, text: (el.textContent || '').toLowerCase() };
+  // Bouw kaart: positie in de samengestelde tekst -> element
+  var totalText = '';
+  var positions = [];
+  allLeafs.forEach(function(el) {
+    var t = el.textContent.toLowerCase().trim();
+    if (!t) return;
+    positions.push({ start: totalText.length, end: totalText.length + t.length, el: el });
+    totalText += t + ' ';
   });
 
+  // Voor elke chunk: zoek de positie en wijs alle overlappende elementen toe
+  var searchPos = 0;
   chunks.forEach(function(chunk, idx) {
-    // Pak de eerste 5 woorden als zoekstring
-    var words = chunk.toLowerCase().split(/\s+/).filter(function(w) { return w.length > 2; });
-    if (words.length === 0) return;
-    var needle = words.slice(0, 4).join(' ');
+    var clean = chunk.toLowerCase().trim();
+    if (!clean) return;
+    // Zoek vanaf searchPos voor goede volgorde
+    var firstWords = clean.split(/\s+/).filter(function(w){return w.length>2;}).slice(0, 3).join(' ');
+    if (!firstWords) return;
+    var pos = totalText.indexOf(firstWords, searchPos);
+    if (pos === -1) return;
+    var endPos = pos + clean.length;
 
-    // Zoek het element waarin deze chunk begint
-    for (var i = 0; i < elementTexts.length; i++) {
-      if (elementTexts[i].text.indexOf(needle) !== -1) {
-        var el = elementTexts[i].el;
-        var existing = el.getAttribute('data-chunks');
-        el.setAttribute('data-chunks', existing ? existing + ',' + idx : String(idx));
-        // Verwijder de gevonden tekst zodat hij niet opnieuw matcht
-        elementTexts[i].text = elementTexts[i].text.replace(needle, '');
-        break;
+    // Markeer alle elementen die overlap hebben
+    positions.forEach(function(p) {
+      if (p.end >= pos && p.start <= endPos) {
+        var existing = p.el.getAttribute('data-chunks');
+        var ids = existing ? existing.split(',') : [];
+        if (ids.indexOf(String(idx)) === -1) {
+          ids.push(String(idx));
+          p.el.setAttribute('data-chunks', ids.join(','));
+        }
       }
-    }
+    });
+    searchPos = pos + firstWords.length;
   });
 }
 
