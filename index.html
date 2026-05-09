@@ -61,6 +61,9 @@
   .bl-sub::before { content:'–'; color:var(--tl); font-size:0.8rem; position:absolute; left:0; top:0; }
   .photos { display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; padding-top:10px; border-top:1px solid var(--b); }
   .scroll-top { display:block; margin-top:10px; padding:6px 12px; background:var(--gl); border:1.5px solid var(--g); color:var(--g); border-radius:20px; font-size:0.72rem; font-weight:600; cursor:pointer; font-family:'Source Sans 3',sans-serif; text-align:center; }
+  .speak-btn { display:inline-flex; align-items:center; gap:5px; margin-top:10px; margin-right:8px; padding:6px 12px; background:var(--gl); border:1.5px solid var(--g); color:var(--g); border-radius:20px; font-size:0.72rem; font-weight:600; cursor:pointer; font-family:'Source Sans 3',sans-serif; }
+  .speak-btn.speaking { background:var(--g); color:#fff; }
+  .speak-btn:active { background:var(--g); color:#fff; }
   .scroll-top:active { background:var(--g); color:#fff; }
   /* Weer paneel */
   .weer { background:#fff; border-bottom:1px solid var(--b); padding:12px 14px; flex-shrink:0; }
@@ -140,7 +143,7 @@
     </div>
     <div class="hdr-right">
       <span class="hdr-season" id="season"></span>
-      <span class="hdr-ver">v56</span>
+      <span class="hdr-ver">v57</span>
       <div class="story-toggle" id="storyToggle" onclick="toggleStorytelling()">
         <span class="st-label">Verhaal</span>
         <div class="st-switch"></div>
@@ -674,6 +677,79 @@ function addBirdButtons(container) {
   });
 }
 
+// Spraak functionaliteit
+var currentSpeech = null;
+
+function stripMarkdown(text) {
+  return text
+    .replace(/\{\s*"soorten".*\}/g, '')           // verwijder soorten JSON
+    .replace(/\*\*(.*?)\*\*/g, '$1')             // verwijder bold
+    .replace(/^#{1,3}\s+/gm, '')                    // verwijder headers
+    .replace(/^[-*]\s+/gm, '')                      // verwijder bullets
+    .replace(/\s*\*\([^)]+\)\*/g, '')           // verwijder Latijnse namen
+    .replace(/[🌿⚡📖❓💬🌲🌸☀️🍂❄️🐺🐦🍄🐑🔥📋🤝]/g, '')  // verwijder emojis
+    .replace(/\n{2,}/g, '. ')                       // dubbele newlines naar punt
+    .replace(/\n/g, ' ')                            // single newline naar spatie
+    .replace(/\s+/g, ' ')                           // meerdere spaties
+    .trim();
+}
+
+function speakText(text, btn) {
+  if (!('speechSynthesis' in window)) {
+    alert('Spraakfunctie niet beschikbaar in deze browser');
+    return;
+  }
+
+  // Stop huidige
+  if (currentSpeech) {
+    window.speechSynthesis.cancel();
+    if (currentSpeech.btn) {
+      currentSpeech.btn.textContent = '🔊 Voorlezen';
+      currentSpeech.btn.classList.remove('speaking');
+    }
+    if (currentSpeech.btn === btn) {
+      currentSpeech = null;
+      return;
+    }
+  }
+
+  var clean = stripMarkdown(text);
+  var utter = new SpeechSynthesisUtterance(clean);
+  utter.lang = 'nl-NL';
+  utter.rate = 1.0;
+  utter.pitch = 1.0;
+
+  // Probeer een Nederlandse stem te selecteren
+  var voices = window.speechSynthesis.getVoices();
+  var nlVoice = voices.find(function(v) { return v.lang.startsWith('nl'); });
+  if (nlVoice) utter.voice = nlVoice;
+
+  btn.textContent = '⏸ Stop';
+  btn.classList.add('speaking');
+  currentSpeech = { utter: utter, btn: btn };
+
+  utter.onend = function() {
+    btn.textContent = '🔊 Voorlezen';
+    btn.classList.remove('speaking');
+    currentSpeech = null;
+  };
+  utter.onerror = function() {
+    btn.textContent = '🔊 Voorlezen';
+    btn.classList.remove('speaking');
+    currentSpeech = null;
+  };
+
+  window.speechSynthesis.speak(utter);
+}
+
+// Vooraf stemmen laden (Chrome heeft dit nodig)
+if ('speechSynthesis' in window) {
+  window.speechSynthesis.getVoices();
+  window.speechSynthesis.onvoiceschanged = function() {
+    window.speechSynthesis.getVoices();
+  };
+}
+
 function toggleWeer() {
   var body = document.getElementById('weerBody');
   var btn = document.getElementById('weerToggle');
@@ -806,6 +882,11 @@ function addBot(text) {
   var b = document.createElement('div'); b.className = 'bub';
   b.innerHTML = render(mainText);
   if (soorten.length > 0) loadPhotos(soorten, b);
+  var speakBtn = document.createElement('button');
+  speakBtn.className = 'speak-btn';
+  speakBtn.textContent = '🔊 Voorlezen';
+  speakBtn.onclick = function() { speakText(mainText, speakBtn); };
+  b.appendChild(speakBtn);
   var scrollBtn = document.createElement('button');
   scrollBtn.className = 'scroll-top';
   scrollBtn.textContent = '↑ Terug naar begin van antwoord';
