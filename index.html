@@ -62,8 +62,8 @@
   .photos { display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; padding-top:10px; border-top:1px solid var(--b); }
   .scroll-top { display:block; margin-top:10px; padding:6px 12px; background:var(--gl); border:1.5px solid var(--g); color:var(--g); border-radius:20px; font-size:0.72rem; font-weight:600; cursor:pointer; font-family:'Source Sans 3',sans-serif; text-align:center; }
   .speak-btn { display:inline-flex; align-items:center; gap:5px; margin-bottom:10px; padding:6px 12px; background:var(--gl); border:1.5px solid var(--g); color:var(--g); border-radius:20px; font-size:0.72rem; font-weight:600; cursor:pointer; font-family:'Source Sans 3',sans-serif; }
-  .speech-chunk { transition: background 0.2s; padding:2px 4px; border-radius:4px; }
-  .speech-chunk.active { background:rgba(255,235,150,0.5); }
+  [data-chunks] { transition: background 0.25s; border-radius:4px; }
+  [data-chunks].active { background:rgba(255,235,150,0.6); box-shadow:0 0 0 4px rgba(255,235,150,0.6); }
   .speak-btn.speaking { background:var(--g); color:#fff; }
   .speak-btn:active { background:var(--g); color:#fff; }
   .scroll-top:active { background:var(--g); color:#fff; }
@@ -145,7 +145,7 @@
     </div>
     <div class="hdr-right">
       <span class="hdr-season" id="season"></span>
-      <span class="hdr-ver">v59</span>
+      <span class="hdr-ver">v60</span>
       <div class="story-toggle" id="storyToggle" onclick="toggleStorytelling()">
         <span class="st-label">Verhaal</span>
         <div class="st-switch"></div>
@@ -752,12 +752,19 @@ function speakText(text, btn, bubble) {
       return;
     }
 
-    // Highlight huidige chunk
+    // Highlight elementen die deze chunk bevatten
     cleanupHighlights();
-    var chunkEl = bubble.querySelector('.speech-chunk[data-i="' + i + '"]');
-    if (chunkEl) {
-      chunkEl.classList.add('active');
-      chunkEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    var chunkEls = bubble.querySelectorAll('[data-chunks]');
+    var firstActive = null;
+    chunkEls.forEach(function(el) {
+      var idxs = el.getAttribute('data-chunks').split(',').map(Number);
+      if (idxs.indexOf(i) !== -1) {
+        el.classList.add('active');
+        if (!firstActive) firstActive = el;
+      }
+    });
+    if (firstActive) {
+      firstActive.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
     var u = new SpeechSynthesisUtterance(chunks[i]);
@@ -785,46 +792,44 @@ function speakText(text, btn, bubble) {
 }
 
 function cleanupHighlights() {
-  document.querySelectorAll('.speech-chunk.active').forEach(function(el) {
+  document.querySelectorAll('[data-chunks].active').forEach(function(el) {
     el.classList.remove('active');
   });
 }
 
+// In plaats van text-spans wrappen, wijzen we elke top-level element een chunk-index toe
 function prepareBubbleForSpeech(bubble, chunks) {
-  // Verwijder oude voorbereiding
-  bubble.querySelectorAll('.speech-chunk').forEach(function(el) {
-    var parent = el.parentNode;
-    while (el.firstChild) parent.insertBefore(el.firstChild, el);
-    parent.removeChild(el);
+  // Reset alle markeringen
+  bubble.querySelectorAll('[data-chunks]').forEach(function(el) {
+    el.removeAttribute('data-chunks');
   });
 
-  // Wrap iedere chunk in een span
-  // We zoeken in alle text nodes naar elke chunk en vervangen
-  chunks.forEach(function(chunk, idx) {
-    var firstWords = chunk.trim().split(' ').slice(0, 4).join(' ');
-    if (firstWords.length < 8) return;
+  // Verzamel alle blok-elementen (kopjes, bullets, subbullets, paragrafen)
+  var blocks = bubble.querySelectorAll('.bh, .bl, .bl-sub, > div');
+  // Als bovenstaande selector leeg is, pak alle directe children
+  if (blocks.length === 0) blocks = bubble.children;
 
-    var walker = document.createTreeWalker(bubble, NodeFilter.SHOW_TEXT, null, false);
-    var node;
-    while (node = walker.nextNode()) {
-      // Skip nodes binnen al gewrapte spans
-      if (node.parentNode.classList && node.parentNode.classList.contains('speech-chunk')) continue;
-      var pos = node.textContent.indexOf(firstWords);
-      if (pos !== -1) {
-        var span = document.createElement('span');
-        span.className = 'speech-chunk';
-        span.setAttribute('data-i', idx);
-        var range = document.createRange();
-        range.setStart(node, pos);
-        // Zoek einde van de chunk in de tekst
-        var endPos = pos + chunk.length;
-        var actualEnd = Math.min(endPos, node.textContent.length);
-        range.setEnd(node, actualEnd);
-        try {
-          range.surroundContents(span);
-        } catch(e) {
-          // Range overschrijdt grens, sla over
-        }
+  var blockArray = Array.prototype.slice.call(blocks);
+  // Bouw een map: voor elke chunk welke elementen bevatten welke woorden
+  // We doen het andersom: voor elk element kijken we welke chunks erin liggen
+  var elementTexts = blockArray.map(function(el) {
+    return { el: el, text: (el.textContent || '').toLowerCase() };
+  });
+
+  chunks.forEach(function(chunk, idx) {
+    // Pak de eerste 5 woorden als zoekstring
+    var words = chunk.toLowerCase().split(/\s+/).filter(function(w) { return w.length > 2; });
+    if (words.length === 0) return;
+    var needle = words.slice(0, 4).join(' ');
+
+    // Zoek het element waarin deze chunk begint
+    for (var i = 0; i < elementTexts.length; i++) {
+      if (elementTexts[i].text.indexOf(needle) !== -1) {
+        var el = elementTexts[i].el;
+        var existing = el.getAttribute('data-chunks');
+        el.setAttribute('data-chunks', existing ? existing + ',' + idx : String(idx));
+        // Verwijder de gevonden tekst zodat hij niet opnieuw matcht
+        elementTexts[i].text = elementTexts[i].text.replace(needle, '');
         break;
       }
     }
