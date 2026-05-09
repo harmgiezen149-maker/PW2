@@ -62,8 +62,7 @@
   .photos { display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; padding-top:10px; border-top:1px solid var(--b); }
   .scroll-top { display:block; margin-top:10px; padding:6px 12px; background:var(--gl); border:1.5px solid var(--g); color:var(--g); border-radius:20px; font-size:0.72rem; font-weight:600; cursor:pointer; font-family:'Source Sans 3',sans-serif; text-align:center; }
   .speak-btn { display:inline-flex; align-items:center; gap:5px; margin-bottom:10px; padding:6px 12px; background:var(--gl); border:1.5px solid var(--g); color:var(--g); border-radius:20px; font-size:0.72rem; font-weight:600; cursor:pointer; font-family:'Source Sans 3',sans-serif; }
-  [data-chunks] { transition: background 0.25s; border-radius:4px; }
-  [data-chunks].active { background:rgba(255,235,150,0.6); box-shadow:0 0 0 4px rgba(255,235,150,0.6); }
+  .speech-active { background:rgba(255,235,150,0.6); box-shadow:0 0 0 4px rgba(255,235,150,0.6); border-radius:4px; transition: background 0.2s; }
   .speak-btn.speaking { background:var(--g); color:#fff; }
   .speak-btn:active { background:var(--g); color:#fff; }
   .scroll-top:active { background:var(--g); color:#fff; }
@@ -145,7 +144,7 @@
     </div>
     <div class="hdr-right">
       <span class="hdr-season" id="season"></span>
-      <span class="hdr-ver">v62</span>
+      <span class="hdr-ver">v63</span>
       <div class="story-toggle" id="storyToggle" onclick="toggleStorytelling()">
         <span class="st-label">Verhaal</span>
         <div class="st-switch"></div>
@@ -717,26 +716,22 @@ function speakText(text, btn, bubble) {
     if (wasMine) return;
   }
 
-  var clean = stripMarkdown(text);
-  if (!clean) return;
+  // Bouw chunks DIRECT vanuit de DOM elementen
+  // Elk leaf-element wordt een chunk, met directe verwijzing naar het element
+  var leafs = collectLeafElements(bubble);
+  if (leafs.length === 0) return;
 
-  // Splits in zinnen
-  var sentences = clean.match(/[^.!?]+[.!?]+/g) || [clean];
-  // Combineer korte zinnen tot chunks van max 200 tekens
   var chunks = [];
-  var current = '';
-  sentences.forEach(function(s) {
-    if ((current + s).length > 200) {
-      if (current) chunks.push(current.trim());
-      current = s;
-    } else {
-      current += s;
-    }
+  leafs.forEach(function(el) {
+    var t = el.textContent.trim();
+    if (!t || t.length < 3) return;
+    // Verwijder emojis en markdown rommel
+    t = t.replace(/[🌿⚡📖❓💬🌲🌸☀️🍂❄️🐺🐦🍄🐑🔥📋🤝]/g, '').trim();
+    if (!t) return;
+    chunks.push({ text: t, el: el });
   });
-  if (current) chunks.push(current.trim());
 
-  // Wikkel iedere zin in de bubble in een span voor highlighting
-  prepareBubbleForSpeech(bubble, chunks);
+  if (chunks.length === 0) return;
 
   btn.textContent = '⏸ Stop';
   btn.classList.add('speaking');
@@ -752,22 +747,12 @@ function speakText(text, btn, bubble) {
       return;
     }
 
-    // Highlight elementen die deze chunk bevatten
     cleanupHighlights();
-    var chunkEls = bubble.querySelectorAll('[data-chunks]');
-    var firstActive = null;
-    chunkEls.forEach(function(el) {
-      var idxs = el.getAttribute('data-chunks').split(',').map(Number);
-      if (idxs.indexOf(i) !== -1) {
-        el.classList.add('active');
-        if (!firstActive) firstActive = el;
-      }
-    });
-    if (firstActive) {
-      firstActive.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
+    var chunk = chunks[i];
+    chunk.el.classList.add('speech-active');
+    chunk.el.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-    var u = new SpeechSynthesisUtterance(chunks[i]);
+    var u = new SpeechSynthesisUtterance(chunk.text);
     u.lang = 'nl-NL';
     u.rate = 1.0;
     var voices = synth.getVoices();
@@ -785,80 +770,33 @@ function speakText(text, btn, bubble) {
   }
 
   if (synth.getVoices().length === 0) {
-    setTimeout(speakNext, 100);
+    setTimeout(speakNext, 150);
   } else {
     speakNext();
   }
 }
 
-function cleanupHighlights() {
-  document.querySelectorAll('[data-chunks].active').forEach(function(el) {
-    el.classList.remove('active');
-  });
+// Verzamel alle leaf elementen (zonder block-children) in volgorde
+function collectLeafElements(root) {
+  var result = [];
+  function visit(el) {
+    var blockChildren = Array.prototype.filter.call(el.children, function(c) {
+      return c.tagName === 'DIV' || c.matches && c.matches('.bl, .bl-sub, .bh');
+    });
+    if (blockChildren.length === 0) {
+      // Leaf - heeft geen block kinderen
+      if (el.textContent.trim().length > 0) result.push(el);
+    } else {
+      blockChildren.forEach(visit);
+    }
+  }
+  visit(root);
+  return result;
 }
 
-// Voor elke chunk: welke blok-elementen hebben de tekst van die chunk in zich?
-function prepareBubbleForSpeech(bubble, chunks) {
-  // Reset
-  bubble.querySelectorAll('[data-chunks]').forEach(function(el) {
-    el.removeAttribute('data-chunks');
-  });
-
-  // Pak alleen leaf-blokken (geen wrappers)
-  var allLeafs = [];
-  function collectLeafs(el) {
-    var hasBlockChild = false;
-    Array.prototype.forEach.call(el.children, function(child) {
-      if (child.tagName === 'DIV' || child.tagName === 'SPAN' || child.tagName === 'P') {
-        // Check of het een leaf is
-        var hasGrandBlocks = child.querySelectorAll('div, .bl, .bl-sub, .bh').length > 0;
-        if (!hasGrandBlocks) {
-          allLeafs.push(child);
-          hasBlockChild = true;
-        } else {
-          collectLeafs(child);
-          hasBlockChild = true;
-        }
-      }
-    });
-    if (!hasBlockChild && el !== bubble) allLeafs.push(el);
-  }
-  collectLeafs(bubble);
-
-  // Bouw kaart: positie in de samengestelde tekst -> element
-  var totalText = '';
-  var positions = [];
-  allLeafs.forEach(function(el) {
-    var t = el.textContent.toLowerCase().trim();
-    if (!t) return;
-    positions.push({ start: totalText.length, end: totalText.length + t.length, el: el });
-    totalText += t + ' ';
-  });
-
-  // Voor elke chunk: zoek de positie en wijs alle overlappende elementen toe
-  var searchPos = 0;
-  chunks.forEach(function(chunk, idx) {
-    var clean = chunk.toLowerCase().trim();
-    if (!clean) return;
-    // Zoek vanaf searchPos voor goede volgorde
-    var firstWords = clean.split(/\s+/).filter(function(w){return w.length>2;}).slice(0, 3).join(' ');
-    if (!firstWords) return;
-    var pos = totalText.indexOf(firstWords, searchPos);
-    if (pos === -1) return;
-    var endPos = pos + clean.length;
-
-    // Markeer alle elementen die overlap hebben
-    positions.forEach(function(p) {
-      if (p.end >= pos && p.start <= endPos) {
-        var existing = p.el.getAttribute('data-chunks');
-        var ids = existing ? existing.split(',') : [];
-        if (ids.indexOf(String(idx)) === -1) {
-          ids.push(String(idx));
-          p.el.setAttribute('data-chunks', ids.join(','));
-        }
-      }
-    });
-    searchPos = pos + firstWords.length;
+function cleanupHighlights() {
+  document.querySelectorAll('.speech-active').forEach(function(el) {
+    el.classList.remove('speech-active');
   });
 }
 
