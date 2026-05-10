@@ -63,6 +63,7 @@
   .scroll-top { display:block; margin-top:10px; padding:6px 12px; background:var(--gl); border:1.5px solid var(--g); color:var(--g); border-radius:20px; font-size:0.72rem; font-weight:600; cursor:pointer; font-family:'Source Sans 3',sans-serif; text-align:center; }
   .speak-btn { display:inline-flex; align-items:center; gap:5px; margin-bottom:10px; padding:6px 12px; background:var(--gl); border:1.5px solid var(--g); color:var(--g); border-radius:20px; font-size:0.72rem; font-weight:600; cursor:pointer; font-family:'Source Sans 3',sans-serif; }
   .speech-active { background:rgba(255,235,150,0.6); box-shadow:0 0 0 4px rgba(255,235,150,0.6); border-radius:4px; transition: background 0.2s; }
+  .sentence { display:inline; }
   .speak-btn.speaking { background:var(--g); color:#fff; }
   .speak-btn:active { background:var(--g); color:#fff; }
   .scroll-top:active { background:var(--g); color:#fff; }
@@ -144,7 +145,7 @@
     </div>
     <div class="hdr-right">
       <span class="hdr-season" id="season"></span>
-      <span class="hdr-ver">v63</span>
+      <span class="hdr-ver">v64</span>
       <div class="story-toggle" id="storyToggle" onclick="toggleStorytelling()">
         <span class="st-label">Verhaal</span>
         <div class="st-switch"></div>
@@ -777,6 +778,7 @@ function speakText(text, btn, bubble) {
 }
 
 // Verzamel alle leaf elementen (zonder block-children) in volgorde
+// Lange paragrafen worden opgesplitst in zinnen
 function collectLeafElements(root) {
   var result = [];
   function visit(el) {
@@ -784,14 +786,35 @@ function collectLeafElements(root) {
       return c.tagName === 'DIV' || c.matches && c.matches('.bl, .bl-sub, .bh');
     });
     if (blockChildren.length === 0) {
-      // Leaf - heeft geen block kinderen
-      if (el.textContent.trim().length > 0) result.push(el);
+      var t = el.textContent.trim();
+      if (t.length === 0) return;
+      if (t.length > 80 && !el.classList.contains('bh') && !el.classList.contains('bl') && !el.classList.contains('bl-sub')) {
+        splitInSentences(el).forEach(function(s) { result.push(s); });
+      } else {
+        result.push(el);
+      }
     } else {
       blockChildren.forEach(visit);
     }
   }
   visit(root);
   return result;
+}
+
+function splitInSentences(el) {
+  var text = el.textContent;
+  var sentences = text.match(/[^.!?]+[.!?]+(?:\s|$)/g) || [text];
+  if (sentences.length <= 1) return [el];
+  el.innerHTML = '';
+  var spans = [];
+  sentences.forEach(function(s) {
+    var span = document.createElement('span');
+    span.className = 'sentence';
+    span.textContent = s;
+    el.appendChild(span);
+    if (s.trim()) spans.push(span);
+  });
+  return spans;
 }
 
 function cleanupHighlights() {
