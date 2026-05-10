@@ -196,6 +196,7 @@ module.exports = async function handler(req, res) {
     const corrections = await getCorrections();
     const mode = req.body.mode || 'normaal';
     const sys = mode === 'storytelling' ? getSystemStorytelling(corrections) : getSystemNormaal(corrections);
+
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
@@ -203,11 +204,31 @@ module.exports = async function handler(req, res) {
         model: 'claude-sonnet-4-6',
         max_tokens: 2000,
         system: sys,
-        messages: messages
+        messages: messages,
+        stream: true
       }),
     });
-    const data = await response.json();
-    return res.status(response.status).json(data);
+
+    if (!response.ok) {
+      const err = await response.text();
+      return res.status(response.status).json({ error: err });
+    }
+
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache, no-transform');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no');
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      const chunk = decoder.decode(value, { stream: true });
+      res.write(chunk);
+    }
+    res.end();
   } catch (err) {
     return res.status(500).json({ error: 'Fetch mislukt: ' + err.message });
   }
