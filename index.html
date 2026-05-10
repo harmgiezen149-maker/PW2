@@ -145,7 +145,7 @@
     </div>
     <div class="hdr-right">
       <span class="hdr-season" id="season"></span>
-      <span class="hdr-ver">v64</span>
+      <span class="hdr-ver">v65</span>
       <div class="story-toggle" id="storyToggle" onclick="toggleStorytelling()">
         <span class="st-label">Verhaal</span>
         <div class="st-switch"></div>
@@ -1074,30 +1074,108 @@ function ask(q) {
   document.getElementById('btn').disabled = true;
   addUser(q);
   showTyping();
+
+  // Bouw progressive bot bubble alvast op
+  var streamBubble = null;
+  var streamText = '';
+
   fetch('/api/chat?' + Date.now(), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ messages: [{ role: 'user', content: q }], mode: storyMode ? 'storytelling' : 'normaal' })
   })
-  .then(function(res) { return res.json(); })
-  .then(function(data) {
-    hideTyping();
-    if (data.error) {
-      showErr('Fout: ' + data.error);
-    } else {
-      var raw = '';
-      for (var i = 0; i < data.content.length; i++) {
-        if (data.content[i].type === 'text') raw += data.content[i].text;
-      }
-      addBot(raw);
+  .then(function(res) {
+    if (!res.ok) {
+      return res.json().then(function(d) { throw new Error(d.error || 'Server fout'); });
     }
+    if (!res.body || !res.body.getReader) {
+      // Fallback voor oude browsers
+      return res.json().then(function(data) {
+        hideTyping();
+        var raw = '';
+        for (var i = 0; i < data.content.length; i++) {
+          if (data.content[i].type === 'text') raw += data.content[i].text;
+        }
+        addBot(raw);
+      });
+    }
+
+    var reader = res.body.getReader();
+    var decoder = new TextDecoder();
+    var buffer = '';
+
+    function read() {
+      return reader.read().then(function(result) {
+        if (result.done) {
+          // Klaar - finaliseer bubble met juiste rendering
+          if (streamBubble && streamText) {
+            // Vervang ruwe tekst met volledig gerenderd antwoord
+            streamBubble.parentNode.removeChild(streamBubble);
+            addBot(streamText);
+          }
+          return;
+        }
+        buffer += decoder.decode(result.value, { stream: true });
+
+        // Verwerk SSE regels
+        var lines = buffer.split('\n');
+        buffer = lines.pop();
+
+        lines.forEach(function(line) {
+          if (!line.startsWith('data: ')) return;
+          var data = line.slice(6).trim();
+          if (!data || data === '[DONE]') return;
+          try {
+            var evt = JSON.parse(data);
+            if (evt.type === 'content_block_delta' && evt.delta && evt.delta.text) {
+              streamText += evt.delta.text;
+              if (!streamBubble) {
+                hideTyping();
+                streamBubble = createStreamBubble();
+              }
+              updateStreamBubble(streamBubble, streamText);
+            }
+          } catch(e) {}
+        });
+
+        return read();
+      });
+    }
+    return read();
+  })
+  .then(function() {
     document.getElementById('btn').disabled = false;
   })
   .catch(function(e) {
     hideTyping();
+    if (streamBubble) streamBubble.parentNode.removeChild(streamBubble);
     showErr('Verbindingsfout: ' + e.message);
     document.getElementById('btn').disabled = false;
   });
+}
+
+// Tijdelijke bubble tijdens streaming
+function createStreamBubble() {
+  var chat = document.getElementById('chat');
+  var w = document.createElement('div'); w.className = 'msg bot';
+  var av = document.createElement('div'); av.className = 'av'; av.textContent = '🌿';
+  var b = document.createElement('div'); b.className = 'bub';
+  var contentDiv = document.createElement('div');
+  contentDiv.className = 'stream-content';
+  b.appendChild(contentDiv);
+  w.appendChild(av); w.appendChild(b);
+  chat.appendChild(w);
+  setTimeout(function() {
+    w.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 50);
+  return w;
+}
+
+function updateStreamBubble(wrapper, text) {
+  var contentDiv = wrapper.querySelector('.stream-content');
+  // Strip JSON soorten en latijnse namen tijdens streamen
+  var visible = text.replace(/\{\s*"soorten"[\s\S]*\}\s*$/g, '');
+  contentDiv.innerHTML = render(visible);
 }
 </script>
 </body>
