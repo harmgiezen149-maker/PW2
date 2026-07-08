@@ -31,8 +31,8 @@
     --b:#dbe7e0;
     --card:#ffffff;
     --bg:#eef4ef;
-    --shadow:0 2px 14px rgba(13,60,40,0.08);
-    --shadow-lift:0 6px 22px rgba(13,60,40,0.14);
+    --shadow:0 3px 16px rgba(13,60,40,0.13);
+    --shadow-lift:0 8px 26px rgba(13,60,40,0.20);
     --r:16px;
     --ease:cubic-bezier(0.22,0.8,0.3,1);
   }
@@ -46,7 +46,7 @@
   .hdr-sub { font-size:0.62rem; color:rgba(255,255,255,0.85); text-transform:lowercase; letter-spacing:0.02em; display:block; margin-top:2px; }
   .hdr-right { margin-left:auto; display:flex; align-items:center; gap:10px; padding:0 14px; }
   .hdr-season { background:rgba(255,255,255,0.14); border:1px solid rgba(255,255,255,0.3); color:#fff; padding:3px 10px; border-radius:20px; font-size:0.65rem; font-weight:600; backdrop-filter:blur(4px); }
-  .hdr-ver { color:rgba(255,255,255,0.5); font-size:0.6rem; }
+  .hdr-ver { color:rgba(255,255,255,0.7); font-size:0.64rem; }
   .sub { background:rgba(255,255,255,0.85); backdrop-filter:blur(8px); border-top:1px solid var(--b); padding:12px 14px; flex-shrink:0; }
   .sub-title { font-family:'Source Sans 3',sans-serif; font-size:0.92rem; font-weight:700; color:var(--g-dark); margin-bottom:8px; }
   .grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:8px; }
@@ -61,13 +61,13 @@
   .welcome { background:linear-gradient(135deg,#ffffff 0%,var(--gp) 100%); border:1px solid var(--b); border-radius:var(--r); padding:18px; box-shadow:var(--shadow); animation:up 0.45s var(--ease); }
   .welcome-top { display:flex; align-items:center; gap:10px; margin-bottom:6px; }
   .welcome h2 { font-family:'Source Sans 3',sans-serif; font-size:1.15rem; font-weight:700; color:var(--g-dark); }
-  .welcome p { font-size:0.85rem; color:var(--tm); line-height:1.6; }
+  .welcome p { font-size:0.92rem; color:var(--tm); line-height:1.6; }
   .msg { display:flex; gap:9px; animation:up 0.35s var(--ease); }
   @keyframes up { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
   .msg.user { flex-direction:row-reverse; }
   .av { width:30px; height:30px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:14px; margin-top:2px; box-shadow:0 2px 6px rgba(13,60,40,0.15); }
   .av.bot { background:linear-gradient(135deg,var(--g) 0%,var(--g-dark) 100%); } .av.usr { background:#fff; border:1px solid var(--b); }
-  .bub { padding:clamp(11px,2vw,15px) clamp(13px,2.5vw,17px); border-radius:18px; font-size:clamp(0.84rem,2vw,1rem); line-height:1.65; max-width:calc(100% - 42px); }
+  .bub { padding:clamp(11px,2vw,15px) clamp(13px,2.5vw,17px); border-radius:18px; font-size:clamp(0.9rem,2.2vw,1.06rem); line-height:1.65; max-width:calc(100% - 42px); }
   .msg.bot .bub { background:#fff; border:1px solid var(--b); border-top-left-radius:6px; box-shadow:var(--shadow); }
   .msg.user .bub { background:linear-gradient(135deg,var(--g) 0%,var(--g-dark) 100%); border-top-right-radius:6px; color:#fff; box-shadow:0 3px 12px rgba(13,81,56,0.25); }
   .bub b { color:var(--g); font-weight:600; display:inline; } .msg.user .bub b { color:#fff; }
@@ -162,7 +162,6 @@
     .hdr-brand { padding:0 12px; gap:8px; }
     .hdr-right { gap:7px; padding:0 10px; }
     .hdr-season { display:none; }
-    .hdr-ver { display:none; }
   }
 </style>
 </head>
@@ -178,7 +177,7 @@
     </div>
     <div class="hdr-right">
       <span class="hdr-season" id="season"></span>
-      <span class="hdr-ver">v67</span>
+      <span class="hdr-ver">v68</span>
       <div class="story-toggle" id="storyToggle" onclick="toggleStorytelling()">
         <span class="st-label">Verhaal</span>
         <div class="st-switch"></div>
