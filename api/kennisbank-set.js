@@ -1,4 +1,5 @@
 const ALLOWED_ORIGIN = 'https://pwpb2.vercel.app';
+const kennisbank = require('./_kennisbank');
 
 function setSecurityHeaders(res, origin) {
   if (origin === ALLOWED_ORIGIN) {
@@ -10,7 +11,7 @@ function setSecurityHeaders(res, origin) {
 }
 
 function getIp(req) {
-  return (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || 
+  return (req.headers['x-forwarded-for'] || '').split(',')[0].trim() ||
          req.headers['x-real-ip'] || 'unknown';
 }
 
@@ -60,74 +61,74 @@ module.exports = async function handler(req, res) {
 
   const url = process.env.KV_REST_API_URL;
   const token = process.env.KV_REST_API_TOKEN;
-  const { action, text, index, password } = req.body || {};
+  const { action, slug, tekst, titel, password } = req.body || {};
 
-  const save = async (key, arr) => {
-    const encoded = encodeURIComponent(JSON.stringify(arr));
-    const r = await fetch(`${url}/set/${key}/${encoded}`, {
+  const parse = (raw) => {
+    try {
+      const d = JSON.parse(raw);
+      if (!d.result) return {};
+      let p = typeof d.result === 'string' ? JSON.parse(d.result) : d.result;
+      if (p && p.value !== undefined) p = typeof p.value === 'string' ? JSON.parse(p.value) : p.value;
+      return (p && typeof p === 'object' && !Array.isArray(p)) ? p : {};
+    } catch(e) { return {}; }
+  };
+
+  const getOverrides = async () => {
+    const r = await fetch(`${url}/get/kennisbank`, { headers: { Authorization: `Bearer ${token}` } });
+    return parse(await r.text());
+  };
+
+  const save = async (obj) => {
+    const encoded = encodeURIComponent(JSON.stringify(obj));
+    const r = await fetch(`${url}/set/kennisbank/${encoded}`, {
       method: 'GET',
       headers: { Authorization: `Bearer ${token}` }
     });
     return r.json();
   };
 
-  const parse = (raw) => {
-    try {
-      const d = JSON.parse(raw);
-      if (!d.result) return [];
-      let p = typeof d.result === 'string' ? JSON.parse(d.result) : d.result;
-      if (p && p.value !== undefined) p = typeof p.value === 'string' ? JSON.parse(p.value) : p.value;
-      return Array.isArray(p) ? p : [];
-    } catch(e) { return []; }
-  };
-
-  const get = async (key) => {
-    const r = await fetch(`${url}/get/${key}`, { headers: { Authorization: `Bearer ${token}` } });
-    return parse(await r.text());
-  };
-
   const ip = getIp(req);
 
   try {
-    if (action === 'add-pending') {
-      const limit = await checkRateLimit(ip, 'suggest', 5, 86400);
-      if (!limit.ok) return res.status(429).json({ error: 'Maximaal 5 suggesties per dag bereikt.' });
+    const pwLimit = await checkRateLimit(ip, 'pw', 10, 600);
+    if (!pwLimit.ok) return res.status(429).json({ error: 'Te veel pogingen.' });
 
-      const cleanText = sanitizeText(text, 500);
-      if (cleanText.length < 10) return res.status(400).json({ error: 'Suggestie moet minimaal 10 tekens zijn.' });
+    if (password !== process.env.BEHEER_WACHTWOORD) return res.status(401).json({ error: 'Ongeldig wachtwoord' });
 
-      const pending = await get('pending');
-      if (pending.length >= 50) return res.status(429).json({ error: 'Maximaal aantal openstaande suggesties bereikt.' });
-      if (pending.includes(cleanText)) return res.status(400).json({ error: 'Deze suggestie bestaat al.' });
-
-      pending.push(cleanText);
-      await save('pending', pending);
-      return res.status(200).json({ ok: true, pending });
+    const cleanSlug = typeof slug === 'string' ? slug.trim().toLowerCase() : '';
+    if (!/^[a-z0-9-]{2,40}$/.test(cleanSlug)) {
+      return res.status(400).json({ error: 'Ongeldige sectienaam (gebruik kleine letters, cijfers en streepjes).' });
     }
 
-    if (action === 'approve' || action === 'reject' || action === 'delete-approved') {
-      const pwLimit = await checkRateLimit(ip, 'pw', 10, 600);
-      if (!pwLimit.ok) return res.status(429).json({ error: 'Te veel pogingen.' });
+    const overrides = await getOverrides();
+    const vandaag = new Date().toISOString().slice(0, 10);
+    const baseline = kennisbank.secties.find(s => s.slug === cleanSlug);
 
-      if (password !== process.env.BEHEER_WACHTWOORD) return res.status(401).json({ error: 'Ongeldig wachtwoord' });
+    if (action === 'set-section') {
+      const cleanTekst = sanitizeText(tekst, 4000);
+      if (cleanTekst.length < 5) return res.status(400).json({ error: 'Tekst is te kort.' });
+      const cleanTitel = sanitizeText(titel, 80);
+      overrides[cleanSlug] = { tekst: cleanTekst, gecontroleerd: vandaag };
+      if (cleanTitel) overrides[cleanSlug].titel = cleanTitel;
+      await save(overrides);
+      return res.status(200).json({ ok: true });
+    }
 
-      let pending = await get('pending');
-      let approved = await get('approved');
+    if (action === 'clear-section') {
+      delete overrides[cleanSlug];
+      await save(overrides);
+      return res.status(200).json({ ok: true });
+    }
 
-      if (action === 'approve') {
-        const item = pending[index];
-        if (item === undefined) return res.status(400).json({ error: 'Index niet gevonden' });
-        pending.splice(index, 1);
-        approved.push(item);
-        await Promise.all([save('pending', pending), save('approved', approved)]);
-      } else if (action === 'reject') {
-        pending.splice(index, 1);
-        await save('pending', pending);
-      } else if (action === 'delete-approved') {
-        approved.splice(index, 1);
-        await save('approved', approved);
+    if (action === 'mark-checked') {
+      if (overrides[cleanSlug]) {
+        overrides[cleanSlug].gecontroleerd = vandaag;
+      } else if (baseline) {
+        overrides[cleanSlug] = { tekst: baseline.tekst, gecontroleerd: vandaag };
+      } else {
+        return res.status(400).json({ error: 'Sectie niet gevonden' });
       }
-
+      await save(overrides);
       return res.status(200).json({ ok: true });
     }
 

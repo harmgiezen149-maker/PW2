@@ -37,6 +37,20 @@
   .approved-badge { background:var(--gl); color:var(--g); font-size:0.65rem; font-weight:600; padding:2px 7px; border-radius:10px; border:1px solid var(--g); flex-shrink:0; margin-top:2px; }
   .empty { font-size:0.78rem; color:var(--tl); font-style:italic; }
   .loading { font-size:0.78rem; color:var(--tl); }
+
+  .kb-card { background:var(--gp); border:1px solid var(--b); border-radius:8px; padding:12px; margin-bottom:10px; }
+  .kb-head { display:flex; align-items:center; gap:8px; margin-bottom:6px; flex-wrap:wrap; }
+  .kb-head strong { font-size:0.86rem; color:var(--t); }
+  .kb-badge { font-size:0.65rem; font-weight:600; padding:2px 7px; border-radius:10px; flex-shrink:0; }
+  .kb-badge.standaard { background:#eee; color:var(--tm); border:1px solid var(--b); }
+  .kb-badge.aangepast { background:var(--gl); color:var(--g); border:1px solid var(--g); }
+  .kb-date { font-size:0.7rem; color:var(--tl); margin-left:auto; }
+  .kb-date.oud { color:#c0392b; font-weight:600; }
+  .kb-card textarea { width:100%; min-height:72px; border:1.5px solid var(--b); border-radius:6px; padding:8px 10px; font-size:0.8rem; font-family:'Source Sans 3',sans-serif; line-height:1.5; resize:vertical; outline:none; }
+  .kb-card textarea:focus { border-color:var(--g); }
+  .kb-actions { display:flex; gap:6px; margin-top:8px; flex-wrap:wrap; }
+  .kb-new input { width:100%; border:1.5px solid var(--b); border-radius:6px; padding:8px 10px; font-size:0.8rem; font-family:'Source Sans 3',sans-serif; margin-bottom:8px; outline:none; }
+  .kb-new input:focus { border-color:var(--g); }
 </style>
 </head>
 <body>
@@ -67,6 +81,23 @@
     <h2>✅ Geaccordeerde correcties</h2>
     <p>Deze correcties zijn actief op de achtergrond en onzichtbaar voor gebruikers. Je kunt ze hier verwijderen.</p>
     <div id="approvedList"><p class="loading">Laden...</p></div>
+  </div>
+
+  <div class="section">
+    <h2>📚 Kennisbank</h2>
+    <p>De basisinformatie waar de assistent zijn gebiedsspecifieke antwoorden op baseert. Wijzigingen zijn direct actief. "Terug naar standaard" herstelt de meegeleverde tekst.</p>
+    <div id="kbList"><p class="loading">Laden...</p></div>
+
+    <div class="kb-new" style="margin-top:16px">
+      <strong style="font-size:0.86rem">➕ Nieuwe sectie</strong>
+      <p style="margin-top:4px">Voeg een nieuw onderwerp toe (bijv. excursies, parkeren).</p>
+      <input id="kbNewSlug" placeholder="sectienaam (kleine letters en streepjes, bijv. excursies)" />
+      <input id="kbNewTitel" placeholder="Titel (bijv. Excursies)" />
+      <textarea id="kbNewTekst" style="width:100%; min-height:72px; border:1.5px solid var(--b); border-radius:6px; padding:8px 10px; font-size:0.8rem; font-family:'Source Sans 3',sans-serif; line-height:1.5; resize:vertical; outline:none;" placeholder="De feiten voor deze sectie..."></textarea>
+      <div class="kb-actions">
+        <button class="btn-approve" onclick="addKbSection()">Toevoegen</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -113,6 +144,87 @@ function loadAll() {
     renderPending(data.pending || []);
     renderApproved(data.approved || []);
   });
+  loadKennisbank();
+}
+
+function loadKennisbank() {
+  fetch('/api/kennisbank-get')
+  .then(function(r) { return r.json(); })
+  .then(function(data) { renderKennisbank(data.secties || []); })
+  .catch(function() {
+    document.getElementById('kbList').innerHTML = '<p class="empty">Kennisbank kon niet geladen worden.</p>';
+  });
+}
+
+function isOud(datum) {
+  // Rood signaal als de sectie langer dan ~12 maanden geleden is gecontroleerd
+  if (!datum) return true;
+  var d = new Date(datum.length === 7 ? datum + '-01' : datum);
+  if (isNaN(d.getTime())) return true;
+  return (Date.now() - d.getTime()) > 365 * 24 * 3600 * 1000;
+}
+
+function renderKennisbank(secties) {
+  var el = document.getElementById('kbList');
+  if (secties.length === 0) { el.innerHTML = '<p class="empty">Geen secties gevonden.</p>'; return; }
+  el.innerHTML = '';
+  secties.forEach(function(s) {
+    var card = document.createElement('div'); card.className = 'kb-card';
+
+    var head = document.createElement('div'); head.className = 'kb-head';
+    var titel = document.createElement('strong'); titel.textContent = s.titel;
+    var badge = document.createElement('span'); badge.className = 'kb-badge ' + s.bron; badge.textContent = s.bron;
+    var date = document.createElement('span');
+    date.className = 'kb-date' + (isOud(s.gecontroleerd) ? ' oud' : '');
+    date.textContent = 'gecontroleerd: ' + (s.gecontroleerd || 'onbekend');
+    head.appendChild(titel); head.appendChild(badge); head.appendChild(date);
+
+    var ta = document.createElement('textarea'); ta.value = s.tekst;
+
+    var actions = document.createElement('div'); actions.className = 'kb-actions';
+    var save = document.createElement('button'); save.className = 'btn-approve'; save.textContent = '💾 Opslaan';
+    save.onclick = function() { kbAction({ action: 'set-section', slug: s.slug, tekst: ta.value, titel: s.titel }); };
+    var check = document.createElement('button'); check.className = 'btn-approve'; check.textContent = 'Gecontroleerd ✓';
+    check.onclick = function() { kbAction({ action: 'mark-checked', slug: s.slug }); };
+    actions.appendChild(save); actions.appendChild(check);
+    if (s.bron === 'aangepast') {
+      var reset = document.createElement('button'); reset.className = 'btn-delete'; reset.textContent = 'Terug naar standaard';
+      reset.onclick = function() {
+        if (confirm('Aanpassing verwijderen en terug naar de standaardtekst?')) {
+          kbAction({ action: 'clear-section', slug: s.slug });
+        }
+      };
+      actions.appendChild(reset);
+    }
+
+    card.appendChild(head); card.appendChild(ta); card.appendChild(actions);
+    el.appendChild(card);
+  });
+}
+
+function kbAction(body) {
+  body.password = ww;
+  fetch('/api/kennisbank-set', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    if (data.error) { alert('Fout: ' + data.error); return; }
+    loadKennisbank();
+  });
+}
+
+function addKbSection() {
+  var slug = document.getElementById('kbNewSlug').value.trim().toLowerCase();
+  var titel = document.getElementById('kbNewTitel').value.trim();
+  var tekst = document.getElementById('kbNewTekst').value.trim();
+  if (!slug || !tekst) { alert('Vul minimaal een sectienaam en tekst in.'); return; }
+  kbAction({ action: 'set-section', slug: slug, titel: titel, tekst: tekst });
+  document.getElementById('kbNewSlug').value = '';
+  document.getElementById('kbNewTitel').value = '';
+  document.getElementById('kbNewTekst').value = '';
 }
 
 function renderPending(list) {
