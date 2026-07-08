@@ -1078,6 +1078,8 @@ function ask(q) {
   // Bouw progressive bot bubble alvast op
   var streamBubble = null;
   var streamText = '';
+  var bronnen = [];
+  var bronUrls = {};
 
   fetch('/api/chat?' + Date.now(), {
     method: 'POST',
@@ -1109,6 +1111,18 @@ function ask(q) {
         if (result.done) {
           // Klaar - finaliseer bubble met juiste rendering
           if (streamBubble && streamText) {
+            // Bronnen uit websearch onder het antwoord tonen (voor de soorten-JSON-regel)
+            if (bronnen.length > 0) {
+              var bronBlok = '\n\n## Bronnen\n' + bronnen.map(function(b) {
+                return '- [' + (b.title || b.url) + '](' + b.url + ')';
+              }).join('\n');
+              var m = streamText.match(/\{\s*"soorten"[\s\S]*\}\s*$/);
+              if (m) {
+                streamText = streamText.slice(0, m.index) + bronBlok + '\n\n' + m[0];
+              } else {
+                streamText += bronBlok;
+              }
+            }
             // Vervang ruwe tekst met volledig gerenderd antwoord
             streamBubble.parentNode.removeChild(streamBubble);
             addBot(streamText);
@@ -1134,6 +1148,21 @@ function ask(q) {
                 streamBubble = createStreamBubble();
               }
               updateStreamBubble(streamBubble, streamText);
+            } else if (evt.type === 'content_block_start' && evt.content_block && evt.content_block.type === 'server_tool_use') {
+              // Model zoekt actuele informatie op het web
+              if (!streamBubble) {
+                hideTyping();
+                streamBubble = createStreamBubble();
+              }
+              if (!streamText) {
+                streamBubble.querySelector('.stream-content').innerHTML = '<em>🔎 Zoekt actuele informatie…</em>';
+              }
+            } else if (evt.type === 'content_block_delta' && evt.delta && evt.delta.type === 'citations_delta' && evt.delta.citation && evt.delta.citation.url) {
+              var c = evt.delta.citation;
+              if (!bronUrls[c.url]) {
+                bronUrls[c.url] = true;
+                bronnen.push({ url: c.url, title: c.title || '' });
+              }
             }
           } catch(e) {}
         });
