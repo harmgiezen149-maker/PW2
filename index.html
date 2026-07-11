@@ -185,7 +185,7 @@
     </div>
     <div class="hdr-right">
       <span class="hdr-season" id="season"></span>
-      <span class="hdr-ver">v71</span>
+      <span class="hdr-ver">v72</span>
       <div class="story-toggle" id="storyToggle" onclick="toggleStorytelling()">
         <span class="st-label">Verhaal</span>
         <div class="st-switch"></div>
@@ -686,36 +686,52 @@ function playBirdSound(naam, btn) {
   zoekEnSpeelAudio(latijn, btn);
 }
 
+// Eén gecombineerde regex, langste namen eerst en met woordgrenzen, zodat
+// samengestelde namen (roodborsttapuit) als geheel matchen en niet op hun
+// deelwoorden (roodborst / tapuit). (?:en|s)? vangt Nederlandse meervouden.
+var VOGEL_RE = new RegExp('\\b(' + VOGELS.slice()
+  .sort(function(a, b) { return b.length - a.length; })
+  .map(function(v) { return v.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); })
+  .join('|') + ')(?:en|s)?\\b', 'gi');
+
 function addBirdButtons(container) {
+  var seen = {};
   var walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null, false);
   var nodes = [];
   var node;
-  while(node = walker.nextNode()) { nodes.push(node); }
+  while (node = walker.nextNode()) {
+    // Tekst binnen een bestaande knop overslaan
+    if (node.parentNode && node.parentNode.classList && node.parentNode.classList.contains('bird-btn')) continue;
+    nodes.push(node);
+  }
 
   nodes.forEach(function(textNode) {
     var text = textNode.textContent;
-    var lower = text.toLowerCase();
-    VOGELS.forEach(function(vogel) {
-      var idx = lower.indexOf(vogel);
-      if (idx === -1) return;
-      var before = text.substring(0, idx + vogel.length);
-      var after = text.substring(idx + vogel.length);
-      var span = document.createElement('span');
-      span.textContent = before;
+    VOGEL_RE.lastIndex = 0;
+    var m, treffers = [];
+    while ((m = VOGEL_RE.exec(text)) !== null) {
+      var naam = m[1].toLowerCase();
+      if (seen[naam]) continue;            // Ontdubbelen: alleen eerste vermelding
+      seen[naam] = true;
+      treffers.push({ end: m.index + m[0].length, naam: naam });
+    }
+    if (treffers.length === 0) return;
+
+    // Tekstknoop opnieuw opbouwen: tekst met een knop na de eerste vermelding
+    var frag = document.createDocumentFragment();
+    var pos = 0;
+    treffers.forEach(function(t) {
+      frag.appendChild(document.createTextNode(text.substring(pos, t.end)));
       var btn = document.createElement('button');
       btn.className = 'bird-btn';
       btn.textContent = '▶';
-      btn.title = vogel + ' geluid';
-      btn.onclick = (function(v, b) { return function(e) { e.stopPropagation(); playBirdSound(v, b); }; })(vogel, btn);
-      var afterNode = document.createTextNode(after);
-      var parent = textNode.parentNode;
-      parent.replaceChild(afterNode, textNode);
-      parent.insertBefore(btn, afterNode);
-      parent.insertBefore(span, btn);
-      text = after;
-      lower = after.toLowerCase();
-      textNode = afterNode;
+      btn.title = t.naam + ' geluid';
+      btn.onclick = (function(v, b) { return function(e) { e.stopPropagation(); playBirdSound(v, b); }; })(t.naam, btn);
+      frag.appendChild(btn);
+      pos = t.end;
     });
+    frag.appendChild(document.createTextNode(text.substring(pos)));
+    textNode.parentNode.replaceChild(frag, textNode);
   });
 }
 
