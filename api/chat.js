@@ -207,10 +207,11 @@ function getSystemAanvulling(kennisbankText, correctiesText) {
 
 Het is nu ${season} (${date}).
 
-Je krijgt een vraag en een eerder gegeven antwoord. Je taak is dat antwoord AAN TE VULLEN.
+Je krijgt een vraag en een eerder gegeven antwoord (met ## kopjes per onderwerp). Je taak is dat antwoord AAN TE VULLEN, gegroepeerd per onderwerp.
 - Zoek met maximaal 2 gerichte web-zoekacties naar actuele of gebiedsspecifieke informatie die het eerdere antwoord verbetert (recent nieuws, afsluitingen, activiteiten, actueel beleid, nieuwe waarnemingen).
-- Geef UITSLUITEND nieuwe of geactualiseerde feiten die nog niet in het eerdere antwoord staan, als korte bullets. Noem bij elk feit de bron.
-- Herhaal niets uit het eerdere antwoord en geef geen inleiding of afsluiting.
+- Groepeer je aanvullingen ONDER DE EXACTE KOP uit het eerdere antwoord waar ze bij horen. Formaat: een regel "## <exacte kop uit het antwoord>" gevolgd door één of meer bullets (- ...). Zet de bron in de bullet zelf.
+- Gebruik ALLEEN koppen die letterlijk in het eerdere antwoord voorkomen. Past een aanvulling nergens onder, zet die dan onder "## Overig".
+- Geef UITSLUITEND nieuwe of geactualiseerde feiten die nog niet in het eerdere antwoord staan. Herhaal niets en geef geen inleiding of afsluiting.
 - Kun je de vraag prima beantwoorden zonder zoeken (algemene, niet-veranderende natuurkennis), of is er niets zinnigs toe te voegen? Antwoord dan met EXACT dit ene woord en niets anders: GEEN_AANVULLING
 - Geef GEEN {"soorten":...}-regel.
 
