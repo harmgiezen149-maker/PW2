@@ -200,6 +200,25 @@ ${GROUNDING}
 ${kennisbankText}${correctiesText}`;
 }
 
+function getSystemAanvulling(kennisbankText, correctiesText) {
+  const season = getSeason();
+  const date = new Date().toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  return `Je bent een deskundige boswachter-assistent voor Planken Wambuis op de Zuidwest-Veluwe.
+
+Het is nu ${season} (${date}).
+
+Je krijgt een vraag en een eerder gegeven antwoord. Je taak is dat antwoord AAN TE VULLEN.
+- Zoek met maximaal 2 gerichte web-zoekacties naar actuele of gebiedsspecifieke informatie die het eerdere antwoord verbetert (recent nieuws, afsluitingen, activiteiten, actueel beleid, nieuwe waarnemingen).
+- Geef UITSLUITEND nieuwe of geactualiseerde feiten die nog niet in het eerdere antwoord staan, als korte bullets. Noem bij elk feit de bron.
+- Herhaal niets uit het eerdere antwoord en geef geen inleiding of afsluiting.
+- Kun je de vraag prima beantwoorden zonder zoeken (algemene, niet-veranderende natuurkennis), of is er niets zinnigs toe te voegen? Antwoord dan met EXACT dit ene woord en niets anders: GEEN_AANVULLING
+- Geef GEEN {"soorten":...}-regel.
+
+${GROUNDING}
+
+${kennisbankText}${correctiesText}`;
+}
+
 module.exports = async function handler(req, res) {
   setSecurityHeaders(res, req.headers.origin);
   if (req.method === 'OPTIONS') return res.status(200).end();
@@ -215,10 +234,11 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: 'Ongeldig bericht' });
   }
 
-  const messages = req.body.messages.map(m => ({
-    role: m.role === 'assistant' ? 'assistant' : 'user',
-    content: sanitizeText(m.content, 1000)
-  })).filter(m => m.content.length > 0);
+  const messages = req.body.messages.map(m => {
+    const role = m.role === 'assistant' ? 'assistant' : 'user';
+    // Gebruikersvragen kort houden; het eerdere antwoord (assistant, fase-2-context) mag langer.
+    return { role, content: sanitizeText(m.content, role === 'assistant' ? 6000 : 1000) };
+  }).filter(m => m.content.length > 0);
 
   if (messages.length === 0) {
     return res.status(400).json({ error: 'Bericht is leeg' });
@@ -232,23 +252,34 @@ module.exports = async function handler(req, res) {
     const kennisbankText = renderKennisbank(overrides);
     const correctiesText = renderCorrecties(corrections);
     const mode = req.body.mode || 'normaal';
-    const sys = mode === 'storytelling'
-      ? getSystemStorytelling(kennisbankText, correctiesText)
-      : getSystemNormaal(kennisbankText, correctiesText);
+    const phase = req.body.phase === 2 ? 2 : 1;
+
+    let sys, maxUses, maxTokens;
+    if (phase === 2) {
+      sys = getSystemAanvulling(kennisbankText, correctiesText);
+      maxUses = 2;
+      maxTokens = 1500;
+    } else {
+      sys = mode === 'storytelling'
+        ? getSystemStorytelling(kennisbankText, correctiesText)
+        : getSystemNormaal(kennisbankText, correctiesText);
+      maxUses = 1;
+      maxTokens = 3000;
+    }
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
-        max_tokens: 3000,
+        max_tokens: maxTokens,
         system: sys,
         messages: messages,
         stream: true,
         tools: [{
           type: 'web_search_20250305',
           name: 'web_search',
-          max_uses: 1,
+          max_uses: maxUses,
           user_location: { type: 'approximate', country: 'NL', timezone: 'Europe/Amsterdam' }
         }]
       }),
