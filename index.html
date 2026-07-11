@@ -149,6 +149,12 @@
   .ldr-bar { height:5px; border-radius:3px; background:var(--gl); overflow:hidden; position:relative; }
   .ldr-fill { position:absolute; top:0; left:0; height:100%; width:40%; border-radius:3px; background:linear-gradient(90deg,var(--g) 0%,var(--lime) 100%); animation:slide 1.4s var(--ease) infinite; }
   @keyframes slide { 0%{left:-40%} 60%{left:100%} 100%{left:100%} }
+  /* Fase 2: aanvulling op de achtergrond */
+  .aanvul-indicator { display:flex; align-items:center; gap:7px; margin-top:12px; padding-top:10px; border-top:1px dashed var(--b); font-size:0.8rem; color:var(--tl); font-style:italic; }
+  .aanvul-dot { width:8px; height:8px; border-radius:50%; background:var(--g); flex-shrink:0; animation:pulse 1.1s infinite; }
+  .aanvul-ok { margin-top:12px; padding-top:10px; border-top:1px dashed var(--b); font-size:0.8rem; color:var(--g); transition:opacity 0.6s ease; }
+  .aanvul-blok { margin-top:12px; padding-top:12px; border-top:2px solid var(--gl); animation:up 0.4s var(--ease); }
+  .aanvul-kop { font-size:0.82rem; font-weight:700; color:var(--g-dark); margin-bottom:6px; }
   .inp-area { border-top:1px solid var(--b); background:rgba(255,255,255,0.92); backdrop-filter:blur(8px); padding:12px 14px calc(12px + env(safe-area-inset-bottom)); flex-shrink:0; }
   .inp-row { display:flex; gap:8px; align-items:flex-end; }
   #txt { flex:1; background:var(--gp); border:1.5px solid var(--b); border-radius:14px; padding:10px 14px; color:var(--t); font-family:'Source Sans 3',sans-serif; font-size:clamp(0.82rem,2vw,1rem); resize:none; outline:none; min-height:42px; max-height:96px; line-height:1.5; transition:border-color 0.2s, background 0.2s, box-shadow 0.2s; }
@@ -177,7 +183,7 @@
     </div>
     <div class="hdr-right">
       <span class="hdr-season" id="season"></span>
-      <span class="hdr-ver">v69</span>
+      <span class="hdr-ver">v70</span>
       <div class="story-toggle" id="storyToggle" onclick="toggleStorytelling()">
         <span class="st-label">Verhaal</span>
         <div class="st-switch"></div>
@@ -1015,6 +1021,8 @@ function addBot(text) {
   setTimeout(function() {
     w.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, 100);
+  // Bubbel + scrollknop teruggeven zodat fase 2 een aanvulling kan invoegen
+  return { bub: b, scrollBtn: scrollBtn };
 }
 // Loader met voortgangsbalk en roterende statustekst
 var ldrTimer = null;
@@ -1135,71 +1143,39 @@ function loadPhotos(soorten, container) {
   });
 }
 
-function ask(q) {
-  document.getElementById('btn').disabled = true;
-  addUser(q);
-  showTyping();
-
-  // Bouw progressive bot bubble alvast op
-  var streamBubble = null;
-  var streamText = '';
-  var bronnen = [];
-  var bronUrls = {};
-
-  fetch('/api/chat?' + Date.now(), {
+// Eén chat-call streamen. onDelta(streamText) wordt aangeroepen bij elke tekst,
+// onSearch() wanneer het model gaat zoeken. Geeft { rawText, bronnen } terug.
+function runChat(payload, onDelta, onSearch) {
+  return fetch('/api/chat?' + Date.now(), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ messages: [{ role: 'user', content: q }], mode: storyMode ? 'storytelling' : 'normaal' })
+    body: JSON.stringify(payload)
   })
   .then(function(res) {
     if (!res.ok) {
       return res.json().then(function(d) { throw new Error(d.error || 'Server fout'); });
     }
+    var rawText = '';
+    var bronnen = [];
+    var bronUrls = {};
     if (!res.body || !res.body.getReader) {
       // Fallback voor oude browsers
       return res.json().then(function(data) {
-        hideTyping();
-        var raw = '';
         for (var i = 0; i < data.content.length; i++) {
-          if (data.content[i].type === 'text') raw += data.content[i].text;
+          if (data.content[i].type === 'text') rawText += data.content[i].text;
         }
-        addBot(raw);
+        return { rawText: rawText, bronnen: bronnen };
       });
     }
-
     var reader = res.body.getReader();
     var decoder = new TextDecoder();
     var buffer = '';
-
     function read() {
       return reader.read().then(function(result) {
-        if (result.done) {
-          // Klaar - finaliseer bubble met juiste rendering
-          if (streamBubble && streamText) {
-            // Bronnen uit websearch onder het antwoord tonen (voor de soorten-JSON-regel)
-            if (bronnen.length > 0) {
-              var bronBlok = '\n\n## Bronnen\n' + bronnen.map(function(b) {
-                return '- [' + (b.title || b.url) + '](' + b.url + ')';
-              }).join('\n');
-              var m = streamText.match(/\{\s*"soorten"[\s\S]*\}\s*$/);
-              if (m) {
-                streamText = streamText.slice(0, m.index) + bronBlok + '\n\n' + m[0];
-              } else {
-                streamText += bronBlok;
-              }
-            }
-            // Vervang ruwe tekst met volledig gerenderd antwoord
-            streamBubble.parentNode.removeChild(streamBubble);
-            addBot(streamText);
-          }
-          return;
-        }
+        if (result.done) return { rawText: rawText, bronnen: bronnen };
         buffer += decoder.decode(result.value, { stream: true });
-
-        // Verwerk SSE regels
         var lines = buffer.split('\n');
         buffer = lines.pop();
-
         lines.forEach(function(line) {
           if (!line.startsWith('data: ')) return;
           var data = line.slice(6).trim();
@@ -1207,15 +1183,10 @@ function ask(q) {
           try {
             var evt = JSON.parse(data);
             if (evt.type === 'content_block_delta' && evt.delta && evt.delta.text) {
-              streamText += evt.delta.text;
-              if (!streamBubble) {
-                hideTyping();
-                streamBubble = createStreamBubble();
-              }
-              updateStreamBubble(streamBubble, streamText);
+              rawText += evt.delta.text;
+              if (onDelta) onDelta(rawText);
             } else if (evt.type === 'content_block_start' && evt.content_block && evt.content_block.type === 'server_tool_use') {
-              // Model zoekt actuele informatie op het web — toon dat in de loader
-              if (!streamBubble) setLoaderStatus('🔎 Zoekt actuele informatie…');
+              if (onSearch) onSearch();
             } else if (evt.type === 'content_block_delta' && evt.delta && evt.delta.type === 'citations_delta' && evt.delta.citation && evt.delta.citation.url) {
               var c = evt.delta.citation;
               if (!bronUrls[c.url]) {
@@ -1225,14 +1196,49 @@ function ask(q) {
             }
           } catch(e) {}
         });
-
         return read();
       });
     }
     return read();
-  })
-  .then(function() {
+  });
+}
+
+// Bronnenlijst als markdown, ingevoegd vóór de soorten-JSON-regel
+function metBronnen(text, bronnen) {
+  if (!bronnen || bronnen.length === 0) return text;
+  var bronBlok = '\n\n## Bronnen\n' + bronnen.map(function(b) {
+    return '- [' + (b.title || b.url) + '](' + b.url + ')';
+  }).join('\n');
+  var m = text.match(/\{\s*"soorten"[\s\S]*\}\s*$/);
+  if (m) return text.slice(0, m.index) + bronBlok + '\n\n' + m[0];
+  return text + bronBlok;
+}
+
+function ask(q) {
+  document.getElementById('btn').disabled = true;
+  addUser(q);
+  showTyping();
+
+  var mode = storyMode ? 'storytelling' : 'normaal';
+  var streamBubble = null;
+
+  // FASE 1 — snel antwoord (max 1 zoekactie)
+  runChat(
+    { messages: [{ role: 'user', content: q }], mode: mode, phase: 1 },
+    function(rawText) {
+      if (!streamBubble) { hideTyping(); streamBubble = createStreamBubble(); }
+      updateStreamBubble(streamBubble, rawText);
+    },
+    function() { if (!streamBubble) setLoaderStatus('🔎 Zoekt actuele informatie…'); }
+  )
+  .then(function(r1) {
     document.getElementById('btn').disabled = false;
+    if (streamBubble) { streamBubble.parentNode.removeChild(streamBubble); streamBubble = null; }
+    var fase1Tekst = r1.rawText || '';
+    if (!fase1Tekst.trim()) { hideTyping(); return; }
+    var rendered = addBot(metBronnen(fase1Tekst, r1.bronnen));
+    // FASE 2 — aanvulling op de achtergrond (max 2 zoekacties)
+    startAanvulling(q, mode, fase1Tekst, rendered);
   })
   .catch(function(e) {
     hideTyping();
@@ -1243,6 +1249,48 @@ function ask(q) {
       showErr('Verbindingsfout: ' + e.message);
     }
     document.getElementById('btn').disabled = false;
+  });
+}
+
+// Fase 2: zoekt op de achtergrond en vult het antwoord aan
+function startAanvulling(q, mode, fase1Tekst, rendered) {
+  if (!rendered || !rendered.bub) return;
+  // Indicator onder het antwoord
+  var ind = document.createElement('div');
+  ind.className = 'aanvul-indicator';
+  ind.innerHTML = '<span class="aanvul-dot"></span> Aanvullen met extra bronnen…';
+  rendered.bub.insertBefore(ind, rendered.scrollBtn);
+
+  runChat({
+    messages: [
+      { role: 'user', content: q },
+      { role: 'assistant', content: fase1Tekst },
+      { role: 'user', content: 'Vul dit antwoord aan volgens je instructies.' }
+    ],
+    mode: mode,
+    phase: 2
+  })
+  .then(function(r2) {
+    var tekst = (r2.rawText || '').trim();
+    if (ind.parentNode) ind.parentNode.removeChild(ind);
+    if (!tekst || /^GEEN_AANVULLING\b/i.test(tekst)) {
+      // Niets toe te voegen — kort bevestigen en laten vervagen
+      var ok = document.createElement('div');
+      ok.className = 'aanvul-ok';
+      ok.textContent = '✓ Antwoord is actueel — geen aanvullingen';
+      rendered.bub.insertBefore(ok, rendered.scrollBtn);
+      setTimeout(function() { ok.style.opacity = '0'; }, 3500);
+      setTimeout(function() { if (ok.parentNode) ok.parentNode.removeChild(ok); }, 4200);
+      return;
+    }
+    var blok = document.createElement('div');
+    blok.className = 'aanvul-blok';
+    blok.innerHTML = '<div class="aanvul-kop">🔎 Aanvulling met actuele info</div>' + render(metBronnen(tekst, r2.bronnen));
+    rendered.bub.insertBefore(blok, rendered.scrollBtn);
+  })
+  .catch(function() {
+    // Fase 2 mislukt: eerste antwoord blijft gewoon staan
+    if (ind.parentNode) ind.parentNode.removeChild(ind);
   });
 }
 
