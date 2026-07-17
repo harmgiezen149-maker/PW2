@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="mono_background">#FFFFFF</color>
+    <color name="mono_surface">#F4F4F4</color>
+    <color name="mono_text_primary">#111111</color>
+    <color name="mono_text_secondary">#666666</color>
+    <color name="mono_accent">#111111</color>
+    <color name="oled_black">#000000</color>
+</resources>

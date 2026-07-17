@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="mono_background">#121212</color>
+    <color name="mono_surface">#1C1C1C</color>
+    <color name="mono_text_primary">#EEEEEE</color>
+    <color name="mono_text_secondary">#999999</color>
+    <color name="mono_accent">#EEEEEE</color>
+</resources>

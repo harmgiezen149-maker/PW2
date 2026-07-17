@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.MiniLauncher" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/mono_accent</item>
+        <item name="colorPrimaryVariant">@color/mono_accent</item>
+        <item name="colorOnPrimary">@color/mono_background</item>
+        <item name="colorSecondary">@color/mono_accent</item>
+        <item name="colorSecondaryVariant">@color/mono_accent</item>
+        <item name="colorOnSecondary">@color/mono_background</item>
+        <item name="colorSurface">@color/mono_surface</item>
+        <item name="android:colorBackground">@color/mono_background</item>
+        <item name="android:windowBackground">@color/mono_background</item>
+        <item name="android:textColorPrimary">@color/mono_text_primary</item>
+        <item name="android:textColorSecondary">@color/mono_text_secondary</item>
+        <item name="android:statusBarColor">@color/mono_background</item>
+        <item name="android:navigationBarColor">@color/mono_background</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+</resources>
