@@ -49,6 +49,39 @@ class SettingsActivity : BaseActivity() {
                 selected = prefs.blockedApps,
             ) { prefs.blockedApps = it; render() }
         }
+        row(container, getString(R.string.settings_mindful_apps), prefs.mindfulApps.size.toString()) {
+            showAppMultiPicker(
+                title = getString(R.string.settings_mindful_apps),
+                selected = prefs.mindfulApps,
+            ) { prefs.mindfulApps = it; render() }
+        }
+        val sessionActive = prefs.focusSessionUntil > System.currentTimeMillis()
+        row(
+            container,
+            getString(R.string.settings_focus_session),
+            if (sessionActive) {
+                val minutes = ((prefs.focusSessionUntil - System.currentTimeMillis() + 59_999) / 60_000L).toInt()
+                getString(R.string.focus_session_remaining, minutes)
+            } else {
+                getString(R.string.state_off)
+            },
+        ) {
+            if (sessionActive) {
+                AlertDialog.Builder(this)
+                    .setTitle(R.string.focus_session_cancel_title)
+                    .setPositiveButton(android.R.string.ok) { _, _ ->
+                        prefs.focusSessionUntil = 0L
+                        render()
+                    }
+                    .setNegativeButton(android.R.string.cancel, null)
+                    .show()
+            } else {
+                showFocusSessionPicker()
+            }
+        }
+        row(container, getString(R.string.settings_blocked_sites), prefs.blockedSites.size.toString()) {
+            showBlockedSites()
+        }
         row(container, getString(R.string.settings_schedules), prefs.schedules.size.toString()) {
             startActivity(Intent(this, ScheduleEditorActivity::class.java))
         }
@@ -86,6 +119,14 @@ class SettingsActivity : BaseActivity() {
         row(container, getString(R.string.settings_theme), themeLabel()) { showThemePicker() }
         row(
             container,
+            getString(R.string.settings_text_color),
+            if (prefs.crtGreen) getString(R.string.text_green) else getString(R.string.text_white),
+        ) {
+            prefs.crtGreen = !prefs.crtGreen
+            recreate()
+        }
+        row(
+            container,
             getString(R.string.settings_font_size),
             if (prefs.largeFont) getString(R.string.font_large) else getString(R.string.font_normal),
         ) {
@@ -120,25 +161,78 @@ class SettingsActivity : BaseActivity() {
 
     private fun themeLabel(): String = when (prefs.theme) {
         Prefs.THEME_LIGHT -> getString(R.string.theme_light)
-        Prefs.THEME_OLED -> getString(R.string.theme_oled)
-        else -> getString(R.string.theme_dark)
+        else -> getString(R.string.theme_black)
     }
 
     private fun showThemePicker() {
-        val values = arrayOf(Prefs.THEME_LIGHT, Prefs.THEME_DARK, Prefs.THEME_OLED)
-        val labels = arrayOf(
-            getString(R.string.theme_light),
-            getString(R.string.theme_dark),
-            getString(R.string.theme_oled),
-        )
+        // Legacy "dark"/"oled" values both mean Black (pure #000000)
+        val values = arrayOf(Prefs.THEME_LIGHT, Prefs.THEME_OLED)
+        val labels = arrayOf(getString(R.string.theme_light), getString(R.string.theme_black))
+        val checked = if (prefs.theme == Prefs.THEME_LIGHT) 0 else 1
         AlertDialog.Builder(this)
             .setTitle(R.string.settings_theme)
-            .setSingleChoiceItems(labels, values.indexOf(prefs.theme)) { dialog, which ->
+            .setSingleChoiceItems(labels, checked) { dialog, which ->
                 prefs.theme = values[which]
                 App.applyNightMode(prefs.theme)
                 dialog.dismiss()
                 recreate()
             }
+            .show()
+    }
+
+    private fun showFocusSessionPicker() {
+        val values = intArrayOf(15, 25, 45, 60)
+        val labels = values.map { getString(R.string.settings_nudge_value, it) }.toTypedArray()
+        AlertDialog.Builder(this)
+            .setTitle(R.string.settings_focus_session)
+            .setItems(labels) { _, which ->
+                prefs.focusSessionUntil = System.currentTimeMillis() + values[which] * 60_000L
+                render()
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun showBlockedSites() {
+        val sites = prefs.blockedSites.sorted()
+        val builder = AlertDialog.Builder(this)
+            .setTitle(R.string.settings_blocked_sites)
+            .setNeutralButton(R.string.blocked_sites_add) { _, _ -> showAddSite() }
+            .setPositiveButton(android.R.string.ok, null)
+        if (sites.isEmpty()) {
+            builder.setMessage(R.string.blocked_sites_empty)
+        } else {
+            builder.setItems(
+                sites.map { getString(R.string.blocked_sites_row, it) }.toTypedArray()
+            ) { _, which ->
+                prefs.blockedSites = prefs.blockedSites - sites[which]
+                render()
+            }
+        }
+        builder.show()
+    }
+
+    private fun showAddSite() {
+        val input = android.widget.EditText(this).apply {
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or
+                android.text.InputType.TYPE_TEXT_VARIATION_URI
+            hint = getString(R.string.blocked_sites_hint)
+        }
+        AlertDialog.Builder(this)
+            .setTitle(R.string.blocked_sites_add)
+            .setView(input)
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                val host = io.github.minilauncher.blocking.WebsiteMatcher.normalizeHost(input.text.toString())
+                if (host == null) {
+                    android.widget.Toast.makeText(
+                        this, R.string.blocked_sites_invalid, android.widget.Toast.LENGTH_SHORT
+                    ).show()
+                } else {
+                    prefs.blockedSites = prefs.blockedSites + host
+                }
+                render()
+            }
+            .setNegativeButton(android.R.string.cancel, null)
             .show()
     }
 

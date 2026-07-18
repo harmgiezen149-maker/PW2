@@ -6,4 +6,6 @@
     <color name="mono_text_secondary">#666666</color>
     <color name="mono_accent">#111111</color>
     <color name="oled_black">#000000</color>
+    <color name="crt_green">#33FF33</color>
+    <color name="crt_green_dim">#1E9E1E</color>
 </resources>

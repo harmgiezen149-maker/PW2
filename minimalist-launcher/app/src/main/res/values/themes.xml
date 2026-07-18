@@ -19,11 +19,14 @@
         <item name="android:windowLightStatusBar">true</item>
     </style>
 
-    <style name="Theme.MiniLauncher.Oled">
-        <item name="android:colorBackground">@color/oled_black</item>
-        <item name="android:windowBackground">@color/oled_black</item>
-        <item name="colorSurface">@color/oled_black</item>
-        <item name="android:statusBarColor">@color/oled_black</item>
-        <item name="android:navigationBarColor">@color/oled_black</item>
+    <!-- CRT text style: phosphor green on the (pure black) background -->
+    <style name="ThemeOverlay.MiniLauncher.Crt" parent="">
+        <item name="android:textColorPrimary">@color/crt_green</item>
+        <item name="android:textColorSecondary">@color/crt_green_dim</item>
+        <item name="android:textColorHint">@color/crt_green_dim</item>
+        <item name="colorPrimary">@color/crt_green</item>
+        <item name="colorPrimaryVariant">@color/crt_green</item>
+        <item name="colorSecondary">@color/crt_green</item>
+        <item name="colorAccent">@color/crt_green</item>
     </style>
 </resources>

@@ -3,7 +3,7 @@
     <string name="app_name">Minimalist Launcher</string>
 
     <string name="accessibility_service_label">Minimalist Launcher app blocker</string>
-    <string name="accessibility_service_description">Detects when a blocked or over-limit app is opened so the launcher can show the focus screen instead. Used only for in-app reminders and blocking. No personal information from accessibility events is collected or stored.</string>
+    <string name="accessibility_service_description">Detects when a blocked or over-limit app is opened so the launcher can show the focus screen instead. When website blocking is enabled, the service also reads the address bar of supported browsers to compare the current site against your block list. All checks happen on this device only; nothing is collected, stored or transmitted.</string>
     <string name="notification_filter_label">Minimalist Launcher notification filter</string>
 
     <string name="nudge_channel_name">Time reminders</string>
@@ -48,6 +48,43 @@
     <string name="blocked_usage_today">Used %d minutes today.</string>
     <string name="blocked_back">Back to focus</string>
     <string name="blocked_five_more">Allow 5 more minutes</string>
+    <string name="blocked_reason_mindful">Take a mindful pause before using this app.</string>
+    <string name="blocked_reason_website">This website is on your block list.</string>
+
+    <!-- Mindful pause -->
+    <string name="action_mindful_on">Enable mindful pause</string>
+    <string name="action_mindful_off">Disable mindful pause</string>
+    <string name="settings_mindful_apps">Mindful apps</string>
+    <string name="pause_hint">Take a breath</string>
+    <string name="pause_question">How long do you want to use it?</string>
+    <string name="pause_minutes">%d min</string>
+    <string name="pause_never_mind">Never mind, stay focused</string>
+
+    <!-- Home polish -->
+    <string name="home_battery">%d%%</string>
+    <string name="shortcut_dialer">Phone (dialer)</string>
+    <string name="shortcut_dialer_label">Phone</string>
+    <string name="shortcut_pick_title">Choose shortcut app</string>
+
+    <!-- Focus session -->
+    <string name="settings_focus_session">Focus session</string>
+    <string name="focus_session_remaining">%d min left</string>
+    <string name="focus_session_cancel_title">End focus session?</string>
+    <string name="home_focus_countdown">Focus · %d min left</string>
+
+    <!-- Website blocker -->
+    <string name="settings_blocked_sites">Blocked websites</string>
+    <string name="blocked_sites_add">Add website</string>
+    <string name="blocked_sites_hint">e.g. youtube.com</string>
+    <string name="blocked_sites_invalid">Not a valid site</string>
+    <string name="blocked_sites_empty">No blocked websites yet. Blocking works in common browsers while the blocker service is on.</string>
+    <string name="blocked_sites_row">%s (tap to remove)</string>
+
+    <!-- CRT theme -->
+    <string name="settings_text_color">Text color</string>
+    <string name="text_white">White</string>
+    <string name="text_green">Green (CRT)</string>
+    <string name="theme_black">Black</string>
 
     <!-- Stats -->
     <string name="stats_title">Screen time today</string>
@@ -82,8 +119,6 @@
     <string name="state_on">On</string>
     <string name="state_off">Off</string>
     <string name="theme_light">Light</string>
-    <string name="theme_dark">Dark</string>
-    <string name="theme_oled">OLED black</string>
     <string name="font_normal">Normal</string>
     <string name="font_large">Large</string>
     <string name="grayscale_adb_hint">Turning the whole screen grayscale needs a one-time permission that can only be granted over USB debugging:\n\nadb shell pm grant %s android.permission.WRITE_SECURE_SETTINGS\n\nAfter that, this toggle switches the system monochrome filter on and off.</string>
@@ -115,7 +150,7 @@
     <string name="onboarding_usage_title">Usage access</string>
     <string name="onboarding_usage_desc">Needed for the screen-time dashboard and daily app limits.</string>
     <string name="onboarding_accessibility_title">App blocker service</string>
-    <string name="onboarding_accessibility_desc">Detects when a blocked app opens so the focus screen can step in. Used only for blocking and reminders; no content is read or collected.</string>
+    <string name="onboarding_accessibility_desc">Detects when a blocked app opens so the focus screen can step in, and reads the browser address bar for website blocking. Everything stays on this device; nothing is collected or sent anywhere.</string>
     <string name="onboarding_notif_listener_title">Notification access</string>
     <string name="onboarding_notif_listener_desc">Needed to filter notifications from apps you mute.</string>
     <string name="onboarding_post_notif_title">Reminder notifications</string>

@@ -1,17 +1,27 @@
 package io.github.minilauncher.ui.home
 
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
+import android.os.BatteryManager
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.view.GestureDetector
+import android.view.MotionEvent
 import android.view.View
 import android.widget.TextView
+import androidx.appcompat.app.AlertDialog
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import io.github.minilauncher.R
+import io.github.minilauncher.blocking.AppBlockerAccessibilityService
 import io.github.minilauncher.blocking.BlockState
 import io.github.minilauncher.data.AppRepository
 import io.github.minilauncher.data.Prefs
 import io.github.minilauncher.data.model.AppEntry
-import io.github.minilauncher.ui.blocked.BlockedActivity
 import io.github.minilauncher.ui.common.AppLauncher
 import io.github.minilauncher.ui.common.AppLongPressDialog
 import io.github.minilauncher.ui.common.BaseActivity
@@ -20,13 +30,34 @@ import io.github.minilauncher.ui.common.TextListAdapter
 import io.github.minilauncher.ui.drawer.AppDrawerActivity
 import io.github.minilauncher.ui.onboarding.OnboardingActivity
 import io.github.minilauncher.ui.settings.SettingsActivity
+import kotlin.math.abs
 
 class HomeActivity : BaseActivity() {
 
     private lateinit var repo: AppRepository
     private lateinit var prefs: Prefs
     private lateinit var adapter: TextListAdapter
+    private lateinit var gestureDetector: GestureDetector
     private var favorites: List<AppEntry> = emptyList()
+
+    private val handler = Handler(Looper.getMainLooper())
+    private val countdownTick = object : Runnable {
+        override fun run() {
+            updateFocusCountdown()
+            handler.postDelayed(this, 30_000L)
+        }
+    }
+
+    private val batteryReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            val level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
+            val scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, 100)
+            if (level >= 0 && scale > 0) {
+                findViewById<TextView>(R.id.battery).text =
+                    getString(R.string.home_battery, level * 100 / scale)
+            }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -47,19 +78,59 @@ class HomeActivity : BaseActivity() {
             adapter = this@HomeActivity.adapter
         }
 
-        findViewById<TextView>(R.id.allAppsButton).setOnClickListener {
-            startActivity(Intent(this, AppDrawerActivity::class.java))
-        }
+        findViewById<TextView>(R.id.allAppsButton).setOnClickListener { openDrawer() }
         findViewById<TextView>(R.id.settingsButton).setOnClickListener {
             startActivity(Intent(this, SettingsActivity::class.java))
         }
         findViewById<TextView>(R.id.blockerWarning).setOnClickListener {
             startActivity(Intent(this, OnboardingActivity::class.java))
         }
+        findViewById<TextView>(R.id.focusSessionCountdown).setOnClickListener {
+            AlertDialog.Builder(this)
+                .setTitle(R.string.focus_session_cancel_title)
+                .setPositiveButton(android.R.string.ok) { _, _ ->
+                    prefs.focusSessionUntil = 0L
+                    updateFocusCountdown()
+                }
+                .setNegativeButton(android.R.string.cancel, null)
+                .show()
+        }
+
+        setUpShortcut(R.id.shortcutLeft, isLeft = true)
+        setUpShortcut(R.id.shortcutRight, isLeft = false)
+
+        gestureDetector = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
+            override fun onFling(
+                e1: MotionEvent?,
+                e2: MotionEvent,
+                velocityX: Float,
+                velocityY: Float,
+            ): Boolean {
+                if (e1 == null) return false
+                val dy = e2.y - e1.y
+                val dx = e2.x - e1.x
+                val minDistance = 100 * resources.displayMetrics.density
+                if (abs(dy) < abs(dx) || abs(dy) < minDistance || abs(velocityY) < 1500) return false
+                if (dy < 0) {
+                    // Only treat as "open drawer" when the list has no more to scroll
+                    if (!findViewById<RecyclerView>(R.id.favoritesList).canScrollVertically(1)) {
+                        openDrawer()
+                    }
+                } else {
+                    AppBlockerAccessibilityService.openNotificationShade()
+                }
+                return true
+            }
+        })
 
         if (!prefs.onboardingDone) {
             startActivity(Intent(this, OnboardingActivity::class.java))
         }
+    }
+
+    override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
+        gestureDetector.onTouchEvent(ev)
+        return super.dispatchTouchEvent(ev)
     }
 
     override fun onResume() {
@@ -67,9 +138,72 @@ class HomeActivity : BaseActivity() {
         // Fallback path: the accessibility service forced us home because a
         // blocked app opened, but could not start the block screen itself.
         BlockState.consumePendingBlock()?.let { info ->
-            startActivity(BlockedActivity.intent(this, info, repo.labelFor(info.packageName)))
+            startActivity(AppLauncher.blockIntent(this, info, repo.labelFor(info.packageName)))
         }
+        ContextCompat.registerReceiver(
+            this,
+            batteryReceiver,
+            IntentFilter(Intent.ACTION_BATTERY_CHANGED),
+            ContextCompat.RECEIVER_NOT_EXPORTED,
+        )
+        handler.post(countdownTick)
         refresh()
+    }
+
+    override fun onPause() {
+        runCatching { unregisterReceiver(batteryReceiver) }
+        handler.removeCallbacks(countdownTick)
+        super.onPause()
+    }
+
+    private fun openDrawer() {
+        startActivity(Intent(this, AppDrawerActivity::class.java))
+    }
+
+    private fun setUpShortcut(viewId: Int, isLeft: Boolean) {
+        val view = findViewById<TextView>(viewId)
+        view.setOnClickListener {
+            when (val target = if (isLeft) prefs.shortcutLeft else prefs.shortcutRight) {
+                Prefs.SHORTCUT_DIALER -> runCatching { startActivity(Intent(Intent.ACTION_DIAL)) }
+                else -> AppLauncher.launch(this, target)
+            }
+        }
+        view.setOnLongClickListener {
+            showShortcutPicker(isLeft)
+            true
+        }
+    }
+
+    private fun showShortcutPicker(isLeft: Boolean) {
+        val apps = repo.allApps(includeHidden = true)
+        val labels = mutableListOf(getString(R.string.shortcut_dialer))
+        labels += apps.map { it.displayLabel }
+        AlertDialog.Builder(this)
+            .setTitle(R.string.shortcut_pick_title)
+            .setItems(labels.toTypedArray()) { _, which ->
+                val value = if (which == 0) Prefs.SHORTCUT_DIALER else apps[which - 1].packageName
+                if (isLeft) prefs.shortcutLeft = value else prefs.shortcutRight = value
+                refresh()
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun shortcutLabel(target: String): String =
+        if (target == Prefs.SHORTCUT_DIALER) getString(R.string.shortcut_dialer_label)
+        else repo.labelFor(target)
+
+    private fun updateFocusCountdown() {
+        val view = findViewById<TextView>(R.id.focusSessionCountdown)
+        val until = prefs.focusSessionUntil
+        val now = System.currentTimeMillis()
+        if (until > now) {
+            val minutes = ((until - now + 59_999) / 60_000L).toInt()
+            view.text = getString(R.string.home_focus_countdown, minutes)
+            view.visibility = View.VISIBLE
+        } else {
+            view.visibility = View.GONE
+        }
     }
 
     private fun refresh() {
@@ -79,6 +213,9 @@ class HomeActivity : BaseActivity() {
             if (favorites.isEmpty()) View.VISIBLE else View.GONE
         findViewById<TextView>(R.id.blockerWarning).visibility =
             if (PermissionChecks.blockerConfiguredButDisabled(this)) View.VISIBLE else View.GONE
+        findViewById<TextView>(R.id.shortcutLeft).text = shortcutLabel(prefs.shortcutLeft)
+        findViewById<TextView>(R.id.shortcutRight).text = shortcutLabel(prefs.shortcutRight)
+        updateFocusCountdown()
     }
 
     @Deprecated("Deprecated in Java")

@@ -27,17 +27,21 @@ class BlockedActivity : BaseActivity() {
         val detail = intent.getStringExtra(EXTRA_DETAIL).orEmpty()
         val prefs = Prefs.get(this)
 
-        findViewById<TextView>(R.id.blockedAppName).text = label
+        findViewById<TextView>(R.id.blockedAppName).text =
+            if (reason == BlockReason.WEBSITE) detail else label
         findViewById<TextView>(R.id.blockedReason).text = when (reason) {
             BlockReason.FOCUS_MODE -> getString(R.string.blocked_reason_focus)
             BlockReason.SCHEDULE ->
                 if (detail.isNotEmpty()) getString(R.string.blocked_reason_schedule, detail)
                 else getString(R.string.blocked_reason_schedule_generic)
             BlockReason.LIMIT -> getString(R.string.blocked_reason_limit, detail)
+            // MINDFUL normally routes to PauseActivity; defensive fallback text
+            BlockReason.MINDFUL -> getString(R.string.blocked_reason_mindful)
+            BlockReason.WEBSITE -> getString(R.string.blocked_reason_website)
         }
 
         val usageView = findViewById<TextView>(R.id.blockedUsage)
-        if (PermissionChecks.hasUsageAccess(this)) {
+        if (reason != BlockReason.WEBSITE && PermissionChecks.hasUsageAccess(this)) {
             val minutes = UsageRepository.get(this).todayUsageMillis(pkg) / 60_000L
             usageView.text = getString(R.string.blocked_usage_today, minutes)
         } else {
@@ -49,7 +53,13 @@ class BlockedActivity : BaseActivity() {
         val fiveMore = findViewById<TextView>(R.id.fiveMoreButton)
         if (prefs.allowFiveMoreMinutes) {
             fiveMore.setOnClickListener {
-                prefs.allowTemporarily(pkg, System.currentTimeMillis() + 5 * 60_000L)
+                if (reason == BlockReason.WEBSITE) {
+                    // Site allowances live under a "site:" key: colons are illegal
+                    // in package names, so this can never collide with app rules.
+                    prefs.allowTemporarily("site:$detail", System.currentTimeMillis() + 5 * 60_000L)
+                } else {
+                    prefs.allowTemporarily(pkg, System.currentTimeMillis() + 5 * 60_000L)
+                }
                 AppRepository(this).launch(pkg)
                 finish()
             }

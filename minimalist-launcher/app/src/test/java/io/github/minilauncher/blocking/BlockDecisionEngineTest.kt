@@ -22,7 +22,9 @@ class BlockDecisionEngineTest {
         schedules: List<Schedule> = emptyList(),
         limits: Map<String, Int> = emptyMap(),
         tempAllow: Map<String, Long> = emptyMap(),
-    ) = BlockDecisionEngine.Config(blocked, focus, schedules, limits, tempAllow)
+        mindful: Set<String> = emptySet(),
+        focusSessionUntil: Long = 0L,
+    ) = BlockDecisionEngine.Config(blocked, focus, schedules, limits, tempAllow, mindful, focusSessionUntil)
 
     private fun evaluate(
         config: BlockDecisionEngine.Config,
@@ -122,6 +124,59 @@ class BlockDecisionEngineTest {
         )
         assertEquals(Decision.Allow, decision)
         assertTrue(!consulted)
+    }
+
+    @Test
+    fun `mindful app is blocked by default with reason MINDFUL`() {
+        val decision = evaluate(config(mindful = setOf(pkg)))
+        assertTrue(decision is Decision.Block && decision.reason == BlockReason.MINDFUL)
+    }
+
+    @Test
+    fun `mindful app is allowed while a chosen duration is active`() {
+        val decision = evaluate(
+            config(mindful = setOf(pkg), tempAllow = mapOf(pkg to now + 60_000L))
+        )
+        assertEquals(Decision.Allow, decision)
+    }
+
+    @Test
+    fun `focus mode wins over mindful when app is in both sets`() {
+        val decision = evaluate(config(blocked = setOf(pkg), focus = true, mindful = setOf(pkg)))
+        assertTrue(decision is Decision.Block && decision.reason == BlockReason.FOCUS_MODE)
+    }
+
+    @Test
+    fun `limit wins over mindful so pause allowances cannot bypass the daily cap`() {
+        val decision = evaluate(
+            config(mindful = setOf(pkg), limits = mapOf(pkg to 30)),
+            usageMillis = 30 * 60_000L,
+        )
+        assertTrue(decision is Decision.Block && decision.reason == BlockReason.LIMIT)
+    }
+
+    @Test
+    fun `active focus session blocks a listed app without manual focus mode`() {
+        val decision = evaluate(
+            config(blocked = setOf(pkg), focus = false, focusSessionUntil = now + 10 * 60_000L)
+        )
+        assertTrue(decision is Decision.Block && decision.reason == BlockReason.FOCUS_MODE)
+    }
+
+    @Test
+    fun `expired focus session no longer blocks`() {
+        val decision = evaluate(
+            config(blocked = setOf(pkg), focusSessionUntil = now - 1L)
+        )
+        assertEquals(Decision.Allow, decision)
+    }
+
+    @Test
+    fun `focus session does not block apps outside the block list`() {
+        val decision = evaluate(
+            config(blocked = setOf("other.app"), focusSessionUntil = now + 10 * 60_000L)
+        )
+        assertEquals(Decision.Allow, decision)
     }
 
     @Test

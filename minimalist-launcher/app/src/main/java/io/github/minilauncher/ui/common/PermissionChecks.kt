@@ -74,7 +74,8 @@ object PermissionChecks {
     /** Whether any blocking feature is configured but the service is off. */
     fun blockerConfiguredButDisabled(context: Context): Boolean {
         val prefs = io.github.minilauncher.data.Prefs.get(context)
-        val configured = prefs.blockedApps.isNotEmpty() || prefs.limits.isNotEmpty()
+        val configured = prefs.blockedApps.isNotEmpty() || prefs.limits.isNotEmpty() ||
+            prefs.mindfulApps.isNotEmpty() || prefs.blockedSites.isNotEmpty()
         return configured && !isAccessibilityEnabled(context)
     }
 }

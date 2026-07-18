@@ -95,6 +95,21 @@ class Prefs(context: Context) {
         tempAllowUntil = tempAllowUntil + (pkg to untilMillis)
     }
 
+    /** Apps behind the mindful pause: breathing screen + chosen usage duration. */
+    var mindfulApps: Set<String>
+        get() = sp.getStringSet(KEY_MINDFUL, emptySet())!!.toSet()
+        set(value) = sp.edit().putStringSet(KEY_MINDFUL, value).apply()
+
+    /** Epoch millis until which a timed focus session runs (0 = none). */
+    var focusSessionUntil: Long
+        get() = sp.getLong(KEY_FOCUS_SESSION, 0L)
+        set(value) = sp.edit().putLong(KEY_FOCUS_SESSION, value).apply()
+
+    /** Pre-normalized hosts (see WebsiteMatcher.normalizeHost). */
+    var blockedSites: Set<String>
+        get() = sp.getStringSet(KEY_BLOCKED_SITES, emptySet())!!.toSet()
+        set(value) = sp.edit().putStringSet(KEY_BLOCKED_SITES, value).apply()
+
     var allowFiveMoreMinutes: Boolean
         get() = sp.getBoolean(KEY_ALLOW_FIVE_MORE, true)
         set(value) = sp.edit().putBoolean(KEY_ALLOW_FIVE_MORE, value).apply()
@@ -145,6 +160,20 @@ class Prefs(context: Context) {
         get() = sp.getBoolean(KEY_DRAWER_HINT, true)
         set(value) = sp.edit().putBoolean(KEY_DRAWER_HINT, value).apply()
 
+    /** CRT-style green text instead of white/black. */
+    var crtGreen: Boolean
+        get() = sp.getBoolean(KEY_CRT_GREEN, false)
+        set(value) = sp.edit().putBoolean(KEY_CRT_GREEN, value).apply()
+
+    /** Bottom-corner shortcuts: SHORTCUT_DIALER or a package name. */
+    var shortcutLeft: String
+        get() = sp.getString(KEY_SHORTCUT_LEFT, SHORTCUT_DIALER)!!
+        set(value) = sp.edit().putString(KEY_SHORTCUT_LEFT, value).apply()
+
+    var shortcutRight: String
+        get() = sp.getString(KEY_SHORTCUT_RIGHT, "com.google.android.gm")!!
+        set(value) = sp.edit().putString(KEY_SHORTCUT_RIGHT, value).apply()
+
     // ---- onboarding ----
 
     var onboardingDone: Boolean
@@ -186,6 +215,7 @@ class Prefs(context: Context) {
         const val THEME_LIGHT = "light"
         const val THEME_DARK = "dark"
         const val THEME_OLED = "oled"
+        const val SHORTCUT_DIALER = "dialer"
 
         private const val KEY_FAVORITES = "favorites"
         private const val KEY_HIDDEN = "hidden_apps"
@@ -196,6 +226,12 @@ class Prefs(context: Context) {
         private const val KEY_LIMITS = "limits"
         private const val KEY_TEMP_ALLOW = "temp_allow_until"
         private const val KEY_ALLOW_FIVE_MORE = "allow_five_more"
+        private const val KEY_MINDFUL = "mindful_apps"
+        private const val KEY_FOCUS_SESSION = "focus_session_until"
+        private const val KEY_BLOCKED_SITES = "blocked_sites"
+        private const val KEY_CRT_GREEN = "crt_green"
+        private const val KEY_SHORTCUT_LEFT = "shortcut_left"
+        private const val KEY_SHORTCUT_RIGHT = "shortcut_right"
         private const val KEY_NUDGE_INTERVAL = "nudge_interval_min"
         private const val KEY_MUTED = "muted_apps"
         private const val KEY_FILTERED_DATE = "filtered_date"

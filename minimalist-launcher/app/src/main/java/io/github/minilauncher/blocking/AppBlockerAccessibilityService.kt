@@ -6,6 +6,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import android.view.accessibility.AccessibilityEvent
 import io.github.minilauncher.R
 import io.github.minilauncher.data.AppRepository
@@ -13,7 +14,7 @@ import io.github.minilauncher.data.Prefs
 import io.github.minilauncher.data.model.BlockReason
 import io.github.minilauncher.data.model.BlockedInfo
 import io.github.minilauncher.data.model.Decision
-import io.github.minilauncher.ui.blocked.BlockedActivity
+import io.github.minilauncher.ui.common.AppLauncher
 import io.github.minilauncher.usage.UsageRepository
 import java.time.LocalDateTime
 import java.util.concurrent.Executors
@@ -38,15 +39,65 @@ class AppBlockerAccessibilityService : AccessibilityService() {
         super.onServiceConnected()
         prefs = Prefs.get(this)
         usage = UsageRepository.get(this)
+        instance = this
         scheduleSessionCheck()
     }
 
+    override fun onUnbind(intent: android.content.Intent?): Boolean {
+        instance = null
+        return super.onUnbind(intent)
+    }
+
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
-        if (event.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
         val pkg = event.packageName?.toString() ?: return
         if (pkg == packageName || pkg in IGNORED_PACKAGES) return
 
-        executor.execute { handleForeground(pkg) }
+        when (event.eventType) {
+            AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
+                executor.execute { handleForeground(pkg) }
+                maybeCheckUrl(pkg) // catches tab switches too
+            }
+            AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED -> maybeCheckUrl(pkg)
+            else -> return
+        }
+    }
+
+    // ---- website blocker ----
+
+    private var lastUrlCheckMillis = 0L
+    private var lastSiteBlockMillis = 0L
+
+    /**
+     * Reads the browser's address bar and blocks matching sites. Must run on
+     * the service main thread: accessibility nodes go stale across threads.
+     */
+    private fun maybeCheckUrl(pkg: String) {
+        val viewId = BROWSER_URL_BARS[pkg] ?: return
+        val now = SystemClock.uptimeMillis()
+        if (now - lastUrlCheckMillis < 500) return
+        lastUrlCheckMillis = now
+        val sites = prefs.blockedSites
+        if (sites.isEmpty()) return
+        val root = rootInActiveWindow ?: return
+        val text = runCatching {
+            root.findAccessibilityNodeInfosByViewId(viewId)?.firstOrNull()?.text?.toString()
+        }.getOrNull() ?: return
+        val matched = WebsiteMatcher.matchesBlockedSite(text, sites) ?: return
+        if ((prefs.tempAllowUntil["site:$matched"] ?: 0L) > System.currentTimeMillis()) return
+        handleBlockedSite(pkg, matched)
+    }
+
+    private fun handleBlockedSite(pkg: String, site: String) {
+        // Cooldown: BACK itself triggers a burst of content events
+        if (SystemClock.uptimeMillis() - lastSiteBlockMillis < 2000) return
+        lastSiteBlockMillis = SystemClock.uptimeMillis()
+        val info = BlockedInfo(pkg, BlockReason.WEBSITE, site)
+        BlockState.pendingBlock = info
+        performGlobalAction(GLOBAL_ACTION_BACK)
+        performGlobalAction(GLOBAL_ACTION_HOME)
+        runCatching {
+            startActivity(AppLauncher.blockIntent(this, info, AppRepository(this).labelFor(pkg)))
+        }
     }
 
     private fun handleForeground(pkg: String) {
@@ -59,7 +110,7 @@ class AppBlockerAccessibilityService : AccessibilityService() {
             mainHandler.post {
                 performGlobalAction(GLOBAL_ACTION_HOME)
                 runCatching {
-                    startActivity(BlockedActivity.intent(this, info, label))
+                    startActivity(AppLauncher.blockIntent(this, info, label))
                 }
             }
         } else {
@@ -72,13 +123,7 @@ class AppBlockerAccessibilityService : AccessibilityService() {
     private fun evaluate(pkg: String): Decision {
         val now = System.currentTimeMillis()
         val dateTime = LocalDateTime.now()
-        val config = BlockDecisionEngine.Config(
-            blockedApps = prefs.blockedApps,
-            focusModeEnabled = prefs.focusModeEnabled,
-            schedules = prefs.schedules,
-            limits = prefs.limits,
-            tempAllowUntil = prefs.tempAllowUntil,
-        )
+        val config = AppLauncher.configFrom(prefs)
         return BlockDecisionEngine.evaluate(
             packageName = pkg,
             config = config,
@@ -135,6 +180,7 @@ class AppBlockerAccessibilityService : AccessibilityService() {
     }
 
     override fun onDestroy() {
+        instance = null
         mainHandler.removeCallbacksAndMessages(null)
         executor.shutdown()
         super.onDestroy()
@@ -147,5 +193,27 @@ class AppBlockerAccessibilityService : AccessibilityService() {
             "com.android.systemui",
             "android",
         )
+
+        // Best-effort address-bar view IDs for common browsers; unknown
+        // browsers simply aren't URL-checked.
+        private val BROWSER_URL_BARS = mapOf(
+            "com.android.chrome" to "com.android.chrome:id/url_bar",
+            "com.chrome.beta" to "com.chrome.beta:id/url_bar",
+            "com.brave.browser" to "com.brave.browser:id/url_bar",
+            "com.microsoft.emmx" to "com.microsoft.emmx:id/url_bar",
+            "com.vivaldi.browser" to "com.vivaldi.browser:id/url_bar",
+            "com.sec.android.app.sbrowser" to "com.sec.android.app.sbrowser:id/location_bar_edit_text",
+            "org.mozilla.firefox" to "org.mozilla.firefox:id/mozac_browser_toolbar_url_view",
+            "org.mozilla.focus" to "org.mozilla.focus:id/mozac_browser_toolbar_url_view",
+            "com.duckduckgo.mobile.android" to "com.duckduckgo.mobile.android:id/omnibarTextInput",
+            "com.opera.browser" to "com.opera.browser:id/url_field",
+        )
+
+        @Volatile
+        private var instance: AppBlockerAccessibilityService? = null
+
+        /** Used by the home screen's swipe-down gesture; false when the service is off. */
+        fun openNotificationShade(): Boolean =
+            instance?.performGlobalAction(GLOBAL_ACTION_NOTIFICATIONS) ?: false
     }
 }

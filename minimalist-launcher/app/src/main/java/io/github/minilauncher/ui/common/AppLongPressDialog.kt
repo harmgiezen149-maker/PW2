@@ -38,6 +38,11 @@ object AppLongPressDialog {
         } else {
             activity.getString(R.string.action_block) to { prefs.blockedApps = prefs.blockedApps + pkg }
         }
+        options += if (pkg in prefs.mindfulApps) {
+            activity.getString(R.string.action_mindful_off) to { prefs.mindfulApps = prefs.mindfulApps - pkg }
+        } else {
+            activity.getString(R.string.action_mindful_on) to { prefs.mindfulApps = prefs.mindfulApps + pkg }
+        }
         options += (limit?.let { activity.getString(R.string.action_edit_limit, it) }
             ?: activity.getString(R.string.action_set_limit)) to { showLimit(activity, entry, onChanged) }
         options += if (isMuted) {

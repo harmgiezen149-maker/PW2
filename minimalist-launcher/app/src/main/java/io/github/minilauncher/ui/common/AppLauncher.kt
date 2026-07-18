@@ -6,7 +6,9 @@ import io.github.minilauncher.data.AppRepository
 import io.github.minilauncher.data.Prefs
 import io.github.minilauncher.data.model.BlockedInfo
 import io.github.minilauncher.data.model.Decision
+import io.github.minilauncher.data.model.BlockReason
 import io.github.minilauncher.ui.blocked.BlockedActivity
+import io.github.minilauncher.ui.pause.PauseActivity
 import io.github.minilauncher.usage.UsageRepository
 import java.time.LocalDateTime
 
@@ -17,19 +19,32 @@ import java.time.LocalDateTime
  */
 object AppLauncher {
 
+    /** Builds the engine Config from the current preferences. */
+    fun configFrom(prefs: Prefs): BlockDecisionEngine.Config = BlockDecisionEngine.Config(
+        blockedApps = prefs.blockedApps,
+        focusModeEnabled = prefs.focusModeEnabled,
+        schedules = prefs.schedules,
+        limits = prefs.limits,
+        tempAllowUntil = prefs.tempAllowUntil,
+        mindfulApps = prefs.mindfulApps,
+        focusSessionUntil = prefs.focusSessionUntil,
+    )
+
+    /** MINDFUL blocks get the pause screen; every other reason the block screen. */
+    fun blockIntent(context: Context, info: BlockedInfo, label: String) =
+        if (info.reason == BlockReason.MINDFUL) {
+            PauseActivity.intent(context, info.packageName, label)
+        } else {
+            BlockedActivity.intent(context, info, label)
+        }
+
     fun launch(context: Context, pkg: String) {
         val prefs = Prefs.get(context)
         val now = System.currentTimeMillis()
         val dateTime = LocalDateTime.now()
         val decision = BlockDecisionEngine.evaluate(
             packageName = pkg,
-            config = BlockDecisionEngine.Config(
-                blockedApps = prefs.blockedApps,
-                focusModeEnabled = prefs.focusModeEnabled,
-                schedules = prefs.schedules,
-                limits = prefs.limits,
-                tempAllowUntil = prefs.tempAllowUntil,
-            ),
+            config = configFrom(prefs),
             nowMillis = now,
             dayOfWeek = dateTime.dayOfWeek.value,
             minuteOfDay = dateTime.hour * 60 + dateTime.minute,
@@ -43,11 +58,7 @@ object AppLauncher {
         when (decision) {
             is Decision.Allow -> repo.launch(pkg)
             is Decision.Block -> context.startActivity(
-                BlockedActivity.intent(
-                    context,
-                    BlockedInfo(pkg, decision.reason, decision.detail),
-                    repo.labelFor(pkg),
-                )
+                blockIntent(context, BlockedInfo(pkg, decision.reason, decision.detail), repo.labelFor(pkg))
             )
         }
     }

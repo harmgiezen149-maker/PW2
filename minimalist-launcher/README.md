@@ -11,23 +11,33 @@ personal information from accessibility events is collected or stored.
 
 ## Features
 
-- **Minimalist launcher** — text-only favorites list with clock and date,
-  app drawer with search. No icons, no dopamine.
+- **Minimalist launcher** — text-only favorites list with clock, date and
+  battery, app drawer with search. No icons, no dopamine.
+- **Configurable corner shortcuts** — Phone bottom-left, Gmail
+  bottom-right by default; long-press either to pick any app.
+- **Gestures** — swipe up for the app drawer, swipe down for the
+  notification shade (needs the blocker service).
 - **Hide & rename apps** — long-press any app in the drawer.
+- **Mindful pause** — put apps behind a short breathing pause that asks
+  "how long do you want to use it?" (1–15 min); when the time is up the
+  pause returns.
 - **App blocker** — put distracting apps on a block list; a focus screen
   steps in when you open them.
-- **Focus mode** — one toggle to enforce the block list right now.
+- **Focus mode & focus sessions** — a permanent toggle, or a timed
+  15/25/45/60-minute session with a countdown on the home screen.
 - **Blocking schedules** — automatically block during chosen windows
   (e.g. Mon–Fri 09:00–17:00; overnight windows supported).
 - **Daily time limits** — per-app minutes budget; blocked for the rest of
   the day once reached.
+- **Website blocker** — block chosen sites (e.g. youtube.com, including
+  subdomains) in common browsers.
 - **Screen time dashboard** — today's usage per app and in total.
 - **In-app time reminders** — a gentle notification after N minutes in
   the same app.
 - **Notification filter** — mute chosen apps; filtered notifications are
   counted on the stats screen.
-- **Themes** — monochrome Light / Dark / OLED-black, plus a large-font
-  option and an optional system-wide grayscale toggle.
+- **Themes** — monochrome Light / pure-black, white or CRT-green text, a
+  large-font option and an optional system-wide grayscale toggle.
 
 ## Install on your phone
 
@@ -43,6 +53,9 @@ personal information from accessibility events is collected or stored.
 
 Updates: install a newer APK straight over the old one — all builds are
 signed with the same (throwaway, committed) key, so settings survive.
+After an update that changes the blocker service's capabilities (like the
+website blocker), toggle the service off and on once under Settings ›
+Accessibility if blocking doesn't react.
 
 To go back to your old home screen: Settings › Apps › Default apps ›
 Home app, or simply uninstall Minimalist Launcher.

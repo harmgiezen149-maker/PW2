@@ -51,7 +51,7 @@ data class Schedule(
     }
 }
 
-enum class BlockReason { FOCUS_MODE, SCHEDULE, LIMIT }
+enum class BlockReason { FOCUS_MODE, SCHEDULE, LIMIT, MINDFUL, WEBSITE }
 
 /** Why an app launch was intercepted; handed from the service to the UI. */
 data class BlockedInfo(

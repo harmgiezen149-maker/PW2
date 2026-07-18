@@ -7,7 +7,7 @@ import androidx.appcompat.app.AppCompatActivity
 import io.github.minilauncher.R
 import io.github.minilauncher.data.Prefs
 
-/** Applies the chosen theme (Light/Dark/OLED) and font scale to every screen. */
+/** Applies the chosen font scale and CRT text color to every screen. */
 abstract class BaseActivity : AppCompatActivity() {
 
     override fun attachBaseContext(newBase: Context) {
@@ -22,8 +22,8 @@ abstract class BaseActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        if (Prefs.get(this).theme == Prefs.THEME_OLED) {
-            setTheme(R.style.Theme_MiniLauncher_Oled)
+        if (Prefs.get(this).crtGreen) {
+            theme.applyStyle(R.style.ThemeOverlay_MiniLauncher_Crt, true)
         }
         super.onCreate(savedInstanceState)
     }
