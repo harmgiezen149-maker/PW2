@@ -1,6 +1,8 @@
 package io.github.minilauncher.ui.drawer
 
 import android.os.Bundle
+import android.view.GestureDetector
+import android.view.MotionEvent
 import android.widget.EditText
 import androidx.core.widget.doAfterTextChanged
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -12,11 +14,13 @@ import io.github.minilauncher.ui.common.AppLauncher
 import io.github.minilauncher.ui.common.AppLongPressDialog
 import io.github.minilauncher.ui.common.BaseActivity
 import io.github.minilauncher.ui.common.TextListAdapter
+import kotlin.math.abs
 
 class AppDrawerActivity : BaseActivity() {
 
     private lateinit var repo: AppRepository
     private lateinit var adapter: TextListAdapter
+    private lateinit var gestureDetector: GestureDetector
     private var allApps: List<AppEntry> = emptyList()
     private var shown: List<AppEntry> = emptyList()
 
@@ -43,6 +47,34 @@ class AppDrawerActivity : BaseActivity() {
             adapter = this@AppDrawerActivity.adapter
         }
         findViewById<EditText>(R.id.searchField).doAfterTextChanged { filter(it?.toString().orEmpty()) }
+
+        // Swipe down while the list is at the top closes the drawer — the
+        // mirror of the swipe-up that opened it.
+        gestureDetector = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
+            override fun onFling(
+                e1: MotionEvent?,
+                e2: MotionEvent,
+                velocityX: Float,
+                velocityY: Float,
+            ): Boolean {
+                if (e1 == null) return false
+                val dy = e2.y - e1.y
+                val dx = e2.x - e1.x
+                val minDistance = 100 * resources.displayMetrics.density
+                if (dy <= 0 || abs(dy) < abs(dx) || dy < minDistance || abs(velocityY) < 1500) {
+                    return false
+                }
+                if (!findViewById<RecyclerView>(R.id.appList).canScrollVertically(-1)) {
+                    finish()
+                }
+                return true
+            }
+        })
+    }
+
+    override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
+        gestureDetector.onTouchEvent(ev)
+        return super.dispatchTouchEvent(ev)
     }
 
     override fun onResume() {
