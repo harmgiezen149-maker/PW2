@@ -1,11 +1,13 @@
 package io.github.minilauncher.ui.common
 
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import io.github.minilauncher.R
+import io.github.minilauncher.data.Prefs
 
 /** Minimalist text-only list row used by the home screen and app drawer. */
 class TextListAdapter(
@@ -28,7 +30,13 @@ class TextListAdapter(
     }
 
     override fun onBindViewHolder(holder: Holder, position: Int) {
-        (holder.itemView as TextView).text = items[position]
+        val view = holder.itemView as TextView
+        view.text = items[position]
+        view.gravity = when (Prefs.get(view.context).alignment) {
+            Prefs.ALIGN_CENTER -> Gravity.CENTER_HORIZONTAL
+            Prefs.ALIGN_RIGHT -> Gravity.END
+            else -> Gravity.START
+        }
     }
 
     override fun getItemCount(): Int = items.size

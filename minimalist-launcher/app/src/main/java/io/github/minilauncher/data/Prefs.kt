@@ -160,6 +160,11 @@ class Prefs(context: Context) {
         get() = sp.getBoolean(KEY_DRAWER_HINT, true)
         set(value) = sp.edit().putBoolean(KEY_DRAWER_HINT, value).apply()
 
+    /** App-list text alignment: ALIGN_LEFT / ALIGN_CENTER / ALIGN_RIGHT. */
+    var alignment: String
+        get() = sp.getString(KEY_ALIGNMENT, ALIGN_LEFT)!!
+        set(value) = sp.edit().putString(KEY_ALIGNMENT, value).apply()
+
     /** CRT-style green text instead of white/black. */
     var crtGreen: Boolean
         get() = sp.getBoolean(KEY_CRT_GREEN, false)
@@ -216,6 +221,9 @@ class Prefs(context: Context) {
         const val THEME_DARK = "dark"
         const val THEME_OLED = "oled"
         const val SHORTCUT_DIALER = "dialer"
+        const val ALIGN_LEFT = "left"
+        const val ALIGN_CENTER = "center"
+        const val ALIGN_RIGHT = "right"
 
         private const val KEY_FAVORITES = "favorites"
         private const val KEY_HIDDEN = "hidden_apps"
@@ -230,6 +238,7 @@ class Prefs(context: Context) {
         private const val KEY_FOCUS_SESSION = "focus_session_until"
         private const val KEY_BLOCKED_SITES = "blocked_sites"
         private const val KEY_CRT_GREEN = "crt_green"
+        private const val KEY_ALIGNMENT = "alignment"
         private const val KEY_SHORTCUT_LEFT = "shortcut_left"
         private const val KEY_SHORTCUT_RIGHT = "shortcut_right"
         private const val KEY_NUDGE_INTERVAL = "nudge_interval_min"

@@ -125,6 +125,7 @@ class SettingsActivity : BaseActivity() {
             prefs.crtGreen = !prefs.crtGreen
             recreate()
         }
+        row(container, getString(R.string.settings_alignment), alignmentLabel()) { showAlignmentPicker() }
         row(
             container,
             getString(R.string.settings_font_size),
@@ -176,6 +177,29 @@ class SettingsActivity : BaseActivity() {
                 App.applyNightMode(prefs.theme)
                 dialog.dismiss()
                 recreate()
+            }
+            .show()
+    }
+
+    private fun alignmentLabel(): String = when (prefs.alignment) {
+        Prefs.ALIGN_CENTER -> getString(R.string.align_center)
+        Prefs.ALIGN_RIGHT -> getString(R.string.align_right)
+        else -> getString(R.string.align_left)
+    }
+
+    private fun showAlignmentPicker() {
+        val values = arrayOf(Prefs.ALIGN_LEFT, Prefs.ALIGN_CENTER, Prefs.ALIGN_RIGHT)
+        val labels = arrayOf(
+            getString(R.string.align_left),
+            getString(R.string.align_center),
+            getString(R.string.align_right),
+        )
+        AlertDialog.Builder(this)
+            .setTitle(R.string.settings_alignment)
+            .setSingleChoiceItems(labels, values.indexOf(prefs.alignment)) { dialog, which ->
+                prefs.alignment = values[which]
+                dialog.dismiss()
+                render()
             }
             .show()
     }

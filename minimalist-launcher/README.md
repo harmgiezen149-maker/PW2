@@ -6,13 +6,18 @@ screen, blocked apps, daily time limits, blocking schedules, notification
 filtering and grayscale themes.
 
 Everything runs on-device. No accounts, no backend, no analytics. The
-accessibility service is used only for in-app reminders and blocking; no
-personal information from accessibility events is collected or stored.
+only network request the app ever makes is the optional temperature
+fetch to open-meteo.com (coarse coordinates only). The accessibility
+service is used only for in-app reminders and blocking; nothing from
+accessibility events is collected or stored.
 
 ## Features
 
 - **Minimalist launcher** — text-only favorites list with clock, date and
-  battery, app drawer with search. No icons, no dopamine.
+  outdoor temperature (tap it once to grant coarse location; data comes
+  from open-meteo.com and nothing else leaves the device), app drawer
+  with search that slides up from the bottom, and configurable
+  left/center/right list alignment. No icons, no dopamine.
 - **Configurable corner shortcuts** — Phone bottom-left, Gmail
   bottom-right by default; long-press either to pick any app.
 - **Gestures** — swipe up for the app drawer, swipe down for the

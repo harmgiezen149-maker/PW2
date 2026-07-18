@@ -61,7 +61,8 @@
     <string name="pause_never_mind">Never mind, stay focused</string>
 
     <!-- Home polish -->
-    <string name="home_battery">%d%%</string>
+    <string name="home_temp">%d°</string>
+    <string name="home_temp_unknown">--°</string>
     <string name="shortcut_dialer">Phone (dialer)</string>
     <string name="shortcut_dialer_label">Phone</string>
     <string name="shortcut_pick_title">Choose shortcut app</string>
@@ -85,6 +86,10 @@
     <string name="text_white">White</string>
     <string name="text_green">Green (CRT)</string>
     <string name="theme_black">Black</string>
+    <string name="settings_alignment">App list alignment</string>
+    <string name="align_left">Left</string>
+    <string name="align_center">Center</string>
+    <string name="align_right">Right</string>
 
     <!-- Stats -->
     <string name="stats_title">Screen time today</string>

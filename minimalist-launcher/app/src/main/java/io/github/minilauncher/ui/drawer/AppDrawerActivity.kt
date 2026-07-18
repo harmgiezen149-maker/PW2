@@ -50,6 +50,12 @@ class AppDrawerActivity : BaseActivity() {
         refresh()
     }
 
+    override fun finish() {
+        super.finish()
+        @Suppress("DEPRECATION")
+        overridePendingTransition(R.anim.stay, R.anim.slide_out_down)
+    }
+
     private fun refresh() {
         allApps = repo.allApps()
         filter(findViewById<EditText>(R.id.searchField).text?.toString().orEmpty())

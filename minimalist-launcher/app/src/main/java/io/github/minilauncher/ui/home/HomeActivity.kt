@@ -1,10 +1,9 @@
 package io.github.minilauncher.ui.home
 
-import android.content.BroadcastReceiver
-import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
-import android.os.BatteryManager
+import android.content.pm.PackageManager
+import android.location.Location
+import android.location.LocationManager
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -12,8 +11,8 @@ import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.View
 import android.widget.TextView
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
-import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import io.github.minilauncher.R
@@ -21,6 +20,7 @@ import io.github.minilauncher.blocking.AppBlockerAccessibilityService
 import io.github.minilauncher.blocking.BlockState
 import io.github.minilauncher.data.AppRepository
 import io.github.minilauncher.data.Prefs
+import io.github.minilauncher.data.WeatherFetcher
 import io.github.minilauncher.data.model.AppEntry
 import io.github.minilauncher.ui.common.AppLauncher
 import io.github.minilauncher.ui.common.AppLongPressDialog
@@ -48,16 +48,10 @@ class HomeActivity : BaseActivity() {
         }
     }
 
-    private val batteryReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context, intent: Intent) {
-            val level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
-            val scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, 100)
-            if (level >= 0 && scale > 0) {
-                findViewById<TextView>(R.id.battery).text =
-                    getString(R.string.home_battery, level * 100 / scale)
-            }
+    private val locationPermission =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            if (granted) updateTemperature()
         }
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -98,6 +92,14 @@ class HomeActivity : BaseActivity() {
 
         setUpShortcut(R.id.shortcutLeft, isLeft = true)
         setUpShortcut(R.id.shortcutRight, isLeft = false)
+
+        findViewById<TextView>(R.id.temperature).setOnClickListener {
+            if (!hasLocationPermission()) {
+                locationPermission.launch(android.Manifest.permission.ACCESS_COARSE_LOCATION)
+            } else {
+                updateTemperature()
+            }
+        }
 
         gestureDetector = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
             override fun onFling(
@@ -140,24 +142,53 @@ class HomeActivity : BaseActivity() {
         BlockState.consumePendingBlock()?.let { info ->
             startActivity(AppLauncher.blockIntent(this, info, repo.labelFor(info.packageName)))
         }
-        ContextCompat.registerReceiver(
-            this,
-            batteryReceiver,
-            IntentFilter(Intent.ACTION_BATTERY_CHANGED),
-            ContextCompat.RECEIVER_NOT_EXPORTED,
-        )
         handler.post(countdownTick)
+        updateTemperature()
         refresh()
     }
 
     override fun onPause() {
-        runCatching { unregisterReceiver(batteryReceiver) }
         handler.removeCallbacks(countdownTick)
         super.onPause()
     }
 
     private fun openDrawer() {
         startActivity(Intent(this, AppDrawerActivity::class.java))
+        @Suppress("DEPRECATION")
+        overridePendingTransition(R.anim.slide_in_up, R.anim.stay)
+    }
+
+    // ---- temperature ----
+
+    private fun hasLocationPermission(): Boolean =
+        checkSelfPermission(android.Manifest.permission.ACCESS_COARSE_LOCATION) ==
+            PackageManager.PERMISSION_GRANTED
+
+    private fun bestLastLocation(): Location? {
+        if (!hasLocationPermission()) return null
+        val lm = getSystemService(LocationManager::class.java) ?: return null
+        return listOf(
+            LocationManager.NETWORK_PROVIDER,
+            LocationManager.GPS_PROVIDER,
+            LocationManager.PASSIVE_PROVIDER,
+        ).mapNotNull { provider ->
+            runCatching { lm.getLastKnownLocation(provider) }.getOrNull()
+        }.maxByOrNull { it.time }
+    }
+
+    private fun updateTemperature() {
+        val view = findViewById<TextView>(R.id.temperature)
+        val known = WeatherFetcher.lastKnown()
+        view.text = if (known != null) getString(R.string.home_temp, known)
+        else getString(R.string.home_temp_unknown)
+        if (WeatherFetcher.isFresh()) return
+        val location = bestLastLocation() ?: return
+        Thread {
+            val temp = WeatherFetcher.fetch(location.latitude, location.longitude) ?: return@Thread
+            runOnUiThread {
+                if (!isDestroyed) view.text = getString(R.string.home_temp, temp)
+            }
+        }.start()
     }
 
     private fun setUpShortcut(viewId: Int, isLeft: Boolean) {
