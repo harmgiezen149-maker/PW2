@@ -31,21 +31,57 @@ class AppBlockerAccessibilityService : AccessibilityService() {
     private val executor = Executors.newSingleThreadExecutor()
     private val mainHandler = Handler(Looper.getMainLooper())
     private val sessionTracker = SessionTracker()
+    private val launchableCache = java.util.concurrent.ConcurrentHashMap<String, Boolean>()
+    private var homePackages: Set<String> = emptySet()
 
     private lateinit var prefs: Prefs
     private lateinit var usage: UsageRepository
+
+    private val screenOffReceiver = object : android.content.BroadcastReceiver() {
+        override fun onReceive(context: android.content.Context, intent: android.content.Intent) {
+            sessionTracker.reset()
+        }
+    }
 
     override fun onServiceConnected() {
         super.onServiceConnected()
         prefs = Prefs.get(this)
         usage = UsageRepository.get(this)
         instance = this
+        homePackages = queryHomePackages()
+        launchableCache.clear()
+        registerReceiver(
+            screenOffReceiver,
+            android.content.IntentFilter(android.content.Intent.ACTION_SCREEN_OFF),
+        )
         scheduleSessionCheck()
     }
 
     override fun onUnbind(intent: android.content.Intent?): Boolean {
         instance = null
+        runCatching { unregisterReceiver(screenOffReceiver) }
         return super.onUnbind(intent)
+    }
+
+    private fun queryHomePackages(): Set<String> {
+        val intent = android.content.Intent(android.content.Intent.ACTION_MAIN)
+            .addCategory(android.content.Intent.CATEGORY_HOME)
+        return packageManager.queryIntentActivities(intent, 0)
+            .map { it.activityInfo.packageName }
+            .toSet()
+    }
+
+    /**
+     * Time reminders should only count real apps the user opens — not the
+     * keyboard, One UI's recents/home surfaces or other system windows that
+     * briefly come to the foreground.
+     */
+    private fun isTrackableApp(pkg: String): Boolean {
+        if (pkg in homePackages) return false
+        return launchableCache.getOrPut(pkg) {
+            runCatching { packageManager.getLaunchIntentForPackage(pkg) != null }
+                .getOrDefault(false)
+        }
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
@@ -113,8 +149,9 @@ class AppBlockerAccessibilityService : AccessibilityService() {
                     startActivity(AppLauncher.blockIntent(this, info, label))
                 }
             }
-        } else {
-            // Only track real, launchable-app sessions for nudges
+        } else if (isTrackableApp(pkg)) {
+            // Only real, launchable apps count toward time-reminder sessions;
+            // keyboard/system windows neither start nor reset a session.
             sessionTracker.onForeground(pkg)
             maybeNudge()
         }
@@ -137,10 +174,13 @@ class AppBlockerAccessibilityService : AccessibilityService() {
     /** Re-check the current session every minute for nudges and limit crossings. */
     private fun scheduleSessionCheck() {
         mainHandler.postDelayed({
-            executor.execute {
-                sessionTracker.currentPackage?.let { pkg ->
-                    usage.invalidate()
-                    handleForeground(pkg)
+            val pm = getSystemService(android.os.PowerManager::class.java)
+            if (pm == null || pm.isInteractive) {
+                executor.execute {
+                    sessionTracker.currentPackage?.let { pkg ->
+                        usage.invalidate()
+                        handleForeground(pkg)
+                    }
                 }
             }
             scheduleSessionCheck()
@@ -181,6 +221,7 @@ class AppBlockerAccessibilityService : AccessibilityService() {
 
     override fun onDestroy() {
         instance = null
+        runCatching { unregisterReceiver(screenOffReceiver) }
         mainHandler.removeCallbacksAndMessages(null)
         executor.shutdown()
         super.onDestroy()
