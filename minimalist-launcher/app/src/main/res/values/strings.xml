@@ -23,6 +23,8 @@
     <string name="action_mute">Mute notifications</string>
     <string name="action_unmute">Unmute notifications</string>
     <string name="action_app_info">App info</string>
+    <string name="action_nudge_exempt">Exclude from time reminder</string>
+    <string name="action_nudge_include">Include in time reminder</string>
 
     <string name="rename_title">Rename %s</string>
     <string name="limit_title">Daily limit for %s</string>
@@ -113,6 +115,7 @@
     <string name="settings_five_more">Allow “5 more minutes” button</string>
     <string name="settings_nudge">In-app time reminder</string>
     <string name="settings_nudge_value">Every %d min</string>
+    <string name="settings_nudge_exempt">Reminder exceptions</string>
     <string name="settings_muted_apps">Muted apps</string>
     <string name="settings_theme">Theme</string>
     <string name="settings_font_size">Font size</string>

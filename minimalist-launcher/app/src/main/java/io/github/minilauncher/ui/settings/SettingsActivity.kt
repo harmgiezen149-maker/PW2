@@ -102,6 +102,16 @@ class SettingsActivity : BaseActivity() {
             if (prefs.nudgeIntervalMinutes == 0) getString(R.string.state_off)
             else getString(R.string.settings_nudge_value, prefs.nudgeIntervalMinutes),
         ) { showNudgePicker() }
+        row(
+            container,
+            getString(R.string.settings_nudge_exempt),
+            prefs.nudgeExemptApps.size.toString(),
+        ) {
+            showAppMultiPicker(
+                title = getString(R.string.settings_nudge_exempt),
+                selected = prefs.nudgeExemptApps,
+            ) { prefs.nudgeExemptApps = it; render() }
+        }
 
         section(container, getString(R.string.settings_section_notifications))
         row(container, getString(R.string.settings_muted_apps), prefs.mutedApps.size.toString()) {

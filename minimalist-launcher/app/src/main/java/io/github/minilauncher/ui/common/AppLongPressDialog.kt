@@ -50,6 +50,15 @@ object AppLongPressDialog {
         } else {
             activity.getString(R.string.action_mute) to { prefs.mutedApps = prefs.mutedApps + pkg }
         }
+        options += if (pkg in prefs.nudgeExemptApps) {
+            activity.getString(R.string.action_nudge_include) to {
+                prefs.nudgeExemptApps = prefs.nudgeExemptApps - pkg
+            }
+        } else {
+            activity.getString(R.string.action_nudge_exempt) to {
+                prefs.nudgeExemptApps = prefs.nudgeExemptApps + pkg
+            }
+        }
         options += activity.getString(R.string.action_app_info) to {
             activity.startActivity(
                 Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$pkg"))

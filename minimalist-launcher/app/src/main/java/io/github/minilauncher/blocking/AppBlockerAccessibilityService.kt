@@ -189,8 +189,9 @@ class AppBlockerAccessibilityService : AccessibilityService() {
 
     private fun maybeNudge() {
         val interval = prefs.nudgeIntervalMinutes
-        val milestone = sessionTracker.dueNudgeMinutes(interval) ?: return
         val pkg = sessionTracker.currentPackage ?: return
+        if (pkg in prefs.nudgeExemptApps) return
+        val milestone = sessionTracker.dueNudgeMinutes(interval) ?: return
         val label = AppRepository(this).labelFor(pkg)
         postNudgeNotification(label, milestone)
     }

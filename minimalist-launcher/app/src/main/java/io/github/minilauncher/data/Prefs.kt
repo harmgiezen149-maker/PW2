@@ -119,6 +119,11 @@ class Prefs(context: Context) {
         get() = sp.getInt(KEY_NUDGE_INTERVAL, 15)
         set(value) = sp.edit().putInt(KEY_NUDGE_INTERVAL, value).apply()
 
+    /** Apps that never trigger an in-app time reminder. */
+    var nudgeExemptApps: Set<String>
+        get() = sp.getStringSet(KEY_NUDGE_EXEMPT, emptySet())!!.toSet()
+        set(value) = sp.edit().putStringSet(KEY_NUDGE_EXEMPT, value).apply()
+
     // ---- notification filter ----
 
     var mutedApps: Set<String>
@@ -242,6 +247,7 @@ class Prefs(context: Context) {
         private const val KEY_SHORTCUT_LEFT = "shortcut_left"
         private const val KEY_SHORTCUT_RIGHT = "shortcut_right"
         private const val KEY_NUDGE_INTERVAL = "nudge_interval_min"
+        private const val KEY_NUDGE_EXEMPT = "nudge_exempt_apps"
         private const val KEY_MUTED = "muted_apps"
         private const val KEY_FILTERED_DATE = "filtered_date"
         private const val KEY_FILTERED_COUNTS = "filtered_counts"
