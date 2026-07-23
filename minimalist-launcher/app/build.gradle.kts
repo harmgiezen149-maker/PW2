@@ -56,4 +56,6 @@ dependencies {
     implementation(libs.androidx.recyclerview)
     implementation(libs.material)
     testImplementation(libs.junit)
+    // Real org.json for unit tests; the android.jar stub throws "not mocked".
+    testImplementation("org.json:json:20240303")
 }
