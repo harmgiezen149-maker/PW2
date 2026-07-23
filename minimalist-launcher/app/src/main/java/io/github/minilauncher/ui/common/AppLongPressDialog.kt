@@ -59,6 +59,14 @@ object AppLongPressDialog {
                 prefs.nudgeExemptApps = prefs.nudgeExemptApps + pkg
             }
         }
+        val folder = prefs.folderContaining(pkg)
+        options += if (folder != null) {
+            activity.getString(R.string.action_remove_from_folder, folder.name) to {
+                prefs.removeFromFolder(pkg)
+            }
+        } else {
+            activity.getString(R.string.action_add_to_folder) to { showFolderPicker(activity, pkg, onChanged) }
+        }
         options += activity.getString(R.string.action_app_info) to {
             activity.startActivity(
                 Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$pkg"))
@@ -71,6 +79,42 @@ object AppLongPressDialog {
                 options[which].second()
                 onChanged()
             }
+            .show()
+    }
+
+    private fun showFolderPicker(activity: Activity, pkg: String, onChanged: () -> Unit) {
+        val prefs = Prefs.get(activity)
+        val folders = prefs.folders
+        val labels = folders.map { it.name }.toTypedArray() +
+            activity.getString(R.string.folder_new)
+        AlertDialog.Builder(activity)
+            .setTitle(R.string.action_add_to_folder)
+            .setItems(labels) { _, which ->
+                if (which < folders.size) {
+                    prefs.addToFolder(folders[which].id, pkg)
+                    onChanged()
+                } else {
+                    showNewFolder(activity, pkg, onChanged)
+                }
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun showNewFolder(activity: Activity, pkg: String, onChanged: () -> Unit) {
+        val input = EditText(activity).apply {
+            inputType = InputType.TYPE_CLASS_TEXT
+            hint = activity.getString(R.string.folder_name_hint)
+        }
+        AlertDialog.Builder(activity)
+            .setTitle(R.string.folder_new)
+            .setView(input)
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                val name = input.text.toString().trim()
+                if (name.isNotEmpty()) Prefs.get(activity).createFolder(name, pkg)
+                onChanged()
+            }
+            .setNegativeButton(android.R.string.cancel, null)
             .show()
     }
 

@@ -1,15 +1,19 @@
 package io.github.minilauncher.ui.drawer
 
 import android.os.Bundle
+import android.text.InputType
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.widget.EditText
+import androidx.appcompat.app.AlertDialog
 import androidx.core.widget.doAfterTextChanged
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import io.github.minilauncher.R
 import io.github.minilauncher.data.AppRepository
+import io.github.minilauncher.data.Prefs
 import io.github.minilauncher.data.model.AppEntry
+import io.github.minilauncher.data.model.Folder
 import io.github.minilauncher.ui.common.AppLauncher
 import io.github.minilauncher.ui.common.AppLongPressDialog
 import io.github.minilauncher.ui.common.BaseActivity
@@ -18,35 +22,41 @@ import kotlin.math.abs
 
 class AppDrawerActivity : BaseActivity() {
 
+    /** One drawer line: its label plus what a tap/long-press does. */
+    private data class Row(
+        val label: String,
+        val onClick: () -> Unit,
+        val onLongClick: () -> Unit = {},
+    )
+
     private lateinit var repo: AppRepository
+    private lateinit var prefs: Prefs
     private lateinit var adapter: TextListAdapter
     private lateinit var gestureDetector: GestureDetector
+
     private var allApps: List<AppEntry> = emptyList()
-    private var shown: List<AppEntry> = emptyList()
+    private var rows: List<Row> = emptyList()
+    private var currentFolderId: String? = null
+    private var query: String = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_drawer)
         repo = AppRepository(this)
+        prefs = Prefs.get(this)
 
         adapter = TextListAdapter(
-            onClick = { pos ->
-                shown.getOrNull(pos)?.let {
-                    AppLauncher.launch(this, it.packageName)
-                    finish()
-                }
-            },
-            onLongClick = { pos ->
-                shown.getOrNull(pos)?.let { entry ->
-                    AppLongPressDialog.show(this, entry) { refresh() }
-                }
-            },
+            onClick = { pos -> rows.getOrNull(pos)?.onClick?.invoke() },
+            onLongClick = { pos -> rows.getOrNull(pos)?.onLongClick?.invoke() },
         )
         findViewById<RecyclerView>(R.id.appList).apply {
             layoutManager = LinearLayoutManager(this@AppDrawerActivity)
             adapter = this@AppDrawerActivity.adapter
         }
-        findViewById<EditText>(R.id.searchField).doAfterTextChanged { filter(it?.toString().orEmpty()) }
+        findViewById<EditText>(R.id.searchField).doAfterTextChanged {
+            query = it?.toString().orEmpty()
+            rebuild()
+        }
 
         // Swipe down while the list is at the top closes the drawer — the
         // mirror of the swipe-up that opened it.
@@ -79,7 +89,19 @@ class AppDrawerActivity : BaseActivity() {
 
     override fun onResume() {
         super.onResume()
-        refresh()
+        reload()
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onBackPressed() {
+        // Inside a folder, back returns to the folder list before closing.
+        if (currentFolderId != null && query.isBlank()) {
+            currentFolderId = null
+            rebuild()
+        } else {
+            @Suppress("DEPRECATION")
+            super.onBackPressed()
+        }
     }
 
     override fun finish() {
@@ -88,14 +110,110 @@ class AppDrawerActivity : BaseActivity() {
         overridePendingTransition(R.anim.stay, R.anim.slide_out_down)
     }
 
-    private fun refresh() {
+    private fun reload() {
         allApps = repo.allApps()
-        filter(findViewById<EditText>(R.id.searchField).text?.toString().orEmpty())
+        rebuild()
     }
 
-    private fun filter(query: String) {
-        shown = if (query.isBlank()) allApps
-        else allApps.filter { it.displayLabel.contains(query.trim(), ignoreCase = true) }
-        adapter.submit(shown.map { it.displayLabel })
+    private fun rebuild() {
+        val q = query.trim()
+        rows = when {
+            // A search always spans every app, so folders never hide a result.
+            q.isNotEmpty() ->
+                allApps.filter { it.displayLabel.contains(q, ignoreCase = true) }.map { appRow(it) }
+
+            currentFolderId != null -> {
+                val folder = prefs.folders.firstOrNull { it.id == currentFolderId }
+                if (folder == null) {
+                    currentFolderId = null
+                    return rebuild()
+                }
+                val byPackage = allApps.associateBy { it.packageName }
+                buildList {
+                    add(Row(getString(R.string.folder_back), onClick = {
+                        currentFolderId = null
+                        rebuild()
+                    }))
+                    folder.packages.mapNotNull { byPackage[it] }
+                        .sortedBy { it.displayLabel.lowercase() }
+                        .forEach { add(appRow(it)) }
+                }
+            }
+
+            else -> {
+                val folders = prefs.folders
+                val inFolder = folders.flatMap { it.packages }.toSet()
+                buildList {
+                    folders.sortedBy { it.name.lowercase() }.forEach { add(folderRow(it)) }
+                    allApps.filter { it.packageName !in inFolder }.forEach { add(appRow(it)) }
+                }
+            }
+        }
+        adapter.submit(rows.map { it.label })
+    }
+
+    private fun folderRow(folder: Folder): Row {
+        val installed = allApps.map { it.packageName }.toSet()
+        val count = folder.packages.count { it in installed }
+        return Row(
+            label = getString(R.string.folder_label, folder.name, count),
+            onClick = {
+                currentFolderId = folder.id
+                clearSearch()
+                rebuild()
+            },
+            onLongClick = { showFolderMenu(folder) },
+        )
+    }
+
+    private fun appRow(app: AppEntry): Row = Row(
+        label = app.displayLabel,
+        onClick = {
+            AppLauncher.launch(this, app.packageName)
+            finish()
+        },
+        onLongClick = { AppLongPressDialog.show(this, app) { reload() } },
+    )
+
+    private fun clearSearch() {
+        query = ""
+        findViewById<EditText>(R.id.searchField).text?.clear()
+    }
+
+    private fun showFolderMenu(folder: Folder) {
+        val labels = arrayOf(
+            getString(R.string.folder_rename),
+            getString(R.string.folder_delete),
+        )
+        AlertDialog.Builder(this)
+            .setTitle(folder.name)
+            .setItems(labels) { _, which ->
+                when (which) {
+                    0 -> showRenameFolder(folder)
+                    1 -> {
+                        prefs.deleteFolder(folder.id)
+                        reload()
+                    }
+                }
+            }
+            .show()
+    }
+
+    private fun showRenameFolder(folder: Folder) {
+        val input = EditText(this).apply {
+            inputType = InputType.TYPE_CLASS_TEXT
+            setText(folder.name)
+            setSelection(text.length)
+        }
+        AlertDialog.Builder(this)
+            .setTitle(R.string.folder_rename)
+            .setView(input)
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                val name = input.text.toString().trim()
+                if (name.isNotEmpty()) prefs.renameFolder(folder.id, name)
+                reload()
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
     }
 }

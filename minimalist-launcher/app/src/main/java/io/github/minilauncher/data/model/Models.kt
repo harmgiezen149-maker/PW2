@@ -51,6 +51,27 @@ data class Schedule(
     }
 }
 
+/** A named group of apps shown in the app drawer. An app lives in at most one folder. */
+data class Folder(
+    val id: String,
+    val name: String,
+    val packages: List<String>,
+) {
+    fun toJson(): JSONObject = JSONObject().apply {
+        put("id", id)
+        put("name", name)
+        put("packages", JSONArray(packages))
+    }
+
+    companion object {
+        fun fromJson(o: JSONObject): Folder {
+            val arr = o.getJSONArray("packages")
+            val packages = buildList { for (i in 0 until arr.length()) add(arr.getString(i)) }
+            return Folder(o.getString("id"), o.optString("name", ""), packages)
+        }
+    }
+}
+
 enum class BlockReason { FOCUS_MODE, SCHEDULE, LIMIT, MINDFUL, WEBSITE }
 
 /** Why an app launch was intercepted; handed from the service to the UI. */

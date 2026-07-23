@@ -40,6 +40,14 @@
 
     <!-- Drawer -->
     <string name="drawer_search_hint">Search</string>
+    <string name="folder_label">▸ %1$s (%2$d)</string>
+    <string name="folder_back">‹ Back</string>
+    <string name="folder_new">New folder…</string>
+    <string name="folder_name_hint">Folder name</string>
+    <string name="folder_rename">Rename folder</string>
+    <string name="folder_delete">Delete folder</string>
+    <string name="action_add_to_folder">Add to folder</string>
+    <string name="action_remove_from_folder">Remove from folder “%s”</string>
 
     <!-- Blocked screen -->
     <string name="blocked_headline">Stay focused</string>

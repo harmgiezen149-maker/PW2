@@ -23,6 +23,9 @@ accessibility events is collected or stored.
 - **Gestures** — swipe up for the app drawer, swipe down for the
   notification shade (needs the blocker service).
 - **Hide & rename apps** — long-press any app in the drawer.
+- **Folders** — group similar apps in the drawer: long-press an app →
+  "Add to folder". Tap a folder to open it; search always spans every
+  app so nothing is buried.
 - **Mindful pause** — put apps behind a short breathing pause that asks
   "how long do you want to use it?" (1–15 min); when the time is up the
   pause returns.

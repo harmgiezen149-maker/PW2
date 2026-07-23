@@ -2,6 +2,7 @@ package io.github.minilauncher.data
 
 import android.content.Context
 import android.content.SharedPreferences
+import io.github.minilauncher.data.model.Folder
 import io.github.minilauncher.data.model.Schedule
 import org.json.JSONArray
 import org.json.JSONObject
@@ -46,6 +47,53 @@ class Prefs(context: Context) {
 
     fun setRename(pkg: String, name: String?) {
         renames = if (name.isNullOrBlank()) renames - pkg else renames + (pkg to name)
+    }
+
+    /** App-drawer folders. An app belongs to at most one folder. */
+    var folders: List<Folder>
+        get() {
+            val raw = sp.getString(KEY_FOLDERS, null) ?: return emptyList()
+            return runCatching {
+                val arr = JSONArray(raw)
+                buildList { for (i in 0 until arr.length()) add(Folder.fromJson(arr.getJSONObject(i))) }
+            }.getOrDefault(emptyList())
+        }
+        set(value) {
+            val arr = JSONArray()
+            value.forEach { arr.put(it.toJson()) }
+            sp.edit().putString(KEY_FOLDERS, arr.toString()).apply()
+        }
+
+    fun folderContaining(pkg: String): Folder? = folders.firstOrNull { pkg in it.packages }
+
+    /** Adds [pkg] to a folder, first removing it from any other folder. */
+    fun addToFolder(folderId: String, pkg: String) {
+        folders = folders.map { f ->
+            when (f.id) {
+                folderId -> if (pkg in f.packages) f else f.copy(packages = f.packages + pkg)
+                else -> f.copy(packages = f.packages - pkg)
+            }
+        }
+    }
+
+    fun removeFromFolder(pkg: String) {
+        folders = folders.map { it.copy(packages = it.packages - pkg) }
+    }
+
+    /** Creates a folder (optionally seeded with one app) and returns its id. */
+    fun createFolder(name: String, firstPkg: String? = null): String {
+        val id = java.util.UUID.randomUUID().toString()
+        val base = if (firstPkg != null) folders.map { it.copy(packages = it.packages - firstPkg) } else folders
+        folders = base + Folder(id, name, listOfNotNull(firstPkg))
+        return id
+    }
+
+    fun renameFolder(folderId: String, name: String) {
+        folders = folders.map { if (it.id == folderId) it.copy(name = name) else it }
+    }
+
+    fun deleteFolder(folderId: String) {
+        folders = folders.filterNot { it.id == folderId }
     }
 
     // ---- blocking ----
@@ -233,6 +281,7 @@ class Prefs(context: Context) {
         private const val KEY_FAVORITES = "favorites"
         private const val KEY_HIDDEN = "hidden_apps"
         private const val KEY_RENAMES = "renames"
+        private const val KEY_FOLDERS = "folders"
         private const val KEY_BLOCKED = "blocked_apps"
         private const val KEY_FOCUS_MODE = "focus_mode"
         private const val KEY_SCHEDULES = "schedules"
