@@ -254,8 +254,12 @@ class SettingsActivity : BaseActivity() {
         ).show()
     }
 
-    /** Every app with its day/evening visibility; tap one to change it. */
-    private fun showAppVisibilityList() {
+    /**
+     * Every app with its day/evening visibility; tap one to change it. After a
+     * change the list reopens scrolled to [focusPackage], so several apps can
+     * be set in a row without hunting through the list again.
+     */
+    private fun showAppVisibilityList(focusPackage: String? = null) {
         val apps = AppRepository(this).allApps(includeHidden = true, respectMode = false)
         val labels = apps.map {
             getString(
@@ -264,18 +268,35 @@ class SettingsActivity : BaseActivity() {
                 AppLongPressDialog.visibilityLabel(this, prefs.visibilityFor(it.packageName)),
             )
         }.toTypedArray()
-        AlertDialog.Builder(this)
+        val dialog = AlertDialog.Builder(this)
             .setTitle(R.string.settings_app_visibility)
             .setItems(labels) { _, which ->
-                AppLongPressDialog.showVisibilityPicker(this, apps[which]) { render() }
+                val pkg = apps[which].packageName
+                AppLongPressDialog.showVisibilityPicker(this, apps[which]) {
+                    render()
+                    showAppVisibilityList(focusPackage = pkg)
+                }
             }
             .setPositiveButton(android.R.string.ok, null)
-            .show()
+            .create()
+        dialog.show()
+        scrollToApp(dialog, apps.indexOfFirst { it.packageName == focusPackage })
+    }
+
+    /** Keeps the just-configured app in view when a picker list reopens. */
+    private fun scrollToApp(dialog: AlertDialog, index: Int) {
+        if (index < 0) return
+        val list = dialog.listView ?: return
+        list.post {
+            // Roughly a third down, so it reads as "still where you were".
+            list.setSelectionFromTop(index, list.height / 3)
+        }
     }
 
     /** Every app with its notification window; tap one to change it. */
-    private fun showNotificationWindowList() {
-        if (!PermissionChecks.isNotificationListenerEnabled(this)) {
+    private fun showNotificationWindowList(focusPackage: String? = null) {
+        // Only warn when opening the list, not on every reopen after a change.
+        if (focusPackage == null && !PermissionChecks.isNotificationListenerEnabled(this)) {
             android.widget.Toast.makeText(
                 this,
                 R.string.notification_windows_needs_access,
@@ -293,13 +314,19 @@ class SettingsActivity : BaseActivity() {
                 ),
             )
         }.toTypedArray()
-        AlertDialog.Builder(this)
+        val dialog = AlertDialog.Builder(this)
             .setTitle(R.string.settings_notification_windows)
             .setItems(labels) { _, which ->
-                AppLongPressDialog.showNotificationWindowPicker(this, apps[which]) { render() }
+                val pkg = apps[which].packageName
+                AppLongPressDialog.showNotificationWindowPicker(this, apps[which]) {
+                    render()
+                    showNotificationWindowList(focusPackage = pkg)
+                }
             }
             .setPositiveButton(android.R.string.ok, null)
-            .show()
+            .create()
+        dialog.show()
+        scrollToApp(dialog, apps.indexOfFirst { it.packageName == focusPackage })
     }
 
     private fun alignmentLabel(): String = when (prefs.alignment) {
