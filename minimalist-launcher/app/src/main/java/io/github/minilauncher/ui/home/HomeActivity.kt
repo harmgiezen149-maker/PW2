@@ -24,7 +24,9 @@ import io.github.minilauncher.data.WeatherFetcher
 import io.github.minilauncher.data.model.AppEntry
 import io.github.minilauncher.ui.common.AppLauncher
 import io.github.minilauncher.ui.common.AppLongPressDialog
+import io.github.minilauncher.mode.ModeState
 import io.github.minilauncher.ui.common.BaseActivity
+import io.github.minilauncher.ui.common.EveningOverrideDialog
 import io.github.minilauncher.ui.common.PermissionChecks
 import io.github.minilauncher.ui.common.TextListAdapter
 import io.github.minilauncher.ui.drawer.AppDrawerActivity
@@ -40,10 +42,14 @@ class HomeActivity : BaseActivity() {
     private lateinit var gestureDetector: GestureDetector
     private var favorites: List<AppEntry> = emptyList()
 
+    /** Last rendered day/evening state, so the list is only rebuilt when it flips. */
+    private var lastModeKey: String? = null
+
     private val handler = Handler(Looper.getMainLooper())
     private val countdownTick = object : Runnable {
         override fun run() {
             updateFocusCountdown()
+            syncMode()
             handler.postDelayed(this, 30_000L)
         }
     }
@@ -92,6 +98,10 @@ class HomeActivity : BaseActivity() {
 
         setUpShortcut(R.id.shortcutLeft, isLeft = true)
         setUpShortcut(R.id.shortcutRight, isLeft = false)
+
+        findViewById<TextView>(R.id.modeLabel).setOnClickListener {
+            EveningOverrideDialog.show(this) { refresh() }
+        }
 
         findViewById<TextView>(R.id.temperature).setOnClickListener {
             if (!hasLocationPermission()) {
@@ -206,7 +216,7 @@ class HomeActivity : BaseActivity() {
     }
 
     private fun showShortcutPicker(isLeft: Boolean) {
-        val apps = repo.allApps(includeHidden = true)
+        val apps = repo.allApps(includeHidden = true, respectMode = false)
         val labels = mutableListOf(getString(R.string.shortcut_dialer))
         labels += apps.map { it.displayLabel }
         AlertDialog.Builder(this)
@@ -223,6 +233,41 @@ class HomeActivity : BaseActivity() {
     private fun shortcutLabel(target: String): String =
         if (target == Prefs.SHORTCUT_DIALER) getString(R.string.shortcut_dialer_label)
         else repo.labelFor(target)
+
+    // ---- day / evening mode ----
+
+    /** Rebuilds the app list when the mode flipped; otherwise just refreshes the label. */
+    private fun syncMode() {
+        val state = prefs.currentModeState()
+        val key = "${state.enabled}-${state.evening}"
+        if (key != lastModeKey) {
+            lastModeKey = key
+            refresh()
+        } else {
+            updateModeLabel(state)
+        }
+    }
+
+    private fun updateModeLabel(state: ModeState = prefs.currentModeState()) {
+        val view = findViewById<TextView>(R.id.modeLabel)
+        if (!state.enabled) {
+            view.visibility = View.GONE
+            return
+        }
+        view.visibility = View.VISIBLE
+        view.text = when {
+            state.overrideActive ->
+                getString(R.string.home_mode_evening_override, state.overrideRemainingMinutes)
+            state.evening -> getString(R.string.home_mode_evening)
+            else -> getString(R.string.home_mode_day)
+        }
+        // Evening gets the brighter foreground as its subtle marker.
+        val attr = if (state.evening) android.R.attr.textColorPrimary
+        else android.R.attr.textColorSecondary
+        val styled = theme.obtainStyledAttributes(intArrayOf(attr))
+        view.setTextColor(styled.getColor(0, view.currentTextColor))
+        styled.recycle()
+    }
 
     private fun updateFocusCountdown() {
         val view = findViewById<TextView>(R.id.focusSessionCountdown)
@@ -247,6 +292,9 @@ class HomeActivity : BaseActivity() {
         findViewById<TextView>(R.id.shortcutLeft).text = shortcutLabel(prefs.shortcutLeft)
         findViewById<TextView>(R.id.shortcutRight).text = shortcutLabel(prefs.shortcutRight)
         updateFocusCountdown()
+        val state = prefs.currentModeState()
+        lastModeKey = "${state.enabled}-${state.evening}"
+        updateModeLabel(state)
     }
 
     @Deprecated("Deprecated in Java")

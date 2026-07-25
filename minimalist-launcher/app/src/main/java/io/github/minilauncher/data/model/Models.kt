@@ -3,6 +3,17 @@ package io.github.minilauncher.data.model
 import org.json.JSONArray
 import org.json.JSONObject
 
+/** When an app is shown once day/evening mode is switched on. */
+enum class AppVisibility {
+    ALWAYS, DAY, EVENING;
+
+    companion object {
+        /** Missing or unknown values fall back to ALWAYS so older configs keep working. */
+        fun fromStored(value: String?): AppVisibility =
+            entries.firstOrNull { it.name == value } ?: ALWAYS
+    }
+}
+
 /** A launchable app as shown in the launcher, after rename/hide are applied. */
 data class AppEntry(
     val packageName: String,
@@ -10,6 +21,7 @@ data class AppEntry(
     val displayLabel: String,
     val isHidden: Boolean,
     val isFavorite: Boolean,
+    val visibility: AppVisibility = AppVisibility.ALWAYS,
 )
 
 /**

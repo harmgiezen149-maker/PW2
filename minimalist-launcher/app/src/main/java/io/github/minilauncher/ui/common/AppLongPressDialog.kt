@@ -10,6 +10,7 @@ import androidx.appcompat.app.AlertDialog
 import io.github.minilauncher.R
 import io.github.minilauncher.data.Prefs
 import io.github.minilauncher.data.model.AppEntry
+import io.github.minilauncher.data.model.AppVisibility
 
 /** Long-press menu on any app row: favorite, rename, hide, block, limit, info. */
 object AppLongPressDialog {
@@ -59,6 +60,12 @@ object AppLongPressDialog {
                 prefs.nudgeExemptApps = prefs.nudgeExemptApps + pkg
             }
         }
+        if (prefs.dayEveningEnabled) {
+            options += activity.getString(
+                R.string.action_visibility,
+                visibilityLabel(activity, prefs.visibilityFor(pkg)),
+            ) to { showVisibilityPicker(activity, entry, onChanged) }
+        }
         val folder = prefs.folderContaining(pkg)
         options += if (folder != null) {
             activity.getString(R.string.action_remove_from_folder, folder.name) to {
@@ -79,6 +86,32 @@ object AppLongPressDialog {
                 options[which].second()
                 onChanged()
             }
+            .show()
+    }
+
+    fun visibilityLabel(activity: Activity, visibility: AppVisibility): String =
+        activity.getString(
+            when (visibility) {
+                AppVisibility.ALWAYS -> R.string.visibility_always
+                AppVisibility.DAY -> R.string.visibility_day
+                AppVisibility.EVENING -> R.string.visibility_evening
+            }
+        )
+
+    /** Lets the user pick when an app shows up: always, day only or evening only. */
+    fun showVisibilityPicker(activity: Activity, entry: AppEntry, onChanged: () -> Unit) {
+        val prefs = Prefs.get(activity)
+        val values = AppVisibility.entries.toTypedArray()
+        val labels = values.map { visibilityLabel(activity, it) }.toTypedArray()
+        val current = prefs.visibilityFor(entry.packageName)
+        AlertDialog.Builder(activity)
+            .setTitle(activity.getString(R.string.visibility_title, entry.displayLabel))
+            .setSingleChoiceItems(labels, values.indexOf(current)) { dialog, which ->
+                prefs.setVisibility(entry.packageName, values[which])
+                dialog.dismiss()
+                onChanged()
+            }
+            .setNegativeButton(android.R.string.cancel, null)
             .show()
     }
 

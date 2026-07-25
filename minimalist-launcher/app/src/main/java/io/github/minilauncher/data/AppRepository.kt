@@ -4,23 +4,33 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import io.github.minilauncher.data.model.AppEntry
+import io.github.minilauncher.data.model.AppVisibility
+import io.github.minilauncher.mode.DayEveningEvaluator
+import io.github.minilauncher.mode.ModeState
 
 /**
- * Lists launchable apps with the user's renames and hidden set applied.
- * Queried fresh on demand (the list is small); callers refresh in onResume.
+ * Lists launchable apps with the user's renames, hidden set and day/evening
+ * visibility applied. Queried fresh on demand (the list is small); callers
+ * refresh in onResume.
  */
 class AppRepository(private val context: Context) {
 
     private val prefs = Prefs.get(context)
 
-    /** All launchable apps except this launcher itself, sorted by display label. */
-    fun allApps(includeHidden: Boolean = false): List<AppEntry> {
+    /**
+     * All launchable apps except this launcher itself, sorted by display label.
+     * [respectMode] hides apps that do not belong to the current day/evening
+     * mode; configuration screens pass false so every app stays selectable.
+     */
+    fun allApps(includeHidden: Boolean = false, respectMode: Boolean = true): List<AppEntry> {
         val pm = context.packageManager
         val intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
         val resolved = pm.queryIntentActivities(intent, PackageManager.MATCH_ALL)
         val renames = prefs.renames
         val hidden = prefs.hiddenApps
         val favorites = prefs.favorites.toSet()
+        val visibility = prefs.appVisibility
+        val mode = if (respectMode) prefs.currentModeState() else ModeState.DISABLED
         return resolved
             .asSequence()
             .map { it.activityInfo }
@@ -34,9 +44,11 @@ class AppRepository(private val context: Context) {
                     displayLabel = renames[info.packageName] ?: original,
                     isHidden = info.packageName in hidden,
                     isFavorite = info.packageName in favorites,
+                    visibility = AppVisibility.fromStored(visibility[info.packageName]),
                 )
             }
             .filter { includeHidden || !it.isHidden }
+            .filter { DayEveningEvaluator.isVisible(it.visibility, mode) }
             .sortedBy { it.displayLabel.lowercase() }
             .toList()
     }

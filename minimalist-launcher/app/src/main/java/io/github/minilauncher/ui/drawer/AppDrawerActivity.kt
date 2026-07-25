@@ -1,6 +1,8 @@
 package io.github.minilauncher.ui.drawer
 
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.text.InputType
 import android.view.GestureDetector
 import android.view.MotionEvent
@@ -38,6 +40,18 @@ class AppDrawerActivity : BaseActivity() {
     private var rows: List<Row> = emptyList()
     private var currentFolderId: String? = null
     private var query: String = ""
+    private var lastModeKey: String? = null
+
+    private val handler = Handler(Looper.getMainLooper())
+    private val modeTick = object : Runnable {
+        override fun run() {
+            // Day/evening can flip while the drawer sits open.
+            val state = prefs.currentModeState()
+            val key = "${state.enabled}-${state.evening}"
+            if (key != lastModeKey) reload()
+            handler.postDelayed(this, 30_000L)
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -90,6 +104,12 @@ class AppDrawerActivity : BaseActivity() {
     override fun onResume() {
         super.onResume()
         reload()
+        handler.post(modeTick)
+    }
+
+    override fun onPause() {
+        handler.removeCallbacks(modeTick)
+        super.onPause()
     }
 
     @Deprecated("Deprecated in Java")
@@ -111,6 +131,8 @@ class AppDrawerActivity : BaseActivity() {
     }
 
     private fun reload() {
+        val state = prefs.currentModeState()
+        lastModeKey = "${state.enabled}-${state.evening}"
         allApps = repo.allApps()
         rebuild()
     }

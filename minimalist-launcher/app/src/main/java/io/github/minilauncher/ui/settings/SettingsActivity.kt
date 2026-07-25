@@ -10,7 +10,9 @@ import io.github.minilauncher.App
 import io.github.minilauncher.R
 import io.github.minilauncher.data.AppRepository
 import io.github.minilauncher.data.Prefs
+import io.github.minilauncher.ui.common.AppLongPressDialog
 import io.github.minilauncher.ui.common.BaseActivity
+import io.github.minilauncher.ui.common.EveningOverrideDialog
 import io.github.minilauncher.ui.common.PermissionChecks
 import io.github.minilauncher.ui.onboarding.OnboardingActivity
 import io.github.minilauncher.ui.stats.StatsActivity
@@ -113,6 +115,50 @@ class SettingsActivity : BaseActivity() {
             ) { prefs.nudgeExemptApps = it; render() }
         }
 
+        section(container, getString(R.string.settings_section_mode))
+        row(
+            container,
+            getString(R.string.settings_mode_enabled),
+            if (prefs.dayEveningEnabled) getString(R.string.state_on) else getString(R.string.state_off),
+        ) {
+            prefs.dayEveningEnabled = !prefs.dayEveningEnabled
+            render()
+        }
+        if (prefs.dayEveningEnabled) {
+            row(
+                container,
+                getString(R.string.settings_evening_start),
+                formatMinute(prefs.eveningStartMinute),
+            ) {
+                pickTime(prefs.eveningStartMinute) { prefs.eveningStartMinute = it; render() }
+            }
+            row(
+                container,
+                getString(R.string.settings_evening_end),
+                formatMinute(prefs.eveningEndMinute),
+            ) {
+                pickTime(prefs.eveningEndMinute) { prefs.eveningEndMinute = it; render() }
+            }
+            row(
+                container,
+                getString(R.string.settings_app_visibility),
+                prefs.appVisibility.size.toString(),
+            ) { showAppVisibilityList() }
+            val overrideActive = prefs.eveningOverrideUntil > System.currentTimeMillis()
+            row(
+                container,
+                getString(R.string.settings_evening_override),
+                if (overrideActive) {
+                    getString(
+                        R.string.focus_session_remaining,
+                        prefs.currentModeState().overrideRemainingMinutes,
+                    )
+                } else {
+                    getString(R.string.state_off)
+                },
+            ) { EveningOverrideDialog.show(this) { render() } }
+        }
+
         section(container, getString(R.string.settings_section_notifications))
         row(container, getString(R.string.settings_muted_apps), prefs.mutedApps.size.toString()) {
             if (!PermissionChecks.isNotificationListenerEnabled(this)) {
@@ -188,6 +234,37 @@ class SettingsActivity : BaseActivity() {
                 dialog.dismiss()
                 recreate()
             }
+            .show()
+    }
+
+    private fun formatMinute(minute: Int): String = "%02d:%02d".format(minute / 60, minute % 60)
+
+    private fun pickTime(currentMinute: Int, onPicked: (Int) -> Unit) {
+        android.app.TimePickerDialog(
+            this,
+            { _, hour, minute -> onPicked(hour * 60 + minute) },
+            currentMinute / 60,
+            currentMinute % 60,
+            true,
+        ).show()
+    }
+
+    /** Every app with its day/evening visibility; tap one to change it. */
+    private fun showAppVisibilityList() {
+        val apps = AppRepository(this).allApps(includeHidden = true, respectMode = false)
+        val labels = apps.map {
+            getString(
+                R.string.app_visibility_row,
+                it.displayLabel,
+                AppLongPressDialog.visibilityLabel(this, prefs.visibilityFor(it.packageName)),
+            )
+        }.toTypedArray()
+        AlertDialog.Builder(this)
+            .setTitle(R.string.settings_app_visibility)
+            .setItems(labels) { _, which ->
+                AppLongPressDialog.showVisibilityPicker(this, apps[which]) { render() }
+            }
+            .setPositiveButton(android.R.string.ok, null)
             .show()
     }
 
@@ -314,7 +391,7 @@ class SettingsActivity : BaseActivity() {
         selected: Set<String>,
         onDone: (Set<String>) -> Unit,
     ) {
-        val apps = AppRepository(this).allApps(includeHidden = true)
+        val apps = AppRepository(this).allApps(includeHidden = true, respectMode = false)
         val labels = apps.map { it.displayLabel }.toTypedArray()
         val checked = apps.map { it.packageName in selected }.toBooleanArray()
         AlertDialog.Builder(this)

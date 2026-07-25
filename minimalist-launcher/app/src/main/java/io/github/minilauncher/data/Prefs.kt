@@ -2,11 +2,15 @@ package io.github.minilauncher.data
 
 import android.content.Context
 import android.content.SharedPreferences
+import io.github.minilauncher.data.model.AppVisibility
 import io.github.minilauncher.data.model.Folder
 import io.github.minilauncher.data.model.Schedule
+import io.github.minilauncher.mode.DayEveningEvaluator
+import io.github.minilauncher.mode.ModeState
 import org.json.JSONArray
 import org.json.JSONObject
 import java.text.SimpleDateFormat
+import java.time.LocalTime
 import java.util.Date
 import java.util.Locale
 
@@ -94,6 +98,67 @@ class Prefs(context: Context) {
 
     fun deleteFolder(folderId: String) {
         folders = folders.filterNot { it.id == folderId }
+    }
+
+    // ---- day / evening mode ----
+
+    /**
+     * Master switch. Off (the default) means the launcher behaves exactly as
+     * before: every app is visible all day. Reads fall back to off, so broken
+     * storage never leaves an empty launcher.
+     */
+    var dayEveningEnabled: Boolean
+        get() = runCatching { sp.getBoolean(KEY_MODE_ENABLED, false) }.getOrDefault(false)
+        set(value) = sp.edit().putBoolean(KEY_MODE_ENABLED, value).apply()
+
+    /** Minute of day the evening starts (inclusive); default 20:00. */
+    var eveningStartMinute: Int
+        get() = runCatching { sp.getInt(KEY_EVENING_START, DEFAULT_EVENING_START) }
+            .getOrDefault(DEFAULT_EVENING_START)
+        set(value) = sp.edit().putInt(KEY_EVENING_START, value).apply()
+
+    /** Minute of day the evening ends (exclusive); default 07:00, so it wraps midnight. */
+    var eveningEndMinute: Int
+        get() = runCatching { sp.getInt(KEY_EVENING_END, DEFAULT_EVENING_END) }
+            .getOrDefault(DEFAULT_EVENING_END)
+        set(value) = sp.edit().putInt(KEY_EVENING_END, value).apply()
+
+    /**
+     * Epoch millis until which evening mode is forced on (0 = none). Stored as
+     * an end timestamp, not a duration, so it also expires while the app is
+     * closed.
+     */
+    var eveningOverrideUntil: Long
+        get() = runCatching { sp.getLong(KEY_EVENING_OVERRIDE, 0L) }.getOrDefault(0L)
+        set(value) = sp.edit().putLong(KEY_EVENING_OVERRIDE, value).apply()
+
+    /** package -> AppVisibility name; apps without an entry are ALWAYS visible. */
+    var appVisibility: Map<String, String>
+        get() = readStringMap(KEY_APP_VISIBILITY)
+        set(value) = writeStringMap(KEY_APP_VISIBILITY, value)
+
+    fun visibilityFor(pkg: String): AppVisibility = AppVisibility.fromStored(appVisibility[pkg])
+
+    fun setVisibility(pkg: String, visibility: AppVisibility) {
+        appVisibility = if (visibility == AppVisibility.ALWAYS) {
+            appVisibility - pkg
+        } else {
+            appVisibility + (pkg to visibility.name)
+        }
+    }
+
+    /** Resolves the current mode from the stored settings and the device's local clock. */
+    fun currentModeState(nowMillis: Long = System.currentTimeMillis()): ModeState {
+        if (!dayEveningEnabled) return ModeState.DISABLED
+        val now = LocalTime.now()
+        return DayEveningEvaluator.resolve(
+            enabled = true,
+            startMinute = eveningStartMinute,
+            endMinute = eveningEndMinute,
+            minuteOfDay = now.hour * 60 + now.minute,
+            overrideUntilMillis = eveningOverrideUntil,
+            nowMillis = nowMillis,
+        )
     }
 
     // ---- blocking ----
@@ -274,6 +339,8 @@ class Prefs(context: Context) {
         const val THEME_DARK = "dark"
         const val THEME_OLED = "oled"
         const val SHORTCUT_DIALER = "dialer"
+        const val DEFAULT_EVENING_START = 20 * 60
+        const val DEFAULT_EVENING_END = 7 * 60
         const val ALIGN_LEFT = "left"
         const val ALIGN_CENTER = "center"
         const val ALIGN_RIGHT = "right"
@@ -282,6 +349,11 @@ class Prefs(context: Context) {
         private const val KEY_HIDDEN = "hidden_apps"
         private const val KEY_RENAMES = "renames"
         private const val KEY_FOLDERS = "folders"
+        private const val KEY_MODE_ENABLED = "day_evening_enabled"
+        private const val KEY_EVENING_START = "evening_start_min"
+        private const val KEY_EVENING_END = "evening_end_min"
+        private const val KEY_EVENING_OVERRIDE = "evening_override_until"
+        private const val KEY_APP_VISIBILITY = "app_visibility"
         private const val KEY_BLOCKED = "blocked_apps"
         private const val KEY_FOCUS_MODE = "focus_mode"
         private const val KEY_SCHEDULES = "schedules"

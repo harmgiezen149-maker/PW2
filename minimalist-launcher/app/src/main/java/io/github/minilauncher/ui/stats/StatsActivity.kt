@@ -38,7 +38,8 @@ class StatsActivity : BaseActivity() {
         } else {
             UsageRepository.get(this).invalidate()
             val usage = UsageRepository.get(this).todayUsageByPackage()
-            val launchable = repo.allApps(includeHidden = true).associateBy { it.packageName }
+            val launchable = repo.allApps(includeHidden = true, respectMode = false)
+                .associateBy { it.packageName }
             val rows = usage
                 .filterKeys { it in launchable || it == packageName }
                 .toList()

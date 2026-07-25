@@ -33,6 +33,12 @@ accessibility events is collected or stored.
   steps in when you open them.
 - **Focus mode & focus sessions** — a permanent toggle, or a timed
   15/25/45/60-minute session with a countdown on the home screen.
+- **Day / evening mode** — off by default. Switch it on and every app is
+  "always", "day only" or "evening only"; the evening window (20:00–07:00
+  by default, wrapping past midnight) decides what is on screen, and the
+  active mode is shown on the home screen. Need an evening app during the
+  day? "Evening mode now" asks for a confirmation first, then runs for
+  15/30/60 minutes and expires on its own.
 - **Blocking schedules** — automatically block during chosen windows
   (e.g. Mon–Fri 09:00–17:00; overnight windows supported).
 - **Daily time limits** — per-app minutes budget; blocked for the rest of

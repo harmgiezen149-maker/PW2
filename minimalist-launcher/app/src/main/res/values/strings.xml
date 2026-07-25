@@ -70,6 +70,29 @@
     <string name="pause_minutes">%d min</string>
     <string name="pause_never_mind">Never mind, stay focused</string>
 
+    <!-- Day / evening mode -->
+    <string name="settings_section_mode">Day / evening</string>
+    <string name="settings_mode_enabled">Use day/evening mode</string>
+    <string name="settings_evening_start">Evening starts</string>
+    <string name="settings_evening_end">Evening ends</string>
+    <string name="settings_app_visibility">App visibility</string>
+    <string name="settings_evening_override">Evening mode now</string>
+    <string name="app_visibility_row">%1$s — %2$s</string>
+    <string name="action_visibility">Visibility: %s</string>
+    <string name="visibility_title">Show “%s”</string>
+    <string name="visibility_always">Always</string>
+    <string name="visibility_day">Day only</string>
+    <string name="visibility_evening">Evening only</string>
+    <string name="home_mode_day">Day</string>
+    <string name="home_mode_evening">Evening</string>
+    <string name="home_mode_evening_override">Evening · %d min left</string>
+    <string name="override_confirm_title">Turn on evening mode?</string>
+    <string name="override_confirm_message">Are you sure? You deliberately closed this off.</string>
+    <string name="override_confirm_yes">Yes, open it up</string>
+    <string name="override_duration_title">For how long?</string>
+    <string name="override_minutes">%d min</string>
+    <string name="override_end_title">Back to day mode now?</string>
+
     <!-- Home polish -->
     <string name="home_temp">%d°</string>
     <string name="home_temp_unknown">--°</string>
