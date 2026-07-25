@@ -8,6 +8,7 @@ import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
 import android.view.accessibility.AccessibilityEvent
+import android.view.accessibility.AccessibilityWindowInfo
 import io.github.minilauncher.R
 import io.github.minilauncher.data.AppRepository
 import io.github.minilauncher.data.Prefs
@@ -86,7 +87,12 @@ class AppBlockerAccessibilityService : AccessibilityService() {
 
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
         val pkg = event.packageName?.toString() ?: return
-        if (pkg == packageName || pkg in IGNORED_PACKAGES) return
+        if (SystemSurfaces.isSystemSurface(pkg, homePackages, packageName)) return
+
+        // The recent-apps overview shows live windows of open apps. Without
+        // this check we would read those as "the user just opened that app"
+        // and send the user home, emptying the task switcher under them.
+        if (!isActiveAppWindow(event, pkg)) return
 
         when (event.eventType) {
             AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
@@ -96,6 +102,23 @@ class AppBlockerAccessibilityService : AccessibilityService() {
             AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED -> maybeCheckUrl(pkg)
             else -> return
         }
+    }
+
+    /**
+     * Whether this event comes from the application window the user is
+     * actually interacting with, as opposed to a system surface or an app
+     * window sitting behind the task switcher. Runs on the service main
+     * thread, where accessibility windows are safe to inspect.
+     */
+    private fun isActiveAppWindow(event: AccessibilityEvent, pkg: String): Boolean {
+        val windowList = runCatching { windows }.getOrNull()
+        if (!windowList.isNullOrEmpty()) {
+            val window = windowList.firstOrNull { it.id == event.windowId } ?: return false
+            if (window.type != AccessibilityWindowInfo.TYPE_APPLICATION) return false
+            if (!window.isActive) return false
+        }
+        val activePackage = runCatching { rootInActiveWindow?.packageName?.toString() }.getOrNull()
+        return activePackage == null || activePackage == pkg
     }
 
     // ---- website blocker ----
@@ -115,6 +138,8 @@ class AppBlockerAccessibilityService : AccessibilityService() {
         val sites = prefs.blockedSites
         if (sites.isEmpty()) return
         val root = rootInActiveWindow ?: return
+        // Only read the address bar of the browser that is genuinely in front.
+        if (root.packageName?.toString() != pkg) return
         val text = runCatching {
             root.findAccessibilityNodeInfosByViewId(viewId)?.firstOrNull()?.text?.toString()
         }.getOrNull() ?: return
@@ -129,7 +154,13 @@ class AppBlockerAccessibilityService : AccessibilityService() {
         lastSiteBlockMillis = SystemClock.uptimeMillis()
         val info = BlockedInfo(pkg, BlockReason.WEBSITE, site)
         BlockState.pendingBlock = info
-        performGlobalAction(GLOBAL_ACTION_BACK)
+        // BACK navigates the browser off the blocked page so returning to it
+        // does not re-trigger. It is only safe while that browser really is in
+        // front — sending it blindly can close tasks the user still wants.
+        val browserInFront = runCatching {
+            rootInActiveWindow?.packageName?.toString() == pkg
+        }.getOrDefault(false)
+        if (browserInFront) performGlobalAction(GLOBAL_ACTION_BACK)
         performGlobalAction(GLOBAL_ACTION_HOME)
         runCatching {
             startActivity(AppLauncher.blockIntent(this, info, AppRepository(this).labelFor(pkg)))
@@ -230,11 +261,6 @@ class AppBlockerAccessibilityService : AccessibilityService() {
 
     companion object {
         private const val NUDGE_CHANNEL = "nudges"
-
-        private val IGNORED_PACKAGES = setOf(
-            "com.android.systemui",
-            "android",
-        )
 
         // Best-effort address-bar view IDs for common browsers; unknown
         // browsers simply aren't URL-checked.

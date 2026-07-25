@@ -69,7 +69,9 @@ class AppRepository(private val context: Context) {
 
     fun launch(pkg: String): Boolean {
         val intent = context.packageManager.getLaunchIntentForPackage(pkg) ?: return false
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        // RESET_TASK_IF_NEEDED resumes an app's existing task instead of
+        // stacking a new one, which is what keeps the task switcher correct.
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
         context.startActivity(intent)
         return true
     }

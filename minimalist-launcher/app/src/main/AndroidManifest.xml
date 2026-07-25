@@ -36,12 +36,20 @@
         android:allowBackup="true"
         android:supportsRtl="true">
 
+        <!--
+            Task flags mirror AOSP's Launcher3. Deliberately NOT
+            excludeFromRecents: the system already keeps the current home task
+            out of the overview, and excluding it explicitly breaks the task
+            switcher's bookkeeping (empty recents on One UI).
+        -->
         <activity
             android:name=".ui.home.HomeActivity"
             android:exported="true"
             android:launchMode="singleTask"
             android:stateNotNeeded="true"
-            android:excludeFromRecents="true">
+            android:taskAffinity=""
+            android:clearTaskOnLaunch="true"
+            android:resumeWhilePausing="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
