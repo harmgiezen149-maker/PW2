@@ -92,6 +92,13 @@
     <string name="override_duration_title">For how long?</string>
     <string name="override_minutes">%d min</string>
     <string name="override_end_title">Back to day mode now?</string>
+    <string name="settings_notification_windows">Notification windows</string>
+    <string name="action_notification_window">Notifications: %s</string>
+    <string name="notification_window_title">Notifications for “%s”</string>
+    <string name="notif_window_always">Always allowed</string>
+    <string name="notif_window_day">Day only</string>
+    <string name="notif_window_evening">Evening only</string>
+    <string name="notification_windows_needs_access">Notification access is off, so nothing is filtered yet. Grant it under Settings › Permissions.</string>
 
     <!-- Home polish -->
     <string name="home_temp">%d°</string>

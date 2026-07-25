@@ -38,7 +38,9 @@ accessibility events is collected or stored.
   by default, wrapping past midnight) decides what is on screen, and the
   active mode is shown on the home screen. Need an evening app during the
   day? "Evening mode now" asks for a confirmation first, then runs for
-  15/30/60 minutes and expires on its own.
+  15/30/60 minutes and expires on its own. Notifications follow the same
+  windows: per app you can allow them always, during the day only, or in
+  the evening only.
 - **Blocking schedules** — automatically block during chosen windows
   (e.g. Mon–Fri 09:00–17:00; overnight windows supported).
 - **Daily time limits** — per-app minutes budget; blocked for the rest of
@@ -48,8 +50,10 @@ accessibility events is collected or stored.
 - **Screen time dashboard** — today's usage per app and in total.
 - **In-app time reminders** — a gentle notification after N minutes in
   the same app.
-- **Notification filter** — mute chosen apps; filtered notifications are
-  counted on the stats screen.
+- **Notification filter** — mute chosen apps entirely, or let day/evening
+  windows decide per app; filtered notifications are counted on the stats
+  screen. Filtering cancels a notification, so one blocked during the day
+  is dismissed, not held back until the evening.
 - **Themes** — monochrome Light / pure-black, white or CRT-green text, a
   large-font option and an optional system-wide grayscale toggle.
 

@@ -147,6 +147,25 @@ class Prefs(context: Context) {
         }
     }
 
+    /**
+     * package -> AppVisibility name, telling when this app's notifications are
+     * allowed. Apps without an entry are never filtered by the day/evening mode.
+     */
+    var notificationWindows: Map<String, String>
+        get() = readStringMap(KEY_NOTIFICATION_WINDOWS)
+        set(value) = writeStringMap(KEY_NOTIFICATION_WINDOWS, value)
+
+    fun notificationWindowFor(pkg: String): AppVisibility =
+        AppVisibility.fromStored(notificationWindows[pkg])
+
+    fun setNotificationWindow(pkg: String, window: AppVisibility) {
+        notificationWindows = if (window == AppVisibility.ALWAYS) {
+            notificationWindows - pkg
+        } else {
+            notificationWindows + (pkg to window.name)
+        }
+    }
+
     /** Resolves the current mode from the stored settings and the device's local clock. */
     fun currentModeState(nowMillis: Long = System.currentTimeMillis()): ModeState {
         if (!dayEveningEnabled) return ModeState.DISABLED
@@ -354,6 +373,7 @@ class Prefs(context: Context) {
         private const val KEY_EVENING_END = "evening_end_min"
         private const val KEY_EVENING_OVERRIDE = "evening_override_until"
         private const val KEY_APP_VISIBILITY = "app_visibility"
+        private const val KEY_NOTIFICATION_WINDOWS = "notification_windows"
         private const val KEY_BLOCKED = "blocked_apps"
         private const val KEY_FOCUS_MODE = "focus_mode"
         private const val KEY_SCHEDULES = "schedules"

@@ -144,6 +144,11 @@ class SettingsActivity : BaseActivity() {
                 getString(R.string.settings_app_visibility),
                 prefs.appVisibility.size.toString(),
             ) { showAppVisibilityList() }
+            row(
+                container,
+                getString(R.string.settings_notification_windows),
+                prefs.notificationWindows.size.toString(),
+            ) { showNotificationWindowList() }
             val overrideActive = prefs.eveningOverrideUntil > System.currentTimeMillis()
             row(
                 container,
@@ -263,6 +268,35 @@ class SettingsActivity : BaseActivity() {
             .setTitle(R.string.settings_app_visibility)
             .setItems(labels) { _, which ->
                 AppLongPressDialog.showVisibilityPicker(this, apps[which]) { render() }
+            }
+            .setPositiveButton(android.R.string.ok, null)
+            .show()
+    }
+
+    /** Every app with its notification window; tap one to change it. */
+    private fun showNotificationWindowList() {
+        if (!PermissionChecks.isNotificationListenerEnabled(this)) {
+            android.widget.Toast.makeText(
+                this,
+                R.string.notification_windows_needs_access,
+                android.widget.Toast.LENGTH_LONG,
+            ).show()
+        }
+        val apps = AppRepository(this).allApps(includeHidden = true, respectMode = false)
+        val labels = apps.map {
+            getString(
+                R.string.app_visibility_row,
+                it.displayLabel,
+                AppLongPressDialog.notificationWindowLabel(
+                    this,
+                    prefs.notificationWindowFor(it.packageName),
+                ),
+            )
+        }.toTypedArray()
+        AlertDialog.Builder(this)
+            .setTitle(R.string.settings_notification_windows)
+            .setItems(labels) { _, which ->
+                AppLongPressDialog.showNotificationWindowPicker(this, apps[which]) { render() }
             }
             .setPositiveButton(android.R.string.ok, null)
             .show()

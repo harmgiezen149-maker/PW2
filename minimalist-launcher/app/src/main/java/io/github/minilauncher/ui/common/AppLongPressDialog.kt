@@ -65,6 +65,10 @@ object AppLongPressDialog {
                 R.string.action_visibility,
                 visibilityLabel(activity, prefs.visibilityFor(pkg)),
             ) to { showVisibilityPicker(activity, entry, onChanged) }
+            options += activity.getString(
+                R.string.action_notification_window,
+                notificationWindowLabel(activity, prefs.notificationWindowFor(pkg)),
+            ) to { showNotificationWindowPicker(activity, entry, onChanged) }
         }
         val folder = prefs.folderContaining(pkg)
         options += if (folder != null) {
@@ -108,6 +112,32 @@ object AppLongPressDialog {
             .setTitle(activity.getString(R.string.visibility_title, entry.displayLabel))
             .setSingleChoiceItems(labels, values.indexOf(current)) { dialog, which ->
                 prefs.setVisibility(entry.packageName, values[which])
+                dialog.dismiss()
+                onChanged()
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    fun notificationWindowLabel(activity: Activity, window: AppVisibility): String =
+        activity.getString(
+            when (window) {
+                AppVisibility.ALWAYS -> R.string.notif_window_always
+                AppVisibility.DAY -> R.string.notif_window_day
+                AppVisibility.EVENING -> R.string.notif_window_evening
+            }
+        )
+
+    /** Lets the user pick when an app may notify: always, day only or evening only. */
+    fun showNotificationWindowPicker(activity: Activity, entry: AppEntry, onChanged: () -> Unit) {
+        val prefs = Prefs.get(activity)
+        val values = AppVisibility.entries.toTypedArray()
+        val labels = values.map { notificationWindowLabel(activity, it) }.toTypedArray()
+        val current = prefs.notificationWindowFor(entry.packageName)
+        AlertDialog.Builder(activity)
+            .setTitle(activity.getString(R.string.notification_window_title, entry.displayLabel))
+            .setSingleChoiceItems(labels, values.indexOf(current)) { dialog, which ->
+                prefs.setNotificationWindow(entry.packageName, values[which])
                 dialog.dismiss()
                 onChanged()
             }
