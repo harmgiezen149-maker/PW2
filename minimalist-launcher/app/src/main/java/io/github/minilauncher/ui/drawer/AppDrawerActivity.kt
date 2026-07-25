@@ -9,7 +9,6 @@ import android.view.MotionEvent
 import android.widget.EditText
 import androidx.appcompat.app.AlertDialog
 import androidx.core.widget.doAfterTextChanged
-import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import io.github.minilauncher.R
 import io.github.minilauncher.data.AppRepository
@@ -20,6 +19,7 @@ import io.github.minilauncher.ui.common.AppLauncher
 import io.github.minilauncher.ui.common.AppLongPressDialog
 import io.github.minilauncher.ui.common.BaseActivity
 import io.github.minilauncher.ui.common.TextListAdapter
+import io.github.minilauncher.ui.common.WheelLayoutManager
 import kotlin.math.abs
 
 class AppDrawerActivity : BaseActivity() {
@@ -64,7 +64,7 @@ class AppDrawerActivity : BaseActivity() {
             onLongClick = { pos -> rows.getOrNull(pos)?.onLongClick?.invoke() },
         )
         findViewById<RecyclerView>(R.id.appList).apply {
-            layoutManager = LinearLayoutManager(this@AppDrawerActivity)
+            layoutManager = WheelLayoutManager(this@AppDrawerActivity)
             adapter = this@AppDrawerActivity.adapter
         }
         findViewById<EditText>(R.id.searchField).doAfterTextChanged {
