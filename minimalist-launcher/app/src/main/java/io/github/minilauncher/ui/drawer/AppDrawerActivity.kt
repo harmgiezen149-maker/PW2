@@ -42,6 +42,7 @@ class AppDrawerActivity : BaseActivity() {
     private var query: String = ""
     private var lastModeKey: String? = null
 
+    private val background = java.util.concurrent.Executors.newSingleThreadExecutor()
     private val handler = Handler(Looper.getMainLooper())
     private val modeTick = object : Runnable {
         override fun run() {
@@ -112,6 +113,11 @@ class AppDrawerActivity : BaseActivity() {
         super.onPause()
     }
 
+    override fun onDestroy() {
+        background.shutdown()
+        super.onDestroy()
+    }
+
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
         // Inside a folder, back returns to the folder list before closing.
@@ -130,11 +136,18 @@ class AppDrawerActivity : BaseActivity() {
         overridePendingTransition(R.anim.stay, R.anim.slide_out_down)
     }
 
+    /** Package-manager work stays off the main thread so the slide-up stays smooth. */
     private fun reload() {
         val state = prefs.currentModeState()
         lastModeKey = "${state.enabled}-${state.evening}"
-        allApps = repo.allApps()
-        rebuild()
+        background.execute {
+            val apps = runCatching { repo.allApps() }.getOrDefault(emptyList())
+            runOnUiThread {
+                if (isFinishing || isDestroyed) return@runOnUiThread
+                allApps = apps
+                rebuild()
+            }
+        }
     }
 
     private fun rebuild() {

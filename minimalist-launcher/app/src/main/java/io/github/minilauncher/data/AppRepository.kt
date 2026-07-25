@@ -23,28 +23,21 @@ class AppRepository(private val context: Context) {
      * mode; configuration screens pass false so every app stays selectable.
      */
     fun allApps(includeHidden: Boolean = false, respectMode: Boolean = true): List<AppEntry> {
-        val pm = context.packageManager
-        val intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
-        val resolved = pm.queryIntentActivities(intent, PackageManager.MATCH_ALL)
         val renames = prefs.renames
         val hidden = prefs.hiddenApps
         val favorites = prefs.favorites.toSet()
         val visibility = prefs.appVisibility
         val mode = if (respectMode) prefs.currentModeState() else ModeState.DISABLED
-        return resolved
+        return installedApps()
             .asSequence()
-            .map { it.activityInfo }
-            .filter { it.packageName != context.packageName }
-            .distinctBy { it.packageName }
-            .map { info ->
-                val original = info.applicationInfo.loadLabel(pm).toString()
+            .map { raw ->
                 AppEntry(
-                    packageName = info.packageName,
-                    originalLabel = original,
-                    displayLabel = renames[info.packageName] ?: original,
-                    isHidden = info.packageName in hidden,
-                    isFavorite = info.packageName in favorites,
-                    visibility = AppVisibility.fromStored(visibility[info.packageName]),
+                    packageName = raw.packageName,
+                    originalLabel = raw.label,
+                    displayLabel = renames[raw.packageName] ?: raw.label,
+                    isHidden = raw.packageName in hidden,
+                    isFavorite = raw.packageName in favorites,
+                    visibility = AppVisibility.fromStored(visibility[raw.packageName]),
                 )
             }
             .filter { includeHidden || !it.isHidden }
@@ -52,6 +45,29 @@ class AppRepository(private val context: Context) {
             .sortedBy { it.displayLabel.lowercase() }
             .toList()
     }
+
+    /**
+     * The raw launchable apps with their original labels. Loading a label
+     * reads another package's resources, so doing this for every installed app
+     * costs hundreds of milliseconds — far too slow to repeat on every resume.
+     * The result is cached and dropped when packages change.
+     */
+    private fun installedApps(): List<RawApp> {
+        cache?.let { return it }
+        val pm = context.packageManager
+        val intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
+        val apps = pm.queryIntentActivities(intent, PackageManager.MATCH_ALL)
+            .asSequence()
+            .map { it.activityInfo }
+            .filter { it.packageName != context.packageName }
+            .distinctBy { it.packageName }
+            .map { RawApp(it.packageName, it.applicationInfo.loadLabel(pm).toString()) }
+            .toList()
+        cache = apps
+        return apps
+    }
+
+    private data class RawApp(val packageName: String, val label: String)
 
     /** Favorites in the user's chosen order, skipping uninstalled apps. */
     fun favoriteApps(): List<AppEntry> {
@@ -61,10 +77,21 @@ class AppRepository(private val context: Context) {
 
     fun labelFor(pkg: String): String {
         prefs.renames[pkg]?.let { return it }
+        cache?.firstOrNull { it.packageName == pkg }?.let { return it.label }
         return runCatching {
             val pm = context.packageManager
             pm.getApplicationInfo(pkg, 0).loadLabel(pm).toString()
         }.getOrDefault(pkg)
+    }
+
+    companion object {
+        @Volatile
+        private var cache: List<RawApp>? = null
+
+        /** Call when packages are installed, removed or replaced. */
+        fun invalidate() {
+            cache = null
+        }
     }
 
     fun launch(pkg: String): Boolean {

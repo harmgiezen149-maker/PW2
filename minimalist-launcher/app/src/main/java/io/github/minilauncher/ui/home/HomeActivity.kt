@@ -45,6 +45,7 @@ class HomeActivity : BaseActivity() {
     /** Last rendered day/evening state, so the list is only rebuilt when it flips. */
     private var lastModeKey: String? = null
 
+    private val background = java.util.concurrent.Executors.newSingleThreadExecutor()
     private val handler = Handler(Looper.getMainLooper())
     private val countdownTick = object : Runnable {
         override fun run() {
@@ -162,6 +163,11 @@ class HomeActivity : BaseActivity() {
         super.onPause()
     }
 
+    override fun onDestroy() {
+        background.shutdown()
+        super.onDestroy()
+    }
+
     private fun openDrawer() {
         startActivity(Intent(this, AppDrawerActivity::class.java))
         @Suppress("DEPRECATION")
@@ -192,13 +198,15 @@ class HomeActivity : BaseActivity() {
         view.text = if (known != null) getString(R.string.home_temp, known)
         else getString(R.string.home_temp_unknown)
         if (WeatherFetcher.isFresh()) return
-        val location = bestLastLocation() ?: return
-        Thread {
-            val temp = WeatherFetcher.fetch(location.latitude, location.longitude) ?: return@Thread
+        // Both the location lookup and the fetch are off the main thread:
+        // getLastKnownLocation is a system call that can take a while.
+        background.execute {
+            val location = bestLastLocation() ?: return@execute
+            val temp = WeatherFetcher.fetch(location.latitude, location.longitude) ?: return@execute
             runOnUiThread {
                 if (!isDestroyed) view.text = getString(R.string.home_temp, temp)
             }
-        }.start()
+        }
     }
 
     private fun setUpShortcut(viewId: Int, isLeft: Boolean) {
@@ -282,19 +290,40 @@ class HomeActivity : BaseActivity() {
         }
     }
 
-    private fun refresh() {
-        favorites = repo.favoriteApps()
-        adapter.submit(favorites.map { it.displayLabel })
-        findViewById<TextView>(R.id.emptyHint).visibility =
-            if (favorites.isEmpty()) View.VISIBLE else View.GONE
-        findViewById<TextView>(R.id.blockerWarning).visibility =
-            if (PermissionChecks.blockerConfiguredButDisabled(this)) View.VISIBLE else View.GONE
-        findViewById<TextView>(R.id.shortcutLeft).text = shortcutLabel(prefs.shortcutLeft)
-        findViewById<TextView>(R.id.shortcutRight).text = shortcutLabel(prefs.shortcutRight)
+    /**
+     * Reads preferences only — safe to run on the main thread.
+     */
+    private fun refreshInstantUi() {
         updateFocusCountdown()
         val state = prefs.currentModeState()
         lastModeKey = "${state.enabled}-${state.evening}"
         updateModeLabel(state)
+    }
+
+    /**
+     * Everything that queries the package manager runs off the main thread.
+     * Doing it inside onResume stalls the very frame the system needs for the
+     * swipe-up animation, which makes it cancel the task switcher.
+     */
+    private fun refresh() {
+        refreshInstantUi()
+        background.execute {
+            val favs = runCatching { repo.favoriteApps() }.getOrDefault(emptyList())
+            val leftLabel = shortcutLabel(prefs.shortcutLeft)
+            val rightLabel = shortcutLabel(prefs.shortcutRight)
+            val warnBlocker = PermissionChecks.blockerConfiguredButDisabled(this)
+            runOnUiThread {
+                if (isFinishing || isDestroyed) return@runOnUiThread
+                favorites = favs
+                adapter.submit(favs.map { it.displayLabel })
+                findViewById<TextView>(R.id.emptyHint).visibility =
+                    if (favs.isEmpty()) View.VISIBLE else View.GONE
+                findViewById<TextView>(R.id.blockerWarning).visibility =
+                    if (warnBlocker) View.VISIBLE else View.GONE
+                findViewById<TextView>(R.id.shortcutLeft).text = leftLabel
+                findViewById<TextView>(R.id.shortcutRight).text = rightLabel
+            }
+        }
     }
 
     @Deprecated("Deprecated in Java")
