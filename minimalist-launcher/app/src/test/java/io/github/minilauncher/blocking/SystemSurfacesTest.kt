@@ -42,4 +42,20 @@ class SystemSurfacesTest {
         assertFalse(SystemSurfaces.isSystemSurface("com.netflix.mediaclient", emptySet(), self))
         assertTrue(SystemSurfaces.isSystemSurface("com.android.systemui", emptySet(), self))
     }
+
+    @Test
+    fun `window content is only watched inside a browser with blocked sites`() {
+        assertTrue(SystemSurfaces.shouldWatchWindowContent(isBrowser = true, hasBlockedSites = true))
+    }
+
+    @Test
+    fun `no blocked sites means never watching window content`() {
+        assertFalse(SystemSurfaces.shouldWatchWindowContent(isBrowser = true, hasBlockedSites = false))
+    }
+
+    @Test
+    fun `outside a browser window content is never watched`() {
+        assertFalse(SystemSurfaces.shouldWatchWindowContent(isBrowser = false, hasBlockedSites = true))
+        assertFalse(SystemSurfaces.shouldWatchWindowContent(isBrowser = false, hasBlockedSites = false))
+    }
 }

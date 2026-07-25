@@ -34,6 +34,7 @@ class AppBlockerAccessibilityService : AccessibilityService() {
     private val sessionTracker = SessionTracker()
     private val launchableCache = java.util.concurrent.ConcurrentHashMap<String, Boolean>()
     private var homePackages: Set<String> = emptySet()
+    private var contentWatching = false
 
     private lateinit var prefs: Prefs
     private lateinit var usage: UsageRepository
@@ -51,6 +52,7 @@ class AppBlockerAccessibilityService : AccessibilityService() {
         instance = this
         homePackages = queryHomePackages()
         launchableCache.clear()
+        contentWatching = false // config declares window-state events only
         registerReceiver(
             screenOffReceiver,
             android.content.IntentFilter(android.content.Intent.ACTION_SCREEN_OFF),
@@ -85,40 +87,68 @@ class AppBlockerAccessibilityService : AccessibilityService() {
         }
     }
 
+    /**
+     * Cheap checks come first: window-content events arrive constantly, so
+     * everything on that path must stay trivial. Only the far rarer
+     * window-state events do any window inspection.
+     */
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
         val pkg = event.packageName?.toString() ?: return
-        if (SystemSurfaces.isSystemSurface(pkg, homePackages, packageName)) return
-
-        // The recent-apps overview shows live windows of open apps. Without
-        // this check we would read those as "the user just opened that app"
-        // and send the user home, emptying the task switcher under them.
-        if (!isActiveAppWindow(event, pkg)) return
 
         when (event.eventType) {
+            AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED -> {
+                if (!BROWSER_URL_BARS.containsKey(pkg)) return
+                maybeCheckUrl(pkg)
+            }
             AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
+                if (SystemSurfaces.isSystemSurface(pkg, homePackages, packageName)) {
+                    setContentWatching(false)
+                    return
+                }
+                // The recent-apps overview shows live windows of open apps.
+                // Without this check we would read those as "the user just
+                // opened that app" and send them home, emptying the switcher.
+                if (!isActiveAppWindow(event)) return
+
+                setContentWatching(
+                    SystemSurfaces.shouldWatchWindowContent(
+                        isBrowser = BROWSER_URL_BARS.containsKey(pkg),
+                        hasBlockedSites = prefs.blockedSites.isNotEmpty(),
+                    )
+                )
                 executor.execute { handleForeground(pkg) }
                 maybeCheckUrl(pkg) // catches tab switches too
             }
-            AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED -> maybeCheckUrl(pkg)
             else -> return
         }
     }
 
     /**
-     * Whether this event comes from the application window the user is
-     * actually interacting with, as opposed to a system surface or an app
-     * window sitting behind the task switcher. Runs on the service main
-     * thread, where accessibility windows are safe to inspect.
+     * Whether the event comes from the application window the user is actually
+     * interacting with, rather than one sitting behind the task switcher. Uses
+     * only window metadata — never the node tree, which is expensive to build.
      */
-    private fun isActiveAppWindow(event: AccessibilityEvent, pkg: String): Boolean {
+    private fun isActiveAppWindow(event: AccessibilityEvent): Boolean {
         val windowList = runCatching { windows }.getOrNull()
-        if (!windowList.isNullOrEmpty()) {
-            val window = windowList.firstOrNull { it.id == event.windowId } ?: return false
-            if (window.type != AccessibilityWindowInfo.TYPE_APPLICATION) return false
-            if (!window.isActive) return false
+        if (windowList.isNullOrEmpty()) return true // cannot tell: keep blocking working
+        val window = windowList.firstOrNull { it.id == event.windowId } ?: return false
+        return window.type == AccessibilityWindowInfo.TYPE_APPLICATION && window.isActive
+    }
+
+    /**
+     * Subscribes to window-content events only while they are needed. Leaving
+     * them on permanently floods the system with events from every app and
+     * visibly slows the system UI down.
+     */
+    private fun setContentWatching(enabled: Boolean) {
+        if (enabled == contentWatching) return
+        val info = serviceInfo ?: return
+        info.eventTypes = if (enabled) {
+            info.eventTypes or AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED
+        } else {
+            info.eventTypes and AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED.inv()
         }
-        val activePackage = runCatching { rootInActiveWindow?.packageName?.toString() }.getOrNull()
-        return activePackage == null || activePackage == pkg
+        runCatching { serviceInfo = info }.onSuccess { contentWatching = enabled }
     }
 
     // ---- website blocker ----
@@ -206,12 +236,17 @@ class AppBlockerAccessibilityService : AccessibilityService() {
     private fun scheduleSessionCheck() {
         mainHandler.postDelayed({
             val pm = getSystemService(android.os.PowerManager::class.java)
-            if (pm == null || pm.isInteractive) {
+            val current = sessionTracker.currentPackage
+            // Only re-evaluate while that app really is still in front: this
+            // tick can send the user home, which must never happen while they
+            // are in the task switcher or another app.
+            val stillInFront = current != null && runCatching {
+                rootInActiveWindow?.packageName?.toString() == current
+            }.getOrDefault(false)
+            if ((pm == null || pm.isInteractive) && stillInFront) {
                 executor.execute {
-                    sessionTracker.currentPackage?.let { pkg ->
-                        usage.invalidate()
-                        handleForeground(pkg)
-                    }
+                    usage.invalidate()
+                    handleForeground(current)
                 }
             }
             scheduleSessionCheck()
