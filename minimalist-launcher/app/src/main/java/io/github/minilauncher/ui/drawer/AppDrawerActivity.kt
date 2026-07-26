@@ -8,6 +8,7 @@ import android.view.GestureDetector
 import android.view.MotionEvent
 import android.widget.EditText
 import androidx.appcompat.app.AlertDialog
+import androidx.core.view.doOnLayout
 import androidx.core.widget.doAfterTextChanged
 import androidx.recyclerview.widget.RecyclerView
 import io.github.minilauncher.R
@@ -67,6 +68,14 @@ class AppDrawerActivity : BaseActivity() {
         findViewById<RecyclerView>(R.id.appList).apply {
             layoutManager = WheelLayoutManager(this@AppDrawerActivity)
             adapter = this@AppDrawerActivity.adapter
+            // Room above and below so the first folder and the last app can
+            // scroll into the middle, where they render at full size. Without
+            // it the top row is stuck at the edge and always the smallest.
+            clipToPadding = false
+            doOnLayout {
+                val room = (it.height * TOP_BOTTOM_ROOM).toInt()
+                if (paddingTop != room) setPadding(paddingLeft, room, paddingRight, room)
+            }
         }
         findViewById<EditText>(R.id.searchField).doAfterTextChanged {
             query = it?.toString().orEmpty()
@@ -250,5 +259,10 @@ class AppDrawerActivity : BaseActivity() {
             }
             .setNegativeButton(android.R.string.cancel, null)
             .show()
+    }
+
+    companion object {
+        /** Share of the list height kept free above and below the rows. */
+        private const val TOP_BOTTOM_ROOM = 0.32f
     }
 }
