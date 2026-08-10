@@ -150,7 +150,15 @@ class HomeActivity : BaseActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        EventLog.record(this, "HOME onNewIntent")
+        setIntent(intent)
+        // Who sent this home intent, and what does it look like? A redundant
+        // one arriving right after the overview appears is what closes it.
+        val categories = intent.categories?.joinToString(",") { it.substringAfterLast('.') } ?: "-"
+        val from = runCatching { referrer?.host ?: referrer?.toString() }.getOrNull() ?: "?"
+        EventLog.record(
+            this,
+            "HOME onNewIntent cat=$categories flags=0x${Integer.toHexString(intent.flags)} from=$from",
+        )
     }
 
     override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {
