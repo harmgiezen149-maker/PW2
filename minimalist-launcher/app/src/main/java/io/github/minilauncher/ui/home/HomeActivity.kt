@@ -32,6 +32,7 @@ import io.github.minilauncher.ui.common.TextListAdapter
 import io.github.minilauncher.ui.drawer.AppDrawerActivity
 import io.github.minilauncher.ui.onboarding.OnboardingActivity
 import io.github.minilauncher.ui.settings.SettingsActivity
+import io.github.minilauncher.util.EventLog
 import kotlin.math.abs
 
 class HomeActivity : BaseActivity() {
@@ -65,6 +66,7 @@ class HomeActivity : BaseActivity() {
         setContentView(R.layout.activity_home)
         repo = AppRepository(this)
         prefs = Prefs.get(this)
+        EventLog.record(this, "HOME onCreate (restored=${savedInstanceState != null})")
 
         adapter = TextListAdapter(
             onClick = { pos -> favorites.getOrNull(pos)?.let { AppLauncher.launch(this, it.packageName) } },
@@ -146,8 +148,24 @@ class HomeActivity : BaseActivity() {
         return super.dispatchTouchEvent(ev)
     }
 
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        EventLog.record(this, "HOME onNewIntent")
+    }
+
+    override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {
+        super.onConfigurationChanged(newConfig)
+        EventLog.record(
+            this,
+            "HOME onConfigurationChanged " +
+                "orientation=${newConfig.orientation} " +
+                "size=${newConfig.screenWidthDp}x${newConfig.screenHeightDp}dp",
+        )
+    }
+
     override fun onResume() {
         super.onResume()
+        EventLog.record(this, "HOME onResume")
         // Fallback path: the accessibility service forced us home because a
         // blocked app opened, but could not start the block screen itself.
         BlockState.consumePendingBlock()?.let { info ->
@@ -159,11 +177,18 @@ class HomeActivity : BaseActivity() {
     }
 
     override fun onPause() {
+        EventLog.record(this, "HOME onPause")
         handler.removeCallbacks(countdownTick)
         super.onPause()
     }
 
     override fun onDestroy() {
+        // isChangingConfigurations tells a configuration-driven recreate apart
+        // from the system simply tearing the launcher down.
+        EventLog.record(
+            this,
+            "HOME onDestroy finishing=$isFinishing changingConfig=$isChangingConfigurations",
+        )
         background.shutdown()
         super.onDestroy()
     }

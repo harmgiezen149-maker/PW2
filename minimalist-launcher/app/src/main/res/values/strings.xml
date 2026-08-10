@@ -161,6 +161,11 @@
     <string name="settings_hidden_apps">Hidden apps</string>
     <string name="settings_stats">Screen time today</string>
     <string name="settings_permissions">Permissions</string>
+    <string name="diagnostics_title">Diagnostics</string>
+    <string name="diagnostics_subtitle">What the launcher itself did, newest at the bottom. Clear it, reproduce the problem, then share this list.</string>
+    <string name="diagnostics_empty">Nothing recorded yet.</string>
+    <string name="diagnostics_clear">Clear</string>
+    <string name="diagnostics_share">Share</string>
     <string name="settings_set_default_home">Set as default launcher</string>
     <string name="state_on">On</string>
     <string name="state_off">Off</string>

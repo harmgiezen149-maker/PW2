@@ -21,6 +21,7 @@ import io.github.minilauncher.ui.common.AppLongPressDialog
 import io.github.minilauncher.ui.common.BaseActivity
 import io.github.minilauncher.ui.common.TextListAdapter
 import io.github.minilauncher.ui.common.WheelLayoutManager
+import io.github.minilauncher.util.EventLog
 import kotlin.math.abs
 
 class AppDrawerActivity : BaseActivity() {
@@ -60,6 +61,7 @@ class AppDrawerActivity : BaseActivity() {
         setContentView(R.layout.activity_drawer)
         repo = AppRepository(this)
         prefs = Prefs.get(this)
+        EventLog.record(this, "DRAWER onCreate")
 
         adapter = TextListAdapter(
             onClick = { pos -> rows.getOrNull(pos)?.onClick?.invoke() },
@@ -123,6 +125,10 @@ class AppDrawerActivity : BaseActivity() {
     }
 
     override fun onDestroy() {
+        EventLog.record(
+            this,
+            "DRAWER onDestroy finishing=$isFinishing changingConfig=$isChangingConfigurations",
+        )
         background.shutdown()
         super.onDestroy()
     }

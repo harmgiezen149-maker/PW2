@@ -316,6 +316,13 @@ class Prefs(context: Context) {
         get() = sp.getString(KEY_SHORTCUT_RIGHT, "com.google.android.gm")!!
         set(value) = sp.edit().putString(KEY_SHORTCUT_RIGHT, value).apply()
 
+    // ---- diagnostics ----
+
+    /** Lifecycle trail, kept across process death so a crash or kill is visible. */
+    var diagnosticsLog: List<String>
+        get() = readStringList(KEY_DIAGNOSTICS)
+        set(value) = writeStringList(KEY_DIAGNOSTICS, value)
+
     // ---- onboarding ----
 
     var onboardingDone: Boolean
@@ -396,6 +403,7 @@ class Prefs(context: Context) {
         private const val KEY_LARGE_FONT = "large_font"
         private const val KEY_DRAWER_HINT = "drawer_hint"
         private const val KEY_ONBOARDING_DONE = "onboarding_done"
+        private const val KEY_DIAGNOSTICS = "diagnostics_log"
 
         @Volatile
         private var instance: Prefs? = null
