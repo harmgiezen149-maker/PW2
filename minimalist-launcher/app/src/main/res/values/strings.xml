@@ -159,6 +159,10 @@
     <string name="settings_font_size">Font size</string>
     <string name="settings_grayscale">System grayscale (advanced)</string>
     <string name="settings_hidden_apps">Hidden apps</string>
+    <string name="settings_recent_apps">Recent apps (swipe sideways)</string>
+    <string name="recents_title">Recent apps</string>
+    <string name="recents_empty">Nothing used recently yet.</string>
+    <string name="recents_no_permission">Usage access is needed to list recent apps. Tap to grant it.</string>
     <string name="settings_stats">Screen time today</string>
     <string name="settings_permissions">Permissions</string>
     <string name="diagnostics_title">Diagnostics</string>

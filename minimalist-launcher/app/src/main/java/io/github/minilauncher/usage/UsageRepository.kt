@@ -37,6 +37,29 @@ class UsageRepository(context: Context) {
         cacheTimestamp = 0L
     }
 
+    /**
+     * Packages ordered by when they were last in the foreground, most recent
+     * first — the launcher's own answer to the task switcher.
+     */
+    fun recentlyUsedPackages(
+        limit: Int = 15,
+        lookbackMillis: Long = 24 * 60 * 60_000L,
+    ): List<String> {
+        val now = System.currentTimeMillis()
+        val events = runCatching { usm.queryEvents(now - lookbackMillis, now) }.getOrNull()
+            ?: return emptyList()
+        val lastUsed = HashMap<String, Long>()
+        val event = UsageEvents.Event()
+        while (events.hasNextEvent()) {
+            events.getNextEvent(event)
+            if (event.eventType == EVENT_FOREGROUND) {
+                val pkg = event.packageName ?: continue
+                lastUsed[pkg] = event.timeStamp
+            }
+        }
+        return lastUsed.entries.sortedByDescending { it.value }.map { it.key }.take(limit)
+    }
+
     private fun compute(now: Long): Map<String, Long> {
         val midnight = Calendar.getInstance().apply {
             set(Calendar.HOUR_OF_DAY, 0)

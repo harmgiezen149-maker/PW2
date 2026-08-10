@@ -302,6 +302,11 @@ class Prefs(context: Context) {
         get() = sp.getString(KEY_ALIGNMENT, ALIGN_LEFT)!!
         set(value) = sp.edit().putString(KEY_ALIGNMENT, value).apply()
 
+    /** Swipe sideways on the home screen for the launcher's own recent-apps list. */
+    var recentAppsEnabled: Boolean
+        get() = sp.getBoolean(KEY_RECENT_APPS, true)
+        set(value) = sp.edit().putBoolean(KEY_RECENT_APPS, value).apply()
+
     /** CRT-style green text instead of white/black. */
     var crtGreen: Boolean
         get() = sp.getBoolean(KEY_CRT_GREEN, false)
@@ -391,6 +396,7 @@ class Prefs(context: Context) {
         private const val KEY_FOCUS_SESSION = "focus_session_until"
         private const val KEY_BLOCKED_SITES = "blocked_sites"
         private const val KEY_CRT_GREEN = "crt_green"
+        private const val KEY_RECENT_APPS = "recent_apps_enabled"
         private const val KEY_ALIGNMENT = "alignment"
         private const val KEY_SHORTCUT_LEFT = "shortcut_left"
         private const val KEY_SHORTCUT_RIGHT = "shortcut_right"

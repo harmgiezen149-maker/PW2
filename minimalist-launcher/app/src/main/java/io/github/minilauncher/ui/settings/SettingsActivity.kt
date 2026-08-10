@@ -209,6 +209,14 @@ class SettingsActivity : BaseActivity() {
                 selected = prefs.hiddenApps,
             ) { prefs.hiddenApps = it; render() }
         }
+        row(
+            container,
+            getString(R.string.settings_recent_apps),
+            if (prefs.recentAppsEnabled) getString(R.string.state_on) else getString(R.string.state_off),
+        ) {
+            prefs.recentAppsEnabled = !prefs.recentAppsEnabled
+            render()
+        }
         row(container, getString(R.string.settings_stats), "") {
             startActivity(Intent(this, StatsActivity::class.java))
         }

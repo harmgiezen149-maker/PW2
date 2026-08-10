@@ -21,7 +21,11 @@ accessibility events is collected or stored.
 - **Configurable corner shortcuts** — Phone bottom-left, Gmail
   bottom-right by default; long-press either to pick any app.
 - **Gestures** — swipe up for the app drawer, swipe down for the
-  notification shade (needs the blocker service).
+  notification shade (needs the blocker service), swipe sideways for the
+  launcher's own recent-apps list.
+- **Recent apps** — a text list of what you used last, so switching back
+  works even where the system's task switcher misbehaves with a
+  third-party launcher. Switch it off under Settings › Recent apps.
 - **Hide & rename apps** — long-press any app in the drawer.
 - **Folders** — group similar apps in the drawer: long-press an app →
   "Add to folder". Tap a folder to open it; search always spans every

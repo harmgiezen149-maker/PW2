@@ -31,6 +31,7 @@ import io.github.minilauncher.ui.common.PermissionChecks
 import io.github.minilauncher.ui.common.TextListAdapter
 import io.github.minilauncher.ui.drawer.AppDrawerActivity
 import io.github.minilauncher.ui.onboarding.OnboardingActivity
+import io.github.minilauncher.ui.recents.RecentAppsActivity
 import io.github.minilauncher.ui.settings.SettingsActivity
 import io.github.minilauncher.util.EventLog
 import kotlin.math.abs
@@ -125,6 +126,14 @@ class HomeActivity : BaseActivity() {
                 val dy = e2.y - e1.y
                 val dx = e2.x - e1.x
                 val minDistance = 100 * resources.displayMetrics.density
+                // Sideways: the launcher's own recent-apps list.
+                if (abs(dx) > abs(dy) && abs(dx) > minDistance && abs(velocityX) > 1200) {
+                    if (!prefs.recentAppsEnabled) return false
+                    startActivity(Intent(this@HomeActivity, RecentAppsActivity::class.java))
+                    @Suppress("DEPRECATION")
+                    overridePendingTransition(R.anim.slide_in_up, R.anim.stay)
+                    return true
+                }
                 if (abs(dy) < abs(dx) || abs(dy) < minDistance || abs(velocityY) < 1500) return false
                 if (dy < 0) {
                     // Only treat as "open drawer" when the list has no more to scroll

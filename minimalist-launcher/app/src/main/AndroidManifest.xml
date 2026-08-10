@@ -77,6 +77,7 @@
         <activity android:name=".ui.drawer.AppDrawerActivity" android:exported="false" />
         <activity android:name=".ui.stats.StatsActivity" android:exported="false" />
         <activity android:name=".ui.diagnostics.DiagnosticsActivity" android:exported="false" />
+        <activity android:name=".ui.recents.RecentAppsActivity" android:exported="false" />
         <activity android:name=".ui.settings.SettingsActivity" android:exported="false" />
         <activity android:name=".ui.settings.ScheduleEditorActivity" android:exported="false" />
         <activity android:name=".ui.onboarding.OnboardingActivity" android:exported="false" />
