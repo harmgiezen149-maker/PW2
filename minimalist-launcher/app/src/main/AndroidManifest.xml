@@ -37,10 +37,14 @@
         android:supportsRtl="true">
 
         <!--
-            Task flags mirror AOSP's Launcher3. Deliberately NOT
-            excludeFromRecents: the system already keeps the current home task
-            out of the overview, and excluding it explicitly breaks the task
-            switcher's bookkeeping (empty recents on One UI).
+            Declaration mirrors AOSP's Launcher3. Two things matter for the
+            task switcher: NOT excludeFromRecents (the system already keeps the
+            current home task out of the overview), and configChanges wide
+            enough that a resize during the swipe-up animation re-lays out the
+            window instead of destroying and recreating the activity, which
+            makes the system cancel the recents animation. uiMode, density and
+            fontScale are deliberately absent: theme and text sizes are
+            resolved when the layout is inflated, so those must still recreate.
         -->
         <activity
             android:name=".ui.home.HomeActivity"
@@ -48,11 +52,9 @@
             android:launchMode="singleTask"
             android:stateNotNeeded="true"
             android:taskAffinity=""
-            android:clearTaskOnLaunch="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
+            android:clearTaskOnLaunch="true"
+            android:configChanges="keyboard|keyboardHidden|mcc|mnc|navigation|orientation|screenSize|screenLayout|smallestScreenSize">
+            <!-- Home only: a launcher is not also a regular app entry. -->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.HOME" />
