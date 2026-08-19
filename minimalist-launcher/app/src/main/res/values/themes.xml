@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Deliberately monochrome in both light and dark to reduce visual
+         stimulation; colors resolve per mode via values-night/colors.xml. -->
+    <style name="Theme.MiniLauncher" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/mono_accent</item>
+        <item name="colorPrimaryVariant">@color/mono_accent</item>
+        <item name="colorOnPrimary">@color/mono_background</item>
+        <item name="colorSecondary">@color/mono_accent</item>
+        <item name="colorSecondaryVariant">@color/mono_accent</item>
+        <item name="colorOnSecondary">@color/mono_background</item>
+        <item name="colorSurface">@color/mono_surface</item>
+        <item name="android:colorBackground">@color/mono_background</item>
+        <item name="android:windowBackground">@color/mono_background</item>
+        <item name="android:textColorPrimary">@color/mono_text_primary</item>
+        <item name="android:textColorSecondary">@color/mono_text_secondary</item>
+        <item name="android:statusBarColor">@color/mono_background</item>
+        <item name="android:navigationBarColor">@color/mono_background</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+
+    <!-- CRT text style: phosphor green on the (pure black) background -->
+    <style name="ThemeOverlay.MiniLauncher.Crt" parent="">
+        <item name="android:textColorPrimary">@color/crt_green</item>
+        <item name="android:textColorSecondary">@color/crt_green_dim</item>
+        <item name="android:textColorHint">@color/crt_green_dim</item>
+        <item name="colorPrimary">@color/crt_green</item>
+        <item name="colorPrimaryVariant">@color/crt_green</item>
+        <item name="colorSecondary">@color/crt_green</item>
+        <item name="colorAccent">@color/crt_green</item>
+    </style>
+</resources>

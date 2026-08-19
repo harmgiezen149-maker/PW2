@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Minimalist Launcher</string>
+
+    <string name="accessibility_service_label">Minimalist Launcher app blocker</string>
+    <string name="accessibility_service_description">Detects when a blocked or over-limit app is opened so the launcher can show the focus screen instead. When website blocking is enabled, the service also reads the address bar of supported browsers to compare the current site against your block list. All checks happen on this device only; nothing is collected, stored or transmitted.</string>
+    <string name="notification_filter_label">Minimalist Launcher notification filter</string>
+
+    <string name="nudge_channel_name">Time reminders</string>
+    <string name="nudge_title">Still in %s</string>
+    <string name="nudge_text">You have been here for %d minutes.</string>
+
+    <!-- Long-press menu -->
+    <string name="action_add_favorite">Add to home</string>
+    <string name="action_remove_favorite">Remove from home</string>
+    <string name="action_rename">Rename</string>
+    <string name="action_hide">Hide app</string>
+    <string name="action_unhide">Unhide app</string>
+    <string name="action_block">Block app</string>
+    <string name="action_unblock">Unblock app</string>
+    <string name="action_set_limit">Set daily limit</string>
+    <string name="action_edit_limit">Daily limit: %d min</string>
+    <string name="action_mute">Mute notifications</string>
+    <string name="action_unmute">Unmute notifications</string>
+    <string name="action_app_info">App info</string>
+    <string name="action_nudge_exempt">Exclude from time reminder</string>
+    <string name="action_nudge_include">Include in time reminder</string>
+
+    <string name="rename_title">Rename %s</string>
+    <string name="limit_title">Daily limit for %s</string>
+    <string name="limit_message">Minutes of use allowed per day. The app is blocked for the rest of the day once the limit is reached.</string>
+    <string name="limit_hint">Minutes per day</string>
+    <string name="limit_remove">Remove limit</string>
+
+    <!-- Home -->
+    <string name="home_all_apps">Apps</string>
+    <string name="home_settings">Settings</string>
+    <string name="home_empty_hint">No apps on your home screen yet. Open “Apps”, long-press one and choose “Add to home”.</string>
+    <string name="blocker_disabled_warning">App blocking is configured but the blocker service is off. Tap to fix.</string>
+
+    <!-- Drawer -->
+    <string name="drawer_search_hint">Search</string>
+    <string name="folder_label">▸ %1$s (%2$d)</string>
+    <string name="folder_back">‹ Back</string>
+    <string name="folder_new">New folder…</string>
+    <string name="folder_name_hint">Folder name</string>
+    <string name="folder_rename">Rename folder</string>
+    <string name="folder_delete">Delete folder</string>
+    <string name="action_add_to_folder">Add to folder</string>
+    <string name="action_remove_from_folder">Remove from folder “%s”</string>
+
+    <!-- Blocked screen -->
+    <string name="blocked_headline">Stay focused</string>
+    <string name="blocked_reason_focus">Focus mode is on. This app is on your block list.</string>
+    <string name="blocked_reason_schedule">Blocked by your schedule until %s.</string>
+    <string name="blocked_reason_schedule_generic">Blocked by your schedule.</string>
+    <string name="blocked_reason_limit">You reached your daily limit of %s minutes.</string>
+    <string name="blocked_usage_today">Used %d minutes today.</string>
+    <string name="blocked_back">Back to focus</string>
+    <string name="blocked_five_more">Allow 5 more minutes</string>
+    <string name="blocked_reason_mindful">Take a mindful pause before using this app.</string>
+    <string name="blocked_reason_website">This website is on your block list.</string>
+
+    <!-- Mindful pause -->
+    <string name="action_mindful_on">Enable mindful pause</string>
+    <string name="action_mindful_off">Disable mindful pause</string>
+    <string name="settings_mindful_apps">Mindful apps</string>
+    <string name="pause_hint">Take a breath</string>
+    <string name="pause_question">How long do you want to use it?</string>
+    <string name="pause_minutes">%d min</string>
+    <string name="pause_never_mind">Never mind, stay focused</string>
+
+    <!-- Day / evening mode -->
+    <string name="settings_section_mode">Day / evening</string>
+    <string name="settings_mode_enabled">Use day/evening mode</string>
+    <string name="settings_evening_start">Evening starts</string>
+    <string name="settings_evening_end">Evening ends</string>
+    <string name="settings_app_visibility">App visibility</string>
+    <string name="settings_evening_override">Evening mode now</string>
+    <string name="app_visibility_row">%1$s — %2$s</string>
+    <string name="action_visibility">Visibility: %s</string>
+    <string name="visibility_title">Show “%s”</string>
+    <string name="visibility_always">Always</string>
+    <string name="visibility_day">Day only</string>
+    <string name="visibility_evening">Evening only</string>
+    <string name="home_mode_day">Day</string>
+    <string name="home_mode_evening">Evening</string>
+    <string name="home_mode_evening_override">Evening · %d min left</string>
+    <string name="override_confirm_title">Turn on evening mode?</string>
+    <string name="override_confirm_message">Are you sure? You deliberately closed this off.</string>
+    <string name="override_confirm_yes">Yes, open it up</string>
+    <string name="override_duration_title">For how long?</string>
+    <string name="override_minutes">%d min</string>
+    <string name="override_end_title">Back to day mode now?</string>
+    <string name="settings_notification_windows">Notification windows</string>
+    <string name="action_notification_window">Notifications: %s</string>
+    <string name="notification_window_title">Notifications for “%s”</string>
+    <string name="notif_window_always">Always allowed</string>
+    <string name="notif_window_day">Day only</string>
+    <string name="notif_window_evening">Evening only</string>
+    <string name="notification_windows_needs_access">Notification access is off, so nothing is filtered yet. Grant it under Settings › Permissions.</string>
+
+    <!-- Home polish -->
+    <string name="home_temp">%d°</string>
+    <string name="home_temp_unknown">--°</string>
+    <string name="shortcut_dialer">Phone (dialer)</string>
+    <string name="shortcut_dialer_label">Phone</string>
+    <string name="shortcut_pick_title">Choose shortcut app</string>
+
+    <!-- Focus session -->
+    <string name="settings_focus_session">Focus session</string>
+    <string name="focus_session_remaining">%d min left</string>
+    <string name="focus_session_cancel_title">End focus session?</string>
+    <string name="home_focus_countdown">Focus · %d min left</string>
+
+    <!-- Website blocker -->
+    <string name="settings_blocked_sites">Blocked websites</string>
+    <string name="blocked_sites_add">Add website</string>
+    <string name="blocked_sites_hint">e.g. youtube.com</string>
+    <string name="blocked_sites_invalid">Not a valid site</string>
+    <string name="blocked_sites_empty">No blocked websites yet. Blocking works in common browsers while the blocker service is on.</string>
+    <string name="blocked_sites_row">%s (tap to remove)</string>
+
+    <!-- CRT theme -->
+    <string name="settings_text_color">Text color</string>
+    <string name="text_white">White</string>
+    <string name="text_green">Green (CRT)</string>
+    <string name="theme_black">Black</string>
+    <string name="settings_alignment">App list alignment</string>
+    <string name="align_left">Left</string>
+    <string name="align_center">Center</string>
+    <string name="align_right">Right</string>
+
+    <!-- Stats -->
+    <string name="stats_title">Screen time today</string>
+    <string name="stats_no_permission">Usage access is needed to show screen time.</string>
+    <string name="stats_grant_permission">Grant usage access</string>
+    <string name="stats_total">Total: %s</string>
+    <string name="stats_hours_minutes">%1$d h %2$d min</string>
+    <string name="stats_minutes">%d min</string>
+    <string name="stats_filtered_total">Notifications filtered today: %d</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_section_focus">Focus &amp; blocking</string>
+    <string name="settings_section_notifications">Notifications</string>
+    <string name="settings_section_appearance">Appearance</string>
+    <string name="settings_section_launcher">Launcher</string>
+    <string name="settings_focus_mode">Focus mode (block list active now)</string>
+    <string name="settings_blocked_apps">Blocked apps</string>
+    <string name="settings_schedules">Blocking schedules</string>
+    <string name="settings_limits">Daily time limits</string>
+    <string name="settings_five_more">Allow “5 more minutes” button</string>
+    <string name="settings_nudge">In-app time reminder</string>
+    <string name="settings_nudge_value">Every %d min</string>
+    <string name="settings_nudge_exempt">Reminder exceptions</string>
+    <string name="settings_muted_apps">Muted apps</string>
+    <string name="settings_theme">Theme</string>
+    <string name="settings_font_size">Font size</string>
+    <string name="settings_grayscale">System grayscale (advanced)</string>
+    <string name="settings_hidden_apps">Hidden apps</string>
+    <string name="settings_recent_apps">Recent apps (swipe sideways)</string>
+    <string name="recents_title">Recent apps</string>
+    <string name="recents_empty">Nothing used recently yet.</string>
+    <string name="recents_no_permission">Usage access is needed to list recent apps. Tap to grant it.</string>
+    <string name="settings_stats">Screen time today</string>
+    <string name="settings_permissions">Permissions</string>
+    <string name="diagnostics_title">Diagnostics</string>
+    <string name="diagnostics_subtitle">What the launcher itself did, newest at the bottom. Clear it, reproduce the problem, then share this list.</string>
+    <string name="diagnostics_empty">Nothing recorded yet.</string>
+    <string name="diagnostics_clear">Clear</string>
+    <string name="diagnostics_share">Share</string>
+    <string name="settings_set_default_home">Set as default launcher</string>
+    <string name="state_on">On</string>
+    <string name="state_off">Off</string>
+    <string name="theme_light">Light</string>
+    <string name="font_normal">Normal</string>
+    <string name="font_large">Large</string>
+    <string name="grayscale_adb_hint">Turning the whole screen grayscale needs a one-time permission that can only be granted over USB debugging:\n\nadb shell pm grant %s android.permission.WRITE_SECURE_SETTINGS\n\nAfter that, this toggle switches the system monochrome filter on and off.</string>
+    <string name="limits_empty_hint">No limits yet. Long-press an app in the drawer and choose “Set daily limit”.</string>
+    <string name="limits_row">%1$s — %2$d min (tap to remove)</string>
+
+    <!-- Schedules -->
+    <string name="schedules_title">Blocking schedules</string>
+    <string name="schedules_subtitle">During these windows every app on your block list is blocked automatically. Overnight windows (end before start) are supported.</string>
+    <string name="schedules_empty">No schedules yet.</string>
+    <string name="schedule_add">+ Add schedule</string>
+    <string name="schedule_new">New schedule: pick days</string>
+    <string name="schedule_edit">Edit schedule: pick days</string>
+    <string name="schedule_save">Next: times</string>
+    <string name="schedule_delete">Delete</string>
+    <string name="schedule_default_name">Focus</string>
+    <string name="schedule_start_time">Start time</string>
+    <string name="schedule_end_time">End time</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_title">Set up your focus phone</string>
+    <string name="onboarding_subtitle">Each permission unlocks one feature. Everything is optional and can be changed later under Settings › Permissions.</string>
+    <string name="onboarding_done">Done</string>
+    <string name="onboarding_grant">Grant</string>
+    <string name="onboarding_granted">Granted ✓</string>
+    <string name="onboarding_step_done">%s ✓</string>
+    <string name="onboarding_home_title">Default launcher</string>
+    <string name="onboarding_home_desc">Make this your home screen so pressing Home lands on your minimalist launcher.</string>
+    <string name="onboarding_usage_title">Usage access</string>
+    <string name="onboarding_usage_desc">Needed for the screen-time dashboard and daily app limits.</string>
+    <string name="onboarding_accessibility_title">App blocker service</string>
+    <string name="onboarding_accessibility_desc">Detects when a blocked app opens so the focus screen can step in, and reads the browser address bar for website blocking. Everything stays on this device; nothing is collected or sent anywhere.</string>
+    <string name="onboarding_notif_listener_title">Notification access</string>
+    <string name="onboarding_notif_listener_desc">Needed to filter notifications from apps you mute.</string>
+    <string name="onboarding_post_notif_title">Reminder notifications</string>
+    <string name="onboarding_post_notif_desc">Lets the launcher send gentle “you have been in this app for a while” reminders.</string>
+    <string name="onboarding_overlay_title">Display over other apps (optional)</string>
+    <string name="onboarding_overlay_desc">Makes the block screen appear faster over a blocked app.</string>
+</resources>
