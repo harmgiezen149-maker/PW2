@@ -47,15 +47,29 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           cp app/build/outputs/apk/debug/app-debug.apk minimalist-launcher.apk
+          # Download scanners like to park a .apk at 99% while inspecting it, so
+          # the same build also ships zipped: not an installable package, so it
+          # comes through untouched.
+          zip -q minimalist-launcher-apk.zip minimalist-launcher.apk
           gh release create latest \
             --title "Latest build" \
             --notes "Automatic build" || true
-          gh release upload latest minimalist-launcher.apk --clobber
+          gh release upload latest \
+            minimalist-launcher.apk minimalist-launcher-apk.zip --clobber
+          # Size and checksum make a stalled, partial download recognisable.
+          cat > notes.md <<NOTES
+          Automatic build of ${GITHUB_SHA::7}, $(date -u '+%Y-%m-%d %H:%M') UTC
+
+          | file | bytes |
+          | --- | --- |
+          | minimalist-launcher.apk | $(stat -c%s minimalist-launcher.apk) |
+          | minimalist-launcher-apk.zip | $(stat -c%s minimalist-launcher-apk.zip) |
+
+          sha256 of the APK: $(sha256sum minimalist-launcher.apk | cut -d' ' -f1)
+          NOTES
           # Not a prerelease: that keeps /releases/latest/ working and puts the
           # download on the repository's front page.
-          gh release edit latest \
-            --prerelease=false \
-            --notes "Automatic build of ${GITHUB_SHA::7}, $(date -u '+%Y-%m-%d %H:%M') UTC"
+          gh release edit latest --prerelease=false --notes-file notes.md
 
       - name: Upload reports on failure
         if: failure()
