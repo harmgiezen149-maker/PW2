@@ -49,10 +49,12 @@ jobs:
           cp app/build/outputs/apk/debug/app-debug.apk minimalist-launcher.apk
           gh release create latest \
             --title "Latest build" \
-            --notes "Automatic build" \
-            --prerelease || true
+            --notes "Automatic build" || true
           gh release upload latest minimalist-launcher.apk --clobber
+          # Not a prerelease: that keeps /releases/latest/ working and puts the
+          # download on the repository's front page.
           gh release edit latest \
+            --prerelease=false \
             --notes "Automatic build of ${GITHUB_SHA::7}, $(date -u '+%Y-%m-%d %H:%M') UTC"
 
       - name: Upload reports on failure
