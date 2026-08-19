@@ -12,6 +12,9 @@ defaults:
   run:
     working-directory: minimalist-launcher
 
+permissions:
+  contents: write # needed to publish the APK as a release asset
+
 jobs:
   build:
     runs-on: ubuntu-latest # Android SDK preinstalled
@@ -35,6 +38,22 @@ jobs:
         with:
           name: minimalist-launcher-debug-apk
           path: minimalist-launcher/app/build/outputs/apk/debug/app-debug.apk
+
+      # Workflow artifacts are only downloadable while signed in to GitHub, so
+      # the APK also goes to a rolling release: that link works signed out and
+      # always points at the newest build.
+      - name: Publish to the rolling release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp app/build/outputs/apk/debug/app-debug.apk minimalist-launcher.apk
+          gh release create latest \
+            --title "Latest build" \
+            --notes "Automatic build" \
+            --prerelease || true
+          gh release upload latest minimalist-launcher.apk --clobber
+          gh release edit latest \
+            --notes "Automatic build of ${GITHUB_SHA::7}, $(date -u '+%Y-%m-%d %H:%M') UTC"
 
       - name: Upload reports on failure
         if: failure()
