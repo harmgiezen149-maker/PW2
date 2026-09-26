@@ -96,7 +96,7 @@ function feitKaart(f) {
     voet.appendChild(bron);
   }
   var k = PW.el('article', { class: 'kaart melding' }, [kop, PW.el('p', { class: 'melding-tekst', tekst: f.tekst }), voet]);
-  if (PW.kaartLink && f.locatie) k.appendChild(PW.kaartLink(f));
+  if (PW.kaartLink && f.plekId) voet.appendChild(PW.kaartLink(f));
   return k;
 }
 

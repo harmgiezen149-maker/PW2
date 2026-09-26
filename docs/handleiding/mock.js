@@ -118,7 +118,7 @@ function stream(blokken, extra) {
 const META_ROUTES = [
   { titel: 'Plekken & routes', feiten: [{ id: 'f1', deelgebied: 'Hele gebied', gecontroleerdOp: NU, verouderd: false, bron: 'Gebiedsfolder Planken Wambuis (2021)' }] },
   { titel: 'Praktisch bezoek', feiten: [
-    { id: 'f2', deelgebied: 'Oud & Nieuw Reemst', gecontroleerdOp: NU, verouderd: false, bron: 'natuurmonumenten.nl', bronUrl: 'https://www.natuurmonumenten.nl/natuurgebieden/planken-wambuis' },
+    { id: 'f2', deelgebied: 'Oud & Nieuw Reemst', gecontroleerdOp: NU, verouderd: false, bron: 'natuurmonumenten.nl', bronUrl: 'https://www.natuurmonumenten.nl/natuurgebieden/planken-wambuis', plekId: 'p1' },
     { id: 'f5', deelgebied: 'Hele gebied', gecontroleerdOp: NU, verouderd: false, bron: 'natuurmonumenten.nl', bronUrl: 'https://www.natuurmonumenten.nl/natuurgebieden/planken-wambuis' },
     { id: 'f3', deelgebied: 'Hele gebied', gecontroleerdOp: '2023-05-14', verouderd: true, bron: 'Gebiedsfolder Planken Wambuis (2021)' }
   ] }

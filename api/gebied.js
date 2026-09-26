@@ -4,7 +4,7 @@ const kb = require('./_lib/kennisbank');
 const auth = require('./_lib/auth');
 const { setSecurityHeaders, checkRateLimit, vandaagISO, nlMaand } = require('./_lib/http');
 
-const kv = require('./_lib/kv');
+const kaart = require('./_lib/kaart');
 const MAANDNAMEN = ['januari', 'februari', 'maart', 'april', 'mei', 'juni', 'juli', 'augustus', 'september', 'oktober', 'november', 'december'];
 const NIEUWS_DAGEN = 60;
 
@@ -23,6 +23,7 @@ function publiek(f, vandaag) {
     bron: f.bron || '', intern: f.zichtbaarheid === 'intern'
   };
   if (f.bronUrl) uit.bronUrl = f.bronUrl;
+  if (f.plekId) uit.plekId = f.plekId;
   if (f.type === 'tijdelijk') { uit.einddatum = f.einddatum || null; if (f.startdatum) uit.startdatum = f.startdatum; }
   if (f.type === 'seizoen') uit.maanden = f.maanden || [];
   return uit;
@@ -36,12 +37,7 @@ function nmGoedgekeurd(f) {
 
 // Buurgebieden: horen níet bij Planken Wambuis (ander beheer), zie ook prompts.js
 const BUURGEBIEDEN = ['De Hoge Veluwe', 'Ginkelse Heide', 'Reijerscamp'];
-const K_GEBIEDEN = 'cfg:gebieden'; // per deelgebied: eigen korte beschrijving, foto, kaartpositie (beheer)
-
-async function gebiedInstellingen() {
-  const c = await kv.getJSON(K_GEBIEDEN, null);
-  return c && typeof c === 'object' ? c : {};
-}
+const gebiedInstellingen = kaart.gebiedInstellingen; // per deelgebied: eigen beschrijving, foto, kaartpositie
 
 // Eerste zin van een tekst, ingekort tot ongeveer max tekens
 function eersteZin(t, max) {
@@ -78,6 +74,37 @@ function gebied(feiten, cfg, slug, vandaag) {
     slug, titel: d.titel, beschrijving: c.beschrijving || '', foto: c.foto || null, fotoBron: c.fotoBron || null,
     feiten: eigen.filter(f => f.onderwerp !== 'routes').map(f => Object.assign(publiek(f, vandaag), { onderwerpTitel: onderwerpTitel(f.onderwerp) })),
     routes: eigen.filter(f => f.onderwerp === 'routes').map(f => Object.assign(publiek(f, vandaag), { onderwerpTitel: onderwerpTitel(f.onderwerp) }))
+  };
+}
+
+// Kaartgegevens: alleen actieve plekken en routes (intern alleen voor wie is ingelogd);
+// bij elke plek de feiten uit de kennisbank die eraan gekoppeld zijn.
+function kaartGegevens(feiten, plekken, routes, cfg, grenzen, ingelogd, vandaag) {
+  const zichtbaar = x => x && x.status !== 'ingetrokken' && (x.zichtbaarheid !== 'intern' || ingelogd);
+  const perPlek = {};
+  for (const f of feiten) if (f.plekId) (perPlek[f.plekId] = perPlek[f.plekId] || []).push(f);
+  const feitenPer = {};
+  for (const f of feiten) feitenPer[f.id] = f;
+  return {
+    midden: kaart.MIDDEN,
+    plekken: Object.values(plekken).filter(zichtbaar).map(p => {
+      const bij = (perPlek[p.id] || []).sort(sorteer).map(f => publiek(f, vandaag));
+      return {
+        id: p.id, naam: p.naam, soort: p.soort, soortTitel: kaart.SOORTEN[p.soort] || 'Plek', lat: p.lat, lon: p.lon,
+        deelgebied: p.deelgebied, deelgebiedTitel: dgTitel(p.deelgebied), intern: p.zichtbaarheid === 'intern',
+        toelichting: p.toelichting || '', gecontroleerdOp: p.gecontroleerdOp || null,
+        feiten: bij, tijdelijk: bij.some(f => f.type === 'tijdelijk')
+      };
+    }).sort((a, b) => a.naam.localeCompare(b.naam)),
+    routes: Object.values(routes).filter(zichtbaar).map(r => ({
+      id: r.id, naam: r.naam, lengteKm: r.lengteKm, punten: r.punten, deelgebied: r.deelgebied, deelgebiedTitel: dgTitel(r.deelgebied),
+      intern: r.zichtbaarheid === 'intern', bron: r.bron || '', bronUrl: r.bronUrl || '', gecontroleerdOp: r.gecontroleerdOp || null,
+      feit: r.feitId && feitenPer[r.feitId] ? publiek(feitenPer[r.feitId], vandaag) : null
+    })).sort((a, b) => a.naam.localeCompare(b.naam)),
+    gebieden: kb.DEELGEBIEDEN.filter(d => d.slug !== 'heel').map(d => {
+      const c = cfg[d.slug] || {};
+      return { slug: d.slug, titel: d.titel, lat: c.lat || null, lon: c.lon || null, grens: grenzen[d.slug] || null };
+    })
   };
 }
 
@@ -118,6 +145,10 @@ module.exports = async function handler(req, res) {
         return res.json(Object.assign(basis, actueel(bruikbaar, vandaag)));
       case 'gebieden':
         return res.json(Object.assign(basis, gebieden(bruikbaar, await gebiedInstellingen())));
+      case 'kaart': {
+        const [plekken, routes, cfg, grenzen] = await Promise.all([kaart.plekken(), kaart.routes(), gebiedInstellingen(), kaart.grenzen()]);
+        return res.json(Object.assign(basis, kaartGegevens(bruikbaar, plekken, routes, cfg, grenzen, !!gebruiker, vandaag)));
+      }
       case 'gebied': {
         const g = gebied(bruikbaar, await gebiedInstellingen(), String(body.slug || ''), vandaag);
         if (!g) return res.status(404).json({ error: 'Onbekend gebied' });
@@ -133,6 +164,5 @@ module.exports = async function handler(req, res) {
 
 module.exports.actueel = actueel;
 module.exports.gebieden = gebieden;
-module.exports.K_GEBIEDEN = K_GEBIEDEN;
 module.exports.BUURGEBIEDEN = BUURGEBIEDEN;
 module.exports.publiek = publiek;

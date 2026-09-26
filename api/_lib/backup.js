@@ -1,20 +1,22 @@
-// Back-ups van de kennisbank, voorstellen en instellingen in de database
+// Back-ups van de kennisbank, voorstellen, kaart en instellingen in de database
 // (wekelijks automatisch, 10 weken bewaard) en als download in het beheerpaneel.
 const kv = require('./kv');
 const kb = require('./kennisbank');
 const auth = require('./auth');
+const kaart = require('./kaart');
 const { vandaagISO } = require('./http');
 
 const BEWAAR = 70 * 86400;
 
 async function maakInhoud() {
-  const [feiten, voorstellen, sites, nmPaginas, gebruikers] = await Promise.all([
+  const [feiten, voorstellen, sites, nmPaginas, gebruikers, plekken, routes, gebieden, grenzen] = await Promise.all([
     kv.hgetallJSON(kb.K_FEITEN), kv.hgetallJSON(kb.K_VOORSTELLEN), kb.getSites(),
-    kv.getJSON('cfg:nmpaginas', null), auth.alleGebruikers()
+    kv.getJSON('cfg:nmpaginas', null), auth.alleGebruikers(),
+    kaart.plekken(), kaart.routes(), kaart.gebiedInstellingen(), kaart.grenzen()
   ]);
   return {
-    soort: 'planken-wambuis-backup', versie: 1, tijd: new Date().toISOString(),
-    feiten, voorstellen, sites, nmPaginas,
+    soort: 'planken-wambuis-backup', versie: 2, tijd: new Date().toISOString(),
+    feiten, voorstellen, sites, nmPaginas, plekken, routes, gebieden, grenzen,
     // Zonder codes: na terugzetten krijgen gebruikers eventueel een nieuwe link
     gebruikers: Object.values(gebruikers).map(auth.zonderGeheim)
   };
@@ -49,6 +51,18 @@ async function terugzetten(id) {
   for (const f of Object.values(b.feiten || {})) cmds.push(['HSET', kb.K_FEITEN, f.id, JSON.stringify(f)]);
   for (const v of Object.values(b.voorstellen || {})) cmds.push(['HSET', kb.K_VOORSTELLEN, v.id, JSON.stringify(v)]);
   if (Array.isArray(b.sites) && b.sites.length) cmds.push(['SET', kb.K_SITES, JSON.stringify(b.sites)]);
+  // Kaart (vanaf back-upversie 2); oudere back-ups laten de kaart ongemoeid
+  if (b.plekken && b.routes) {
+    cmds.push(['DEL', kaart.K_PLEKKEN], ['DEL', kaart.K_ROUTES]);
+    for (const p of Object.values(b.plekken)) cmds.push(['HSET', kaart.K_PLEKKEN, p.id, JSON.stringify(p)]);
+    for (const r of Object.values(b.routes)) cmds.push(['HSET', kaart.K_ROUTES, r.id, JSON.stringify(r)]);
+    if (b.gebieden) cmds.push(['SET', kaart.K_GEBIEDEN, JSON.stringify(b.gebieden)]);
+    for (const d of kb.DEELGEBIEDEN) {
+      if (d.slug === 'heel') continue;
+      const g = b.grenzen && b.grenzen[d.slug];
+      cmds.push(g ? ['SET', kaart.K_GRENS + d.slug, JSON.stringify(g)] : ['DEL', kaart.K_GRENS + d.slug]);
+    }
+  }
   await kv.pipeline(cmds);
   return { feiten: Object.keys(b.feiten || {}).length };
 }

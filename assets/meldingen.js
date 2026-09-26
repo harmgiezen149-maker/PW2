@@ -128,7 +128,7 @@ function kaartje(item, label, labelKlasse, extra) {
       html: PW.icoon(item.verouderd ? 'waarschuwing' : 'vinkje', { maat: 15, dikte: 2.4 }) +
         (item.verouderd ? 'Mogelijk verouderd · gecontroleerd ' : 'Gecontroleerd ') + PW.nlDatumKort(item.gecontroleerdOp) }));
   }
-  if (PW.kaartLink && item.locatie) voet.appendChild(PW.kaartLink(item));
+  if (PW.kaartLink && item.plekId) voet.appendChild(PW.kaartLink(item));
   if (voet.childNodes.length) k.appendChild(voet);
   return k;
 }
