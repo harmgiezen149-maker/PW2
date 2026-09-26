@@ -160,3 +160,45 @@ Twijfelachtige feiten die bij vraag 13 horen:
 De huidige kennisbank staat in `api/_kennisbank.js` in deze openbare repository. Na het
 overzetten naar de database verdwijnt de inhoud uit de code, maar de Git-geschiedenis
 bewaart oudere versies. Zet daarom nooit interne informatie in deze repository.
+
+## Stand van de bouw (26 september 2026)
+
+Alle vijf fasen zijn gebouwd op branch `claude/chatbot-planken-wambuis-accuracy-1mhbl7`,
+getest (automatische tests met nagebootste database en Claude-API) en op de
+preview-deployment met de echte Claude-API gecontroleerd.
+
+| Fase | Wat | Status |
+|------|-----|--------|
+| 1 | Opus 5, nieuwe instructie, webzoeken alleen op toegestane sites, suggesties pas na goedkeuring, geen "✓ actueel", beveiliging | Klaar |
+| 2 | Kennisbank als losse feiten met bron, controle, vervaldatum en zichtbaarheid; citaties met voetnoten; nieuw beheerpaneel | Klaar |
+| 3 | Persoonlijke links, rollen, interne feiten alleen voor ingelogden | Klaar |
+| 4 | Dagelijkse controle nm.nl (cron, 07:00), logboek 90 dagen, "Klopt niet", back-up | Klaar; op de preview getest: 10 voorstellen uit nm.nl |
+| 5 | Voorstellen voor de twijfelachtige feiten, nieuwe onderwerpen, seizoenskalender, documenten uit de bronnenmap, importfunctie | Klaar |
+
+### Livegang (door de beheerder)
+
+1. Merge de branch naar `main` (net als bij eerdere wijzigingen). Vercel zet de
+   nieuwe versie dan live op pwpb2.vercel.app en start de dagelijkse controle.
+2. Open https://pwpb2.vercel.app/beheer.html en maak met het beheerwachtwoord de
+   eerste beheerder aan. Bewaar je persoonlijke link goed; het wachtwoord werkt
+   daarna niet meer voor het beheerpaneel.
+3. Maak in het tabblad Gebruikers links aan voor boswachters en vrijwilligers.
+4. Beoordeel de voorstellen (tabblad Voorstellen). Begin met de wijzigingen voor
+   wolf, ledenaantal en lidmaatschapsprijs, en de praktische regels.
+5. Plak de tekst uit het Drive-document "Conceptfeiten uit interne Kiek-documenten"
+   per bron in "Tekst uit document omzetten in voorstellen" (zichtbaarheid:
+   intern). Doe hetzelfde met de overige documenten in de bronnenmap die je wilt
+   gebruiken.
+6. Stel een maandplafond in de Anthropic-console in.
+
+### Goed om te weten
+
+- De oude kennisbank, de in het oude beheerpaneel aangepaste teksten en de
+  goedgekeurde correcties zijn op 26-09-2026 naar de nieuwe database overgezet.
+  Wijzigingen die je tot de livegang nog in het oude beheerpaneel doet, worden
+  niet meer overgenomen.
+- `api/zelftest.js` werkt alleen op preview-deployments (afgeschermd met
+  Vercel-authenticatie) en is bedoeld om nieuwe versies te testen.
+- Het geschiedenisverslag van Planken Wambuis was via Google Drive maar voor
+  ongeveer de eerste 79 van de 180 pagina's leesbaar; plak de rest zo nodig zelf
+  in de importfunctie.
