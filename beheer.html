@@ -3,58 +3,89 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
 <title>Beheer · Planken Wambuis</title>
-<script>
-  window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
-</script>
-<script defer src="/_vercel/insights/script.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;600;700&family=Source+Sans+3:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;600;700&family=Source+Sans+3:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  :root { --g:#1a5c38; --gl:#e8f2ec; --gp:#f2f8f4; --t:#1a1a1a; --tm:#4a4a4a; --tl:#767676; --b:#d0ddd5; }
+  :root { --g:#1a5c38; --gl:#e8f2ec; --gp:#f2f8f4; --t:#1a1a1a; --tm:#4a4a4a; --tl:#767676; --b:#d0ddd5; --warn:#b5651d; --warnbg:#fdf3e8; --err:#c0392b; }
   * { box-sizing:border-box; margin:0; padding:0; }
   body { font-family:'Source Sans 3',sans-serif; background:var(--gp); color:var(--t); min-height:100vh; }
+  button, input, select, textarea { font-family:inherit; font-size:0.85rem; }
 
-  #login { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; padding:24px; }
+  #login { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; padding:24px; text-align:center; }
   #login .icon { font-size:3rem; margin-bottom:16px; }
   #login h1 { font-family:'Source Serif 4',serif; font-size:1.3rem; color:var(--g); margin-bottom:6px; }
-  #login p { font-size:0.82rem; color:var(--tm); margin-bottom:24px; }
-  #login input { width:100%; max-width:320px; border:1.5px solid var(--b); border-radius:8px; padding:11px 14px; font-size:0.88rem; font-family:'Source Sans 3',sans-serif; outline:none; margin-bottom:10px; }
-  #login input:focus { border-color:var(--g); }
-  #login button { width:100%; max-width:320px; background:var(--g); color:#fff; border:none; border-radius:8px; padding:12px; font-size:0.9rem; font-weight:600; cursor:pointer; font-family:'Source Sans 3',sans-serif; }
-  #login .err { color:#c0392b; font-size:0.78rem; margin-top:8px; display:none; }
+  #login p { font-size:0.85rem; color:var(--tm); margin-bottom:18px; max-width:340px; line-height:1.5; }
+  #login input { width:100%; max-width:320px; border:1.5px solid var(--b); border-radius:8px; padding:11px 14px; outline:none; margin-bottom:10px; }
+  #login button { width:100%; max-width:320px; }
+  #login .err { color:var(--err); font-size:0.8rem; margin-top:8px; min-height:1em; }
 
-  #app { display:none; max-width:700px; margin:0 auto; padding:24px 16px; }
-  .page-header { display:flex; align-items:center; gap:12px; margin-bottom:24px; padding-bottom:16px; border-bottom:2px solid var(--g); }
-  .page-header h1 { font-family:'Source Serif 4',serif; font-size:1.2rem; color:var(--g); }
-  .page-header a { margin-left:auto; font-size:0.78rem; color:var(--tl); text-decoration:none; }
+  #app { display:none; max-width:820px; margin:0 auto; padding:20px 16px 60px; }
+  .page-header { display:flex; align-items:center; gap:10px; margin-bottom:14px; padding-bottom:12px; border-bottom:2px solid var(--g); flex-wrap:wrap; }
+  .page-header h1 { font-family:'Source Serif 4',serif; font-size:1.15rem; color:var(--g); }
+  .page-header .wie { margin-left:auto; font-size:0.78rem; color:var(--tl); }
+  .page-header a { font-size:0.78rem; color:var(--tl); text-decoration:none; }
 
-  .section { background:#fff; border-radius:12px; border:1px solid var(--b); padding:18px; margin-bottom:20px; }
+  .tabs { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:16px; }
+  .tab { background:#fff; border:1px solid var(--b); border-radius:20px; padding:6px 14px; cursor:pointer; color:var(--tm); font-weight:600; }
+  .tab.actief { background:var(--g); color:#fff; border-color:var(--g); }
+  .tel { display:inline-block; min-width:18px; padding:0 5px; margin-left:4px; border-radius:9px; background:var(--warn); color:#fff; font-size:0.7rem; text-align:center; }
+  .tab.actief .tel { background:#fff; color:var(--g); }
+
+  .section { background:#fff; border-radius:12px; border:1px solid var(--b); padding:16px; margin-bottom:16px; }
   .section h2 { font-family:'Source Serif 4',serif; font-size:1rem; color:var(--g); margin-bottom:4px; }
-  .section p { font-size:0.78rem; color:var(--tm); margin-bottom:14px; line-height:1.5; }
+  .uitleg { font-size:0.8rem; color:var(--tm); margin-bottom:12px; line-height:1.5; }
 
-  .item { display:flex; gap:10px; align-items:flex-start; padding:10px 12px; background:var(--gp); border-radius:8px; border:1px solid var(--b); margin-bottom:8px; }
-  .item span { flex:1; font-size:0.83rem; color:var(--t); line-height:1.5; }
-  .item .actions { display:flex; gap:6px; flex-shrink:0; }
-  .btn-approve { background:var(--g); color:#fff; border:none; border-radius:6px; padding:4px 10px; font-size:0.72rem; font-weight:600; cursor:pointer; font-family:'Source Sans 3',sans-serif; }
-  .btn-reject { background:#fff; color:#c0392b; border:1px solid #e8c5c5; border-radius:6px; padding:4px 10px; font-size:0.72rem; cursor:pointer; font-family:'Source Sans 3',sans-serif; }
-  .btn-delete { background:#fff; color:#c0392b; border:1px solid #e8c5c5; border-radius:6px; padding:4px 10px; font-size:0.72rem; cursor:pointer; font-family:'Source Sans 3',sans-serif; }
-  .approved-badge { background:var(--gl); color:var(--g); font-size:0.65rem; font-weight:600; padding:2px 7px; border-radius:10px; border:1px solid var(--g); flex-shrink:0; margin-top:2px; }
-  .empty { font-size:0.78rem; color:var(--tl); font-style:italic; }
-  .loading { font-size:0.78rem; color:var(--tl); }
+  .stats { display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:10px; }
+  .stat { background:var(--gp); border:1px solid var(--b); border-radius:10px; padding:12px; cursor:pointer; }
+  .stat .n { font-size:1.6rem; font-weight:700; color:var(--g); }
+  .stat.warn .n { color:var(--warn); }
+  .stat .l { font-size:0.78rem; color:var(--tm); }
 
-  .kb-card { background:var(--gp); border:1px solid var(--b); border-radius:8px; padding:12px; margin-bottom:10px; }
-  .kb-head { display:flex; align-items:center; gap:8px; margin-bottom:6px; flex-wrap:wrap; }
-  .kb-head strong { font-size:0.86rem; color:var(--t); }
-  .kb-badge { font-size:0.65rem; font-weight:600; padding:2px 7px; border-radius:10px; flex-shrink:0; }
-  .kb-badge.standaard { background:#eee; color:var(--tm); border:1px solid var(--b); }
-  .kb-badge.aangepast { background:var(--gl); color:var(--g); border:1px solid var(--g); }
-  .kb-date { font-size:0.7rem; color:var(--tl); margin-left:auto; }
-  .kb-date.oud { color:#c0392b; font-weight:600; }
-  .kb-card textarea { width:100%; min-height:72px; border:1.5px solid var(--b); border-radius:6px; padding:8px 10px; font-size:0.8rem; font-family:'Source Sans 3',sans-serif; line-height:1.5; resize:vertical; outline:none; }
-  .kb-card textarea:focus { border-color:var(--g); }
-  .kb-actions { display:flex; gap:6px; margin-top:8px; flex-wrap:wrap; }
-  .kb-new input { width:100%; border:1.5px solid var(--b); border-radius:6px; padding:8px 10px; font-size:0.8rem; font-family:'Source Sans 3',sans-serif; margin-bottom:8px; outline:none; }
-  .kb-new input:focus { border-color:var(--g); }
+  .filters { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
+  .filters input, .filters select { border:1.5px solid var(--b); border-radius:6px; padding:7px 9px; outline:none; background:#fff; }
+  .filters input { flex:1; min-width:160px; }
+
+  .card { background:var(--gp); border:1px solid var(--b); border-radius:10px; padding:12px; margin-bottom:10px; }
+  .card.ingetrokken { opacity:0.6; }
+  .card.verlopen { border-color:#e3b98c; background:var(--warnbg); }
+  .card .tekst { font-size:0.88rem; line-height:1.5; margin:6px 0; white-space:pre-wrap; }
+  .badges { display:flex; gap:5px; flex-wrap:wrap; }
+  .badge { font-size:0.66rem; font-weight:700; padding:2px 7px; border-radius:10px; background:#fff; border:1px solid var(--b); color:var(--tm); }
+  .badge.groen { background:var(--gl); border-color:var(--g); color:var(--g); }
+  .badge.warn { background:var(--warnbg); border-color:var(--warn); color:var(--warn); }
+  .badge.rood { background:#fbeaea; border-color:var(--err); color:var(--err); }
+  .meta { font-size:0.74rem; color:var(--tl); line-height:1.5; }
+  .meta a { color:var(--g); }
+  .acties { display:flex; gap:6px; margin-top:8px; flex-wrap:wrap; }
+
+  .btn { border:none; border-radius:6px; padding:6px 12px; font-weight:600; cursor:pointer; }
+  .btn.primair { background:var(--g); color:#fff; }
+  .btn.secundair { background:#fff; color:var(--g); border:1px solid var(--g); }
+  .btn.gevaar { background:#fff; color:var(--err); border:1px solid #e8c5c5; }
+  .btn.klein { padding:4px 9px; font-size:0.74rem; }
+  .btn:disabled { opacity:0.5; cursor:default; }
+
+  .form { background:#fff; border:1px solid var(--b); border-radius:8px; padding:12px; margin-top:8px; }
+  .form label { display:block; font-size:0.74rem; font-weight:600; color:var(--tm); margin:8px 0 3px; }
+  .form input, .form select, .form textarea { width:100%; border:1.5px solid var(--b); border-radius:6px; padding:7px 9px; outline:none; background:#fff; }
+  .form textarea { min-height:80px; resize:vertical; line-height:1.5; }
+  .form input:focus, .form select:focus, .form textarea:focus { border-color:var(--g); }
+  .rij { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  @media (max-width:520px) { .rij { grid-template-columns:1fr; } }
+  .maanden { display:flex; flex-wrap:wrap; gap:6px; }
+  .maanden label { display:flex; align-items:center; gap:3px; font-weight:400; margin:0; }
+  .maanden input { width:auto; }
+  .hint { font-size:0.72rem; color:var(--tl); margin-top:3px; }
+
+  .historie { margin-top:8px; font-size:0.74rem; color:var(--tm); border-top:1px dashed var(--b); padding-top:6px; }
+  .historie div { margin:2px 0; }
+  .tegenspraak { background:var(--warnbg); border:1px solid #e3b98c; border-radius:8px; padding:8px 10px; margin:6px 0; font-size:0.8rem; line-height:1.45; }
+  .leeg { font-size:0.82rem; color:var(--tl); font-style:italic; }
+  .melding { position:fixed; left:50%; bottom:20px; transform:translateX(-50%); background:var(--g); color:#fff; padding:9px 16px; border-radius:8px; font-size:0.85rem; box-shadow:0 4px 16px rgba(0,0,0,0.2); display:none; z-index:10; max-width:90vw; }
+  .melding.fout { background:var(--err); }
+  .site-rij { display:flex; align-items:center; gap:8px; padding:5px 0; border-bottom:1px solid var(--gl); font-size:0.85rem; }
+  .site-rij span { flex:1; }
 </style>
 </head>
 <body>
@@ -62,221 +93,831 @@
 <div id="login">
   <div class="icon">🌲</div>
   <h1>Beheer Planken Wambuis</h1>
-  <p>Voer het beheerwachtwoord in om door te gaan.</p>
-  <input type="password" id="pwInput" placeholder="Wachtwoord" onkeydown="if(event.key==='Enter')login()" />
-  <button onclick="login()">Inloggen</button>
-  <p class="err" id="loginErr">Ongeldig wachtwoord</p>
+  <p id="loginUitleg">Laden…</p>
+  <div id="startVak" style="display:none;width:100%;max-width:320px">
+    <p>Er is nog geen beheerder. Maak de eerste beheerder aan met het beheerwachtwoord (dit kan maar één keer; daarna log je in met je persoonlijke link).</p>
+    <input id="startNaam" placeholder="Je naam" />
+    <input type="password" id="pwInput" placeholder="Beheerwachtwoord" autocomplete="current-password" onkeydown="if(event.key==='Enter')startBeheer()" />
+    <button class="btn primair" onclick="startBeheer()">Eerste beheerder aanmaken</button>
+  </div>
+  <div id="linkVak" style="display:none;width:100%;max-width:420px"></div>
+  <p class="err" id="loginErr"></p>
 </div>
 
 <div id="app">
   <div class="page-header">
-    <span style="font-size:1.6rem">🌲</span>
-    <h1>Correctiebeheer · Planken Wambuis</h1>
-    <a href="/">← Terug naar app</a>
+    <span style="font-size:1.5rem">🌲</span>
+    <h1>Beheer · Planken Wambuis</h1>
+    <span class="wie" id="wie"></span>
+    <a href="/">← App</a>
   </div>
 
-  <div class="section">
-    <h2>📥 Openstaande suggesties</h2>
-    <p>Deze suggesties worden al gebruikt in antwoorden. Keur ze goed (worden onzichtbaar maar actief) of wijs ze af (verdwijnen volledig).</p>
-    <div id="pendingList"><p class="loading">Laden...</p></div>
-  </div>
-
-  <div class="section">
-    <h2>✅ Geaccordeerde correcties</h2>
-    <p>Deze correcties zijn actief op de achtergrond en onzichtbaar voor gebruikers. Je kunt ze hier verwijderen.</p>
-    <div id="approvedList"><p class="loading">Laden...</p></div>
-  </div>
-
-  <div class="section">
-    <h2>📚 Kennisbank</h2>
-    <p>De basisinformatie waar de assistent zijn gebiedsspecifieke antwoorden op baseert. Wijzigingen zijn direct actief. "Terug naar standaard" herstelt de meegeleverde tekst.</p>
-    <div id="kbList"><p class="loading">Laden...</p></div>
-
-    <div class="kb-new" style="margin-top:16px">
-      <strong style="font-size:0.86rem">➕ Nieuwe sectie</strong>
-      <p style="margin-top:4px">Voeg een nieuw onderwerp toe (bijv. excursies, parkeren).</p>
-      <input id="kbNewSlug" placeholder="sectienaam (kleine letters en streepjes, bijv. excursies)" />
-      <input id="kbNewTitel" placeholder="Titel (bijv. Excursies)" />
-      <textarea id="kbNewTekst" style="width:100%; min-height:72px; border:1.5px solid var(--b); border-radius:6px; padding:8px 10px; font-size:0.8rem; font-family:'Source Sans 3',sans-serif; line-height:1.5; resize:vertical; outline:none;" placeholder="De feiten voor deze sectie..."></textarea>
-      <div class="kb-actions">
-        <button class="btn-approve" onclick="addKbSection()">Toevoegen</button>
-      </div>
-    </div>
-  </div>
+  <div class="tabs" id="tabs"></div>
+  <div id="inhoud"></div>
 </div>
 
-<script>
-var ww = '';
+<div class="melding" id="melding"></div>
 
-function login() {
-  var pw = document.getElementById('pwInput').value;
-  fetch('/api/corrections-set', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'approve', index: -1, password: pw })
-  })
-  .then(function(r) { return r.json(); })
-  .then(function(data) {
-    if (data.error === 'Ongeldig wachtwoord') {
-      document.getElementById('loginErr').style.display = 'block';
-      sessionStorage.removeItem('bw');
-    } else {
-      ww = pw;
-      sessionStorage.setItem('bw', pw);
-      document.getElementById('login').style.display = 'none';
-      document.getElementById('app').style.display = 'block';
-      loadAll();
-    }
-  });
+<script>
+// ============================================================
+// Toegang: persoonlijke link (code in localStorage, gedeeld met de app)
+// ============================================================
+(function leesLoginLink() {
+  var m = location.search.match(/[?&]login=([A-Za-z0-9_-]{20,100})/);
+  if (!m) return;
+  try { localStorage.setItem('pw_token', m[1]); } catch (e) {}
+  history.replaceState(null, '', location.pathname);
+})();
+
+function pwToken() {
+  try { return localStorage.getItem('pw_token'); } catch (e) { return null; }
 }
 
-// Automatisch inloggen als wachtwoord al in sessie zit
-window.addEventListener('load', function() {
-  var saved = sessionStorage.getItem('bw');
-  if (saved) {
-    ww = saved;
+function authHeaders() {
+  return { 'Content-Type': 'application/json', 'X-PW-Token': pwToken() || '' };
+}
+
+function api(actie, data) {
+  var body = Object.assign({ actie: actie }, data || {});
+  return fetch('/api/beheer', { method: 'POST', headers: authHeaders(), body: JSON.stringify(body) })
+    .then(function(r) {
+      return r.json().catch(function() { return {}; }).then(function(d) {
+        if (!r.ok) {
+          var e = new Error(d.error || ('Fout ' + r.status));
+          e.status = r.status;
+          throw e;
+        }
+        return d;
+      });
+    });
+}
+
+function loginLink(code) {
+  return location.origin + '/?login=' + code;
+}
+
+function start() {
+  laadOverzicht().then(function() {
     document.getElementById('login').style.display = 'none';
     document.getElementById('app').style.display = 'block';
-    loadAll();
-  }
-});
-
-function loadAll() {
-  fetch('/api/corrections-get')
-  .then(function(r) { return r.json(); })
-  .then(function(data) {
-    renderPending(data.pending || []);
-    renderApproved(data.approved || []);
-  });
-  loadKennisbank();
-}
-
-function loadKennisbank() {
-  fetch('/api/kennisbank-get')
-  .then(function(r) { return r.json(); })
-  .then(function(data) { renderKennisbank(data.secties || []); })
-  .catch(function() {
-    document.getElementById('kbList').innerHTML = '<p class="empty">Kennisbank kon niet geladen worden.</p>';
-  });
-}
-
-function isOud(datum) {
-  // Rood signaal als de sectie langer dan ~12 maanden geleden is gecontroleerd
-  if (!datum) return true;
-  var d = new Date(datum.length === 7 ? datum + '-01' : datum);
-  if (isNaN(d.getTime())) return true;
-  return (Date.now() - d.getTime()) > 365 * 24 * 3600 * 1000;
-}
-
-function renderKennisbank(secties) {
-  var el = document.getElementById('kbList');
-  if (secties.length === 0) { el.innerHTML = '<p class="empty">Geen secties gevonden.</p>'; return; }
-  el.innerHTML = '';
-  secties.forEach(function(s) {
-    var card = document.createElement('div'); card.className = 'kb-card';
-
-    var head = document.createElement('div'); head.className = 'kb-head';
-    var titel = document.createElement('strong'); titel.textContent = s.titel;
-    var badge = document.createElement('span'); badge.className = 'kb-badge ' + s.bron; badge.textContent = s.bron;
-    var date = document.createElement('span');
-    date.className = 'kb-date' + (isOud(s.gecontroleerd) ? ' oud' : '');
-    date.textContent = 'gecontroleerd: ' + (s.gecontroleerd || 'onbekend');
-    head.appendChild(titel); head.appendChild(badge); head.appendChild(date);
-
-    var ta = document.createElement('textarea'); ta.value = s.tekst;
-
-    var actions = document.createElement('div'); actions.className = 'kb-actions';
-    var save = document.createElement('button'); save.className = 'btn-approve'; save.textContent = '💾 Opslaan';
-    save.onclick = function() { kbAction({ action: 'set-section', slug: s.slug, tekst: ta.value, titel: s.titel }); };
-    var check = document.createElement('button'); check.className = 'btn-approve'; check.textContent = 'Gecontroleerd ✓';
-    check.onclick = function() { kbAction({ action: 'mark-checked', slug: s.slug }); };
-    actions.appendChild(save); actions.appendChild(check);
-    if (s.bron === 'aangepast') {
-      var reset = document.createElement('button'); reset.className = 'btn-delete'; reset.textContent = 'Terug naar standaard';
-      reset.onclick = function() {
-        if (confirm('Aanpassing verwijderen en terug naar de standaardtekst?')) {
-          kbAction({ action: 'clear-section', slug: s.slug });
+    toonTab(huidigeTab);
+  }).catch(function(e) {
+    if (e.status !== 401) { document.getElementById('loginUitleg').textContent = e.message; return; }
+    fetch('/api/auth', { method: 'POST', headers: authHeaders(), body: JSON.stringify({ actie: 'status' }) })
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        var uitleg = document.getElementById('loginUitleg');
+        if (d.beheerderAanwezig) {
+          uitleg.textContent = 'Open je persoonlijke beheerderslink om in te loggen. Heb je die niet (meer)? Vraag een andere beheerder om een nieuwe link.';
+        } else {
+          uitleg.textContent = '';
+          document.getElementById('startVak').style.display = 'block';
         }
+      });
+  });
+}
+
+function startBeheer() {
+  var naam = document.getElementById('startNaam').value;
+  var wachtwoord = document.getElementById('pwInput').value;
+  fetch('/api/auth', { method: 'POST', headers: authHeaders(), body: JSON.stringify({ actie: 'start', naam: naam, wachtwoord: wachtwoord }) })
+    .then(function(r) { return r.json().then(function(d) { if (!r.ok) throw new Error(d.error || 'Mislukt'); return d; }); })
+    .then(function(d) {
+      try { localStorage.setItem('pw_token', d.code); } catch (e) {}
+      document.getElementById('startVak').style.display = 'none';
+      var vak = document.getElementById('linkVak');
+      vak.style.display = 'block';
+      vak.innerHTML = '';
+      vak.appendChild(toonLink(d.code, 'Je bent de eerste beheerder. Bewaar deze persoonlijke link goed (bijv. als bladwijzer of in je wachtwoordkluis): je hebt hem nodig om op andere apparaten in te loggen. Deel hem met niemand.'));
+      var verder = el('button', { class: 'btn primair', text: 'Verder naar het beheerpaneel', style: 'margin-top:10px', onclick: function() { vak.style.display = 'none'; start(); } });
+      vak.appendChild(verder);
+    })
+    .catch(function(e) { document.getElementById('loginErr').textContent = e.message; });
+}
+
+// Blok met een eenmalig getoonde link + kopieerknop
+function toonLink(code, uitleg) {
+  var link = loginLink(code);
+  var box = el('div', { class: 'tegenspraak', style: 'text-align:left' }, [
+    el('div', { text: uitleg }),
+    el('div', { style: 'word-break:break-all;font-family:monospace;margin:8px 0;background:#fff;padding:6px;border-radius:6px', text: link })
+  ]);
+  box.appendChild(el('button', { class: 'btn secundair klein', text: '📋 Kopiëren', onclick: function(ev) {
+    var knop = ev.target;
+    (navigator.clipboard ? navigator.clipboard.writeText(link) : Promise.reject())
+      .then(function() { knop.textContent = '✓ Gekopieerd'; })
+      .catch(function() { knop.textContent = 'Selecteer en kopieer de link hierboven'; });
+  } }));
+  return box;
+}
+
+window.addEventListener('load', start);
+
+// ============================================================
+// Hulpfuncties
+// ============================================================
+var OV = null; // overzicht: onderwerpen, deelgebieden, types, sites, aantallen
+var mijnId = null;
+var MAANDEN = ['jan', 'feb', 'mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'];
+
+function el(tag, attrs, kinderen) {
+  var e = document.createElement(tag);
+  if (attrs) Object.keys(attrs).forEach(function(k) {
+    if (k === 'text') e.textContent = attrs[k];
+    else if (k === 'html') e.innerHTML = attrs[k];
+    else if (k === 'class') e.className = attrs[k];
+    else if (k.indexOf('on') === 0) e[k] = attrs[k];
+    else e.setAttribute(k, attrs[k]);
+  });
+  (kinderen || []).forEach(function(k) { if (k) e.appendChild(typeof k === 'string' ? document.createTextNode(k) : k); });
+  return e;
+}
+
+function melding(tekst, fout) {
+  var m = document.getElementById('melding');
+  m.textContent = tekst;
+  m.className = 'melding' + (fout ? ' fout' : '');
+  m.style.display = 'block';
+  clearTimeout(m._t);
+  m._t = setTimeout(function() { m.style.display = 'none'; }, fout ? 5000 : 2500);
+}
+
+function datumNL(iso) {
+  if (!iso) return 'onbekend';
+  var d = iso.slice(0, 10).split('-');
+  return d.length === 3 ? d[2] + '-' + d[1] + '-' + d[0] : (d.length === 2 ? d[1] + '-' + d[0] : iso);
+}
+
+function titelVan(lijst, slug) {
+  var x = (lijst || []).filter(function(o) { return o.slug === slug; })[0];
+  return x ? x.titel : slug;
+}
+
+function fout(e) { melding(e.message || String(e), true); }
+
+// ============================================================
+// Tabs
+// ============================================================
+var TABS = [
+  { id: 'overzicht', titel: 'Overzicht' },
+  { id: 'voorstellen', titel: 'Voorstellen', tel: function() { return OV && OV.aantallen.voorstellen; } },
+  { id: 'kennisbank', titel: 'Kennisbank', tel: function() { return OV && OV.aantallen.verlopen; } },
+  { id: 'meldingen', titel: 'Klopt niet', tel: function() { return OV && OV.aantallen.meldingen; } },
+  { id: 'logboek', titel: 'Logboek' },
+  { id: 'websites', titel: 'Websites & controle' },
+  { id: 'gebruikers', titel: 'Gebruikers' },
+  { id: 'backup', titel: 'Back-up' }
+];
+var huidigeTab = 'overzicht';
+
+function tekenTabs() {
+  var t = document.getElementById('tabs');
+  t.innerHTML = '';
+  TABS.forEach(function(tab) {
+    var n = tab.tel ? tab.tel() : 0;
+    var b = el('button', { class: 'tab' + (tab.id === huidigeTab ? ' actief' : ''), onclick: function() { toonTab(tab.id); } }, [tab.titel]);
+    if (n) b.appendChild(el('span', { class: 'tel', text: String(n) }));
+    t.appendChild(b);
+  });
+}
+
+function toonTab(id, opties) {
+  huidigeTab = id;
+  tekenTabs();
+  var inhoud = document.getElementById('inhoud');
+  inhoud.innerHTML = '<p class="leeg">Laden…</p>';
+  var tab = { overzicht: tabOverzicht, voorstellen: tabVoorstellen, kennisbank: tabKennisbank, meldingen: tabMeldingen, logboek: tabLogboek, websites: tabWebsites, gebruikers: tabGebruikers, backup: tabBackup }[id];
+  tab(inhoud, opties || {});
+}
+
+function laadOverzicht() {
+  return api('overzicht').then(function(d) {
+    OV = d;
+    document.getElementById('wie').textContent = 'Ingelogd als ' + d.gebruiker.naam;
+    mijnId = d.gebruiker.id;
+    tekenTabs();
+    return d;
+  });
+}
+
+// ============================================================
+// Overzicht
+// ============================================================
+function tabOverzicht(inhoud) {
+  laadOverzicht().then(function(d) {
+    var a = d.aantallen;
+    inhoud.innerHTML = '';
+    var s = el('div', { class: 'section' }, [
+      el('h2', { text: 'Overzicht' }),
+      el('p', { class: 'uitleg', text: 'De assistent gebruikt alleen actieve feiten uit de kennisbank. Feiten waarvan de vervaldatum voorbij is, gebruikt hij met de melding "mogelijk verouderd" — controleer ze en klik op "Gecontroleerd". Voorstellen (van gebruikers en van de wekelijkse controle) worden pas gebruikt na goedkeuring.' })
+    ]);
+    var stats = el('div', { class: 'stats' });
+    function stat(n, label, warn, klik) {
+      stats.appendChild(el('div', { class: 'stat' + (warn && n ? ' warn' : ''), onclick: klik }, [
+        el('div', { class: 'n', text: String(n) }), el('div', { class: 'l', text: label })
+      ]));
+    }
+    stat(a.voorstellen, 'voorstellen wachten op beoordeling', true, function() { toonTab('voorstellen'); });
+    stat(a.meldingen, 'meldingen "klopt niet"', true, function() { toonTab('meldingen'); });
+    stat(a.verlopen, 'feiten mogelijk verouderd (opnieuw controleren)', true, function() { toonTab('kennisbank', { status: 'verlopen' }); });
+    stat(a.actief, 'actieve feiten', false, function() { toonTab('kennisbank', { status: 'actief' }); });
+    stat(a.afgelopen, 'tijdelijke feiten afgelopen (worden niet meer gebruikt)', false, function() { toonTab('kennisbank', { status: 'afgelopen' }); });
+    s.appendChild(stats);
+    inhoud.appendChild(s);
+    inhoud.appendChild(cronKaart(d.cronStatus));
+  }).catch(fout);
+}
+
+function cronKaart(cs) {
+  var s = el('div', { class: 'section' }, [el('h2', { text: 'Wekelijkse controle natuurmonumenten.nl' })]);
+  if (!cs || !cs.nm) {
+    s.appendChild(el('p', { class: 'leeg', text: 'Nog niet uitgevoerd. De controle draait elke zaterdag om 07:00 automatisch (na livegang), of start hem via "Websites & controle".' }));
+    return s;
+  }
+  var nm = cs.nm;
+  var regels = [];
+  if (nm.fout) regels.push('❌ Mislukt: ' + nm.fout);
+  else {
+    regels.push('Laatst: ' + new Date(cs.tijd).toLocaleString('nl-NL') + (cs.handmatig ? ' (handmatig door ' + cs.handmatig + ')' : ''));
+    regels.push(nm.paginas + ' pagina(\'s) gelezen, ' + nm.gewijzigd + ' gewijzigd, ' + nm.nieuweBerichten + ' nieuwe bericht(en), ' + nm.voorstellen + ' nieuw(e) voorstel(len)' + (nm.terugval ? ' (via terugvalcontrole)' : ''));
+    (nm.fouten || []).forEach(function(f) { regels.push('⚠ ' + f); });
+  }
+  if (cs.backup && cs.backup.id) regels.push('Back-up gemaakt: ' + cs.backup.id);
+  regels.forEach(function(r) { s.appendChild(el('div', { class: 'meta', text: r })); });
+  return s;
+}
+
+// ============================================================
+// Feitformulier (voor bewerken, nieuw en voorstellen)
+// ============================================================
+function feitFormulier(start, knoppen) {
+  start = start || {};
+  var f = el('div', { class: 'form' });
+  function veld(label, input, hint) {
+    var w = el('div', null, [el('label', { text: label }), input]);
+    if (hint) w.appendChild(el('div', { class: 'hint', text: hint }));
+    return w;
+  }
+  function select(opties, waarde) {
+    var s = el('select');
+    opties.forEach(function(o) { var op = el('option', { value: o.slug, text: o.titel }); if (o.slug === waarde) op.selected = true; s.appendChild(op); });
+    return s;
+  }
+  var tekst = el('textarea'); tekst.value = start.tekst || '';
+  var onderwerp = select([{ slug: '', titel: '— kies —' }].concat(OV.onderwerpen), start.onderwerp || '');
+  var deelgebied = select(OV.deelgebieden, start.deelgebied || 'heel');
+  var type = select(OV.types.map(function(t) { return { slug: t.slug, titel: t.titel + (t.maanden ? ' (vervalt na ' + t.maanden + ' mnd)' : ' (tot einddatum)') }; }), start.type || 'jaarlijks');
+  var zicht = select([{ slug: 'openbaar', titel: 'Openbaar (iedereen)' }, { slug: 'intern', titel: 'Intern (alleen ingelogd)' }], start.zichtbaarheid || 'openbaar');
+  var bron = el('input', { placeholder: 'Bijv. Kiek-document "…", nm.nl-pagina, boswachter Jan' }); bron.value = start.bron || '';
+  var bronUrl = el('input', { placeholder: 'https://…' }); bronUrl.value = start.bronUrl || '';
+  var bronDatum = el('input', { type: 'date' }); bronDatum.value = start.bronDatum || '';
+  var startdatum = el('input', { type: 'date' }); startdatum.value = start.startdatum || '';
+  var einddatum = el('input', { type: 'date' }); einddatum.value = start.einddatum || '';
+  var vervaltOp = el('input', { type: 'date' }); vervaltOp.value = start.vervaltOp || '';
+  var maanden = el('div', { class: 'maanden' });
+  var gekozen = start.maanden || [];
+  MAANDEN.forEach(function(m, i) {
+    var cb = el('input', { type: 'checkbox', value: String(i + 1) });
+    if (gekozen.indexOf(i + 1) >= 0) cb.checked = true;
+    maanden.appendChild(el('label', null, [cb, m]));
+  });
+
+  var seizoenVak = veld('Maanden (seizoen)', maanden, 'De assistent gebruikt dit feit in deze maanden en de maand ervoor.');
+  var tijdelijkVak = el('div', { class: 'rij' }, [veld('Geldt vanaf (optioneel)', startdatum), veld('Geldt t/m (verplicht)', einddatum)]);
+  function typeWissel() {
+    seizoenVak.style.display = type.value === 'seizoen' ? '' : 'none';
+    tijdelijkVak.style.display = type.value === 'tijdelijk' ? '' : 'none';
+  }
+  type.onchange = typeWissel;
+
+  f.appendChild(veld('Feit', tekst, 'Eén feit per blok, met absolute datums (dus "in 2033", niet "over zeven jaar").'));
+  f.appendChild(el('div', { class: 'rij' }, [veld('Onderwerp', onderwerp), veld('Deelgebied', deelgebied)]));
+  f.appendChild(el('div', { class: 'rij' }, [veld('Type', type), veld('Zichtbaarheid', zicht)]));
+  f.appendChild(seizoenVak);
+  f.appendChild(tijdelijkVak);
+  f.appendChild(veld('Bron', bron));
+  f.appendChild(el('div', { class: 'rij' }, [veld('Link naar bron (optioneel)', bronUrl), veld('Datum van de bron (optioneel)', bronDatum)]));
+  f.appendChild(veld('Handmatige vervaldatum (optioneel)', vervaltOp, 'Leeg = automatisch volgens het type.'));
+  typeWissel();
+
+  f.waarde = function() {
+    var ms = [];
+    maanden.querySelectorAll('input').forEach(function(cb) { if (cb.checked) ms.push(Number(cb.value)); });
+    return {
+      tekst: tekst.value, onderwerp: onderwerp.value, deelgebied: deelgebied.value, type: type.value,
+      zichtbaarheid: zicht.value, bron: bron.value, bronUrl: bronUrl.value, bronDatum: bronDatum.value,
+      startdatum: startdatum.value, einddatum: einddatum.value, vervaltOp: vervaltOp.value, maanden: ms
+    };
+  };
+  var acties = el('div', { class: 'acties' });
+  (knoppen || []).forEach(function(k) { acties.appendChild(k); });
+  f.appendChild(acties);
+  return f;
+}
+
+// ============================================================
+// Voorstellen
+// ============================================================
+var HERKOMST = { gebruiker: 'Suggestie gebruiker', 'nm.nl': 'Wekelijkse controle nm.nl', claude: 'Voorstel assistent', feedback: 'Melding "klopt niet"', document: 'Uit document' };
+
+function tabVoorstellen(inhoud) {
+  api('voorstellen').then(function(d) {
+    inhoud.innerHTML = '';
+    var s = el('div', { class: 'section' }, [
+      el('h2', { text: 'Voorstellen' }),
+      el('p', { class: 'uitleg', text: 'Vul onderwerp, type en bron aan en keur goed: het voorstel wordt dan een actief kennisbankfeit (gecontroleerd door jou, vandaag). Bij een wijziging van een bestaand feit wint de nieuwste gecontroleerde bron; de oude tekst blijft in de historie.' })
+    ]);
+    s.appendChild(documentImport());
+    if (d.voorstellen.length === 0) s.appendChild(el('p', { class: 'leeg', text: 'Geen openstaande voorstellen.' }));
+    d.voorstellen.forEach(function(v) {
+      var card = el('div', { class: 'card' });
+      var badges = el('div', { class: 'badges' }, [
+        el('span', { class: 'badge groen', text: HERKOMST[v.herkomst] || v.herkomst || 'voorstel' }),
+        el('span', { class: 'badge', text: v.soort === 'wijziging' ? 'Wijziging bestaand feit' : 'Nieuw feit' }),
+        v.aangemaakt ? el('span', { class: 'badge', text: datumNL(v.aangemaakt) }) : null
+      ]);
+      card.appendChild(badges);
+      if (v.toelichting) card.appendChild(el('div', { class: 'meta', text: v.toelichting }));
+      if (v.huidigFeit) {
+        card.appendChild(el('div', { class: 'tegenspraak' }, [
+          el('b', { text: '⚠ Huidig feit (gecontroleerd ' + datumNL(v.huidigFeit.gecontroleerdOp) + '): ' }),
+          v.huidigFeit.tekst
+        ]));
+      }
+      if (v.bronUrl) card.appendChild(el('div', { class: 'meta' }, ['Bron: ', el('a', { href: v.bronUrl, target: '_blank', rel: 'noopener', text: v.bron || v.bronUrl })]));
+      var goed = el('button', { class: 'btn primair klein', text: '✓ Goedkeuren' });
+      var af = el('button', { class: 'btn gevaar klein', text: '✗ Afwijzen' });
+      var start = Object.assign({}, v.huidigFeit || {}, v);
+      if (!v.bron && v.herkomst === 'gebruiker') start.bron = 'Suggestie van een gebruiker, gecontroleerd door beheerder';
+      var form = feitFormulier(start, [goed, af]);
+      goed.onclick = function() {
+        goed.disabled = true;
+        api('voorstel-goedkeuren', { id: v.id, feit: form.waarde() })
+          .then(function() { melding('Goedgekeurd en toegevoegd aan de kennisbank'); return laadOverzicht(); })
+          .then(function() { toonTab('voorstellen'); })
+          .catch(function(e) { goed.disabled = false; fout(e); });
       };
-      actions.appendChild(reset);
+      af.onclick = function() {
+        if (!confirm('Dit voorstel afwijzen?')) return;
+        api('voorstel-afwijzen', { id: v.id })
+          .then(function() { melding('Afgewezen'); return laadOverzicht(); })
+          .then(function() { toonTab('voorstellen'); }).catch(fout);
+      };
+      card.appendChild(form);
+      s.appendChild(card);
+    });
+    inhoud.appendChild(s);
+  }).catch(fout);
+}
+
+// Document (bijv. uit Kiek) omzetten in voorstellen: tekst plakken, wordt in delen verwerkt
+function documentImport() {
+  var wrap = el('div', { class: 'card', style: 'background:#fff' });
+  var open = el('button', { class: 'btn secundair klein', text: '📄 Tekst uit document omzetten in voorstellen' });
+  var vak = el('div', { style: 'display:none' });
+  open.onclick = function() { vak.style.display = vak.style.display === 'none' ? '' : 'none'; };
+  wrap.appendChild(open);
+  wrap.appendChild(vak);
+  var f = el('div', { class: 'form' });
+  var naam = el('input', { placeholder: 'Naam van het document, bijv. Kiek: "Natuurvisie Wolfheze 2017-2035"' });
+  var link = el('input', { placeholder: 'https://… (optioneel)' });
+  var datum = el('input', { type: 'date' });
+  var zicht = el('select');
+  [['intern', 'Intern (alleen ingelogd)'], ['openbaar', 'Openbaar (iedereen)']].forEach(function(o) { zicht.appendChild(el('option', { value: o[0], text: o[1] })); });
+  var tekst = el('textarea', { style: 'min-height:160px', placeholder: 'Plak hier de tekst van het document (uit Word of PDF kopiëren).' });
+  var status = el('div', { class: 'meta', style: 'margin-top:6px' });
+  var knop = el('button', { class: 'btn primair klein', text: 'Omzetten in voorstellen' });
+  f.appendChild(el('div', { class: 'uitleg', text: 'De assistent haalt de gebiedsspecifieke feiten uit de tekst en zet ze klaar als voorstel. Controleer elk voorstel voordat je het goedkeurt. Lange documenten worden in delen verwerkt (ongeveer een halve minuut per deel).' }));
+  f.appendChild(el('label', { text: 'Document (wordt de bron)' })); f.appendChild(naam);
+  f.appendChild(el('div', { class: 'rij' }, [el('div', null, [el('label', { text: 'Link (optioneel)' }), link]), el('div', null, [el('label', { text: 'Datum document (optioneel)' }), datum])]));
+  f.appendChild(el('label', { text: 'Zichtbaarheid van de voorstellen' })); f.appendChild(zicht);
+  f.appendChild(el('label', { text: 'Tekst' })); f.appendChild(tekst);
+  f.appendChild(el('div', { class: 'acties' }, [knop]));
+  f.appendChild(status);
+  vak.appendChild(f);
+
+  function delen(t) {
+    var stukken = [], huidig = '';
+    t.split(/\n\s*\n/).forEach(function(alinea) {
+      while (alinea.length > 15000) { stukken.push(alinea.slice(0, 15000)); alinea = alinea.slice(15000); }
+      if ((huidig + '\n\n' + alinea).length > 15000) { stukken.push(huidig); huidig = alinea; }
+      else huidig = huidig ? huidig + '\n\n' + alinea : alinea;
+    });
+    if (huidig.trim()) stukken.push(huidig);
+    return stukken.filter(function(x) { return x.trim().length >= 50; });
+  }
+
+  knop.onclick = function() {
+    var stukken = delen(tekst.value);
+    if (!naam.value.trim()) { melding('Vul de naam van het document in', true); return; }
+    if (stukken.length === 0) { melding('Plak eerst de tekst van het document', true); return; }
+    knop.disabled = true;
+    var totaal = 0, i = 0;
+    function volgende() {
+      if (i >= stukken.length) {
+        status.textContent = '✓ Klaar: ' + totaal + ' voorstel(len) aangemaakt uit ' + stukken.length + ' deel/delen.';
+        knop.disabled = false;
+        laadOverzicht().then(function() { setTimeout(function() { toonTab('voorstellen'); }, 1500); });
+        return;
+      }
+      status.textContent = 'Bezig met deel ' + (i + 1) + ' van ' + stukken.length + '… (' + totaal + ' voorstellen tot nu toe)';
+      api('document-importeren', { bronNaam: naam.value, bronUrl: link.value, bronDatum: datum.value, zichtbaarheid: zicht.value, tekst: stukken[i], deel: (i + 1) + '/' + stukken.length })
+        .then(function(r) { totaal += r.voorstellen; i++; volgende(); })
+        .catch(function(e) { knop.disabled = false; status.textContent = 'Gestopt bij deel ' + (i + 1) + ': ' + e.message; });
+    }
+    volgende();
+  };
+  return wrap;
+}
+
+// ============================================================
+// Kennisbank
+// ============================================================
+var filter = { zoek: '', onderwerp: '', deelgebied: '', status: 'actief' };
+
+function tabKennisbank(inhoud, opties) {
+  if (opties.status) filter.status = opties.status;
+  api('feiten').then(function(d) {
+    inhoud.innerHTML = '';
+    var s = el('div', { class: 'section' }, [
+      el('h2', { text: 'Kennisbank' }),
+      el('p', { class: 'uitleg', text: 'Alle feiten waar de assistent zijn antwoorden over Planken Wambuis op baseert. Opslaan geldt ook als controle (datum van vandaag). Intrekken haalt een feit direct uit de antwoorden; het blijft bewaard en kan weer worden geactiveerd.' })
+    ]);
+    var zoek = el('input', { placeholder: 'Zoeken…', value: filter.zoek });
+    function sel(opties, waarde, veld) {
+      var x = el('select');
+      opties.forEach(function(o) { var op = el('option', { value: o.slug, text: o.titel }); if (o.slug === waarde) op.selected = true; x.appendChild(op); });
+      x.onchange = function() { filter[veld] = x.value; teken(); };
+      return x;
+    }
+    var fl = el('div', { class: 'filters' }, [
+      zoek,
+      sel([{ slug: '', titel: 'Alle onderwerpen' }].concat(OV.onderwerpen), filter.onderwerp, 'onderwerp'),
+      sel([{ slug: '', titel: 'Alle deelgebieden' }].concat(OV.deelgebieden), filter.deelgebied, 'deelgebied'),
+      sel([{ slug: 'actief', titel: 'Actief' }, { slug: 'verlopen', titel: 'Mogelijk verouderd' }, { slug: 'afgelopen', titel: 'Tijdelijk, afgelopen' }, { slug: 'intern', titel: 'Intern' }, { slug: 'ingetrokken', titel: 'Ingetrokken' }, { slug: 'alle', titel: 'Alle' }], filter.status, 'status')
+    ]);
+    zoek.oninput = function() { filter.zoek = zoek.value; teken(); };
+    s.appendChild(fl);
+
+    var nieuwKnop = el('button', { class: 'btn secundair', text: '+ Nieuw feit' });
+    var nieuwVak = el('div');
+    nieuwKnop.onclick = function() {
+      if (nieuwVak.firstChild) { nieuwVak.innerHTML = ''; return; }
+      var opslaan = el('button', { class: 'btn primair klein', text: '💾 Opslaan' });
+      var form = feitFormulier({ onderwerp: filter.onderwerp, deelgebied: filter.deelgebied || 'heel' }, [opslaan]);
+      opslaan.onclick = function() {
+        api('feit-opslaan', { feit: form.waarde() }).then(function() { melding('Feit toegevoegd'); nieuwVak.innerHTML = ''; return laadOverzicht(); })
+          .then(function() { toonTab('kennisbank'); }).catch(fout);
+      };
+      nieuwVak.appendChild(form);
+    };
+    s.appendChild(nieuwKnop);
+    s.appendChild(nieuwVak);
+
+    var lijst = el('div', { style: 'margin-top:12px' });
+    s.appendChild(lijst);
+    inhoud.appendChild(s);
+
+    function past(f) {
+      var b = f.beoordeling;
+      if (filter.onderwerp && f.onderwerp !== filter.onderwerp) return false;
+      if (filter.deelgebied && f.deelgebied !== filter.deelgebied) return false;
+      if (filter.zoek && (f.tekst + ' ' + (f.bron || '')).toLowerCase().indexOf(filter.zoek.toLowerCase()) < 0) return false;
+      switch (filter.status) {
+        case 'actief': return f.status === 'actief' && !b.afgelopen;
+        case 'verlopen': return f.status === 'actief' && b.verlopen;
+        case 'afgelopen': return f.status === 'actief' && b.afgelopen;
+        case 'intern': return f.zichtbaarheid === 'intern';
+        case 'ingetrokken': return f.status === 'ingetrokken';
+        default: return true;
+      }
     }
 
-    card.appendChild(head); card.appendChild(ta); card.appendChild(actions);
-    el.appendChild(card);
-  });
+    function teken() {
+      lijst.innerHTML = '';
+      var feiten = d.feiten.filter(past).sort(function(a, b) {
+        return (a.onderwerp || '').localeCompare(b.onderwerp || '') || (a.tekst || '').localeCompare(b.tekst || '');
+      });
+      lijst.appendChild(el('p', { class: 'meta', text: feiten.length + ' feit(en)' }));
+      if (feiten.length === 0) lijst.appendChild(el('p', { class: 'leeg', text: 'Geen feiten gevonden.' }));
+      feiten.forEach(function(f) { lijst.appendChild(feitKaart(f)); });
+    }
+    teken();
+  }).catch(fout);
 }
 
-function kbAction(body) {
-  body.password = ww;
-  fetch('/api/kennisbank-set', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
-  })
-  .then(function(r) { return r.json(); })
-  .then(function(data) {
-    if (data.error) { alert('Fout: ' + data.error); return; }
-    loadKennisbank();
+function feitKaart(f) {
+  var b = f.beoordeling;
+  var card = el('div', { class: 'card' + (f.status === 'ingetrokken' ? ' ingetrokken' : (b.verlopen ? ' verlopen' : '')) });
+  var badges = el('div', { class: 'badges' }, [
+    el('span', { class: 'badge groen', text: titelVan(OV.onderwerpen, f.onderwerp) }),
+    el('span', { class: 'badge', text: titelVan(OV.deelgebieden, f.deelgebied) }),
+    el('span', { class: 'badge', text: titelVan(OV.types, f.type) + (f.type === 'seizoen' && f.maanden && f.maanden.length ? ': ' + f.maanden.map(function(m) { return MAANDEN[m - 1]; }).join(', ') : '') }),
+    f.zichtbaarheid === 'intern' ? el('span', { class: 'badge warn', text: 'Intern' }) : null,
+    f.status === 'ingetrokken' ? el('span', { class: 'badge rood', text: 'Ingetrokken' }) : null,
+    f.status === 'actief' && b.verlopen ? el('span', { class: 'badge warn', text: 'Mogelijk verouderd' }) : null,
+    f.status === 'actief' && b.afgelopen ? el('span', { class: 'badge rood', text: 'Afgelopen' }) : null
+  ]);
+  card.appendChild(badges);
+  card.appendChild(el('div', { class: 'tekst', text: f.tekst }));
+  var meta = el('div', { class: 'meta' });
+  meta.appendChild(document.createTextNode('Bron: '));
+  if (f.bronUrl) meta.appendChild(el('a', { href: f.bronUrl, target: '_blank', rel: 'noopener', text: f.bron || f.bronUrl }));
+  else meta.appendChild(document.createTextNode(f.bron || '—'));
+  if (f.bronDatum) meta.appendChild(document.createTextNode(' (' + datumNL(f.bronDatum) + ')'));
+  meta.appendChild(el('br'));
+  meta.appendChild(document.createTextNode('Gecontroleerd ' + datumNL(f.gecontroleerdOp) + (f.gecontroleerdDoor ? ' door ' + f.gecontroleerdDoor : '') +
+    ' · ' + (f.type === 'tijdelijk' ? 'geldt t/m ' : 'vervalt ') + datumNL(b.verval)));
+  card.appendChild(meta);
+
+  var acties = el('div', { class: 'acties' });
+  var vak = el('div');
+  var bewerk = el('button', { class: 'btn secundair klein', text: '✏️ Bewerken' });
+  bewerk.onclick = function() {
+    if (vak.firstChild) { vak.innerHTML = ''; return; }
+    var opslaan = el('button', { class: 'btn primair klein', text: '💾 Opslaan (= gecontroleerd)' });
+    var form = feitFormulier(f, [opslaan]);
+    opslaan.onclick = function() {
+      var w = form.waarde(); w.id = f.id;
+      api('feit-opslaan', { feit: w }).then(function() { melding('Opgeslagen'); return laadOverzicht(); })
+        .then(function() { toonTab('kennisbank'); }).catch(fout);
+    };
+    vak.appendChild(form);
+  };
+  acties.appendChild(bewerk);
+  if (f.status === 'actief') {
+    acties.appendChild(el('button', { class: 'btn primair klein', text: '✓ Gecontroleerd', onclick: function() {
+      api('feit-gecontroleerd', { id: f.id }).then(function() { melding('Gemarkeerd als gecontroleerd'); return laadOverzicht(); })
+        .then(function() { toonTab('kennisbank'); }).catch(fout);
+    } }));
+    acties.appendChild(el('button', { class: 'btn gevaar klein', text: 'Intrekken', onclick: function() {
+      var reden = prompt('Waarom trek je dit feit in? (optioneel)');
+      if (reden === null) return;
+      api('feit-intrekken', { id: f.id, reden: reden }).then(function() { melding('Ingetrokken — wordt niet meer gebruikt'); return laadOverzicht(); })
+        .then(function() { toonTab('kennisbank'); }).catch(fout);
+    } }));
+  } else {
+    acties.appendChild(el('button', { class: 'btn secundair klein', text: 'Heractiveren', onclick: function() {
+      api('feit-heractiveren', { id: f.id }).then(function() { melding('Weer actief'); return laadOverzicht(); })
+        .then(function() { toonTab('kennisbank'); }).catch(fout);
+    } }));
+  }
+  var hist = el('div', { class: 'historie', style: 'display:none' });
+  (f.historie || []).slice().reverse().forEach(function(h) {
+    hist.appendChild(el('div', { text: datumNL(h.datum) + ' · ' + h.actie + ' · ' + (h.door || '') + (h.reden ? ' · reden: ' + h.reden : '') + (h.oudeTekst ? ' · oude tekst: "' + h.oudeTekst + '"' : '') }));
   });
+  acties.appendChild(el('button', { class: 'btn secundair klein', text: 'Historie', onclick: function() {
+    hist.style.display = hist.style.display === 'none' ? '' : 'none';
+  } }));
+  card.appendChild(acties);
+  card.appendChild(vak);
+  card.appendChild(hist);
+  return card;
 }
 
-function addKbSection() {
-  var slug = document.getElementById('kbNewSlug').value.trim().toLowerCase();
-  var titel = document.getElementById('kbNewTitel').value.trim();
-  var tekst = document.getElementById('kbNewTekst').value.trim();
-  if (!slug || !tekst) { alert('Vul minimaal een sectienaam en tekst in.'); return; }
-  kbAction({ action: 'set-section', slug: slug, titel: titel, tekst: tekst });
-  document.getElementById('kbNewSlug').value = '';
-  document.getElementById('kbNewTitel').value = '';
-  document.getElementById('kbNewTekst').value = '';
+// ============================================================
+// Websites
+// ============================================================
+function tabWebsites(inhoud) {
+  laadOverzicht().then(function(d) {
+    var sites = d.sites.slice();
+    inhoud.innerHTML = '';
+    var s = el('div', { class: 'section' }, [
+      el('h2', { text: 'Toegestane websites' }),
+      el('p', { class: 'uitleg', text: 'De assistent zoekt op internet alleen op deze websites (inclusief subdomeinen). Informatie van websites is niet door een boswachter gecontroleerd en wordt zo ook getoond.' })
+    ]);
+    var lijst = el('div');
+    var nieuw = el('input', { placeholder: 'bijv. natuurmonumenten.nl', style: 'flex:1;border:1.5px solid var(--b);border-radius:6px;padding:7px 9px;' });
+    function teken() {
+      lijst.innerHTML = '';
+      sites.forEach(function(site, i) {
+        lijst.appendChild(el('div', { class: 'site-rij' }, [
+          el('span', { text: site }),
+          el('button', { class: 'btn gevaar klein', text: 'Verwijder', onclick: function() { sites.splice(i, 1); teken(); } })
+        ]));
+      });
+    }
+    teken();
+    s.appendChild(lijst);
+    var toevoegen = el('button', { class: 'btn secundair klein', text: '+ Toevoegen', onclick: function() {
+      var v = nieuw.value.trim();
+      if (v) { sites.push(v); nieuw.value = ''; teken(); }
+    } });
+    s.appendChild(el('div', { style: 'display:flex;gap:8px;margin-top:10px' }, [nieuw, toevoegen]));
+    s.appendChild(el('div', { class: 'acties', style: 'margin-top:12px' }, [
+      el('button', { class: 'btn primair', text: '💾 Lijst opslaan', onclick: function() {
+        api('sites-opslaan', { sites: sites }).then(function(r) { sites = r.sites; teken(); melding('Opgeslagen'); }).catch(fout);
+      } })
+    ]));
+    inhoud.appendChild(s);
+
+    // Pagina's voor de wekelijkse controle
+    var s2 = el('div', { class: 'section' }, [
+      el('h2', { text: 'Wekelijkse controle natuurmonumenten.nl' }),
+      el('p', { class: 'uitleg', text: 'Elke zaterdag om 07:00 worden deze pagina\'s gelezen. Is er iets gewijzigd of staat er een nieuw nieuws- of agendabericht, dan vergelijkt de assistent dat met de kennisbank en zet wat nieuw of anders is klaar als voorstel. Niets gaat live zonder jouw goedkeuring. Eén pagina per regel.' })
+    ]);
+    var ta = el('textarea', { style: 'width:100%;min-height:90px;border:1.5px solid var(--b);border-radius:6px;padding:8px;font-family:monospace;font-size:0.78rem;' });
+    ta.value = (d.nmPaginas || []).join('\n');
+    s2.appendChild(ta);
+    var nu = el('button', { class: 'btn secundair', text: '🔎 Nu controleren' });
+    nu.onclick = function() {
+      nu.disabled = true; nu.textContent = 'Bezig… (kan een minuut duren)';
+      api('nm-controleren').then(function(r) {
+        melding(r.nm.voorstellen + ' nieuw(e) voorstel(len)');
+        return laadOverzicht();
+      }).then(function() { toonTab('websites'); }).catch(function(e) { nu.disabled = false; nu.textContent = '🔎 Nu controleren'; fout(e); });
+    };
+    s2.appendChild(el('div', { class: 'acties', style: 'margin-top:10px' }, [
+      el('button', { class: 'btn primair', text: '💾 Pagina\'s opslaan', onclick: function() {
+        api('nm-paginas-opslaan', { paginas: ta.value.split('\n') }).then(function() { melding('Opgeslagen'); }).catch(fout);
+      } }),
+      nu
+    ]));
+    inhoud.appendChild(s2);
+    inhoud.appendChild(cronKaart(d.cronStatus));
+  }).catch(fout);
+}
+// ============================================================
+// Gebruikers
+// ============================================================
+function tabGebruikers(inhoud) {
+  api('gebruikers').then(function(d) {
+    inhoud.innerHTML = '';
+    var s = el('div', { class: 'section' }, [
+      el('h2', { text: 'Gebruikers' }),
+      el('p', { class: 'uitleg', text: 'Boswachters en vrijwilligers loggen in met een persoonlijke link. Ingelogde gebruikers krijgen ook interne feiten; beheerders kunnen daarnaast dit beheerpaneel gebruiken. Een link wordt maar één keer getoond: kopieer hem en stuur hem zelf door (mail of WhatsApp). Intrekken werkt direct.' })
+    ]);
+    var naam = el('input', { placeholder: 'Naam', style: 'flex:1;min-width:140px;border:1.5px solid var(--b);border-radius:6px;padding:7px 9px;' });
+    var rol = el('select', { style: 'border:1.5px solid var(--b);border-radius:6px;padding:7px 9px;' });
+    [['gebruiker', 'Boswachter / vrijwilliger'], ['beheerder', 'Beheerder']].forEach(function(r) { rol.appendChild(el('option', { value: r[0], text: r[1] })); });
+    var nieuwVak = el('div');
+    var maak = el('button', { class: 'btn primair klein', text: '+ Link maken', onclick: function() {
+      api('gebruiker-maken', { naam: naam.value, rol: rol.value }).then(function(r) {
+        naam.value = '';
+        tekenLijst(r.gebruiker.id, r.code);
+      }).catch(fout);
+    } });
+    s.appendChild(el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px' }, [naam, rol, maak]));
+    s.appendChild(nieuwVak);
+    var lijst = el('div');
+    s.appendChild(lijst);
+    inhoud.appendChild(s);
+
+    function tekenLijst(nieuwId, code) {
+      api('gebruikers').then(function(d2) {
+        lijst.innerHTML = '';
+        if (d2.gebruikers.length === 0) lijst.appendChild(el('p', { class: 'leeg', text: 'Nog geen gebruikers.' }));
+        d2.gebruikers.forEach(function(g) {
+          var card = el('div', { class: 'card' + (g.ingetrokken ? ' ingetrokken' : '') });
+          card.appendChild(el('div', { class: 'badges' }, [
+            el('span', { class: 'badge groen', text: g.rol === 'beheerder' ? 'Beheerder' : 'Boswachter / vrijwilliger' }),
+            g.ingetrokken ? el('span', { class: 'badge rood', text: 'Ingetrokken' }) : null,
+            g.id === mijnId ? el('span', { class: 'badge', text: 'Jij' }) : null
+          ]));
+          card.appendChild(el('div', { class: 'tekst', text: g.naam }));
+          card.appendChild(el('div', { class: 'meta', text: 'Link gemaakt ' + datumNL(g.linkGemaakt) + (g.linkGemaaktDoor ? ' door ' + g.linkGemaaktDoor : '') + (g.ingetrokken ? ' · ingetrokken ' + datumNL(g.ingetrokkenOp) : '') }));
+          if (g.id === nieuwId && code) card.appendChild(toonLink(code, 'Nieuwe persoonlijke link voor ' + g.naam + '. Deze wordt maar één keer getoond.'));
+          var acties = el('div', { class: 'acties' });
+          acties.appendChild(el('button', { class: 'btn secundair klein', text: g.ingetrokken ? 'Nieuwe link (heractiveren)' : 'Nieuwe link', onclick: function() {
+            if (!g.ingetrokken && !confirm('Een nieuwe link maken? De oude link van ' + g.naam + ' werkt dan niet meer.')) return;
+            api('gebruiker-nieuwe-link', { id: g.id }).then(function(r) { tekenLijst(g.id, r.code); }).catch(fout);
+          } }));
+          if (!g.ingetrokken) acties.appendChild(el('button', { class: 'btn gevaar klein', text: 'Intrekken', onclick: function() {
+            if (!confirm('Toegang van ' + g.naam + ' intrekken? De link werkt direct niet meer.')) return;
+            api('gebruiker-intrekken', { id: g.id }).then(function() { melding('Ingetrokken'); tekenLijst(); }).catch(fout);
+          } }));
+          card.appendChild(acties);
+          lijst.appendChild(card);
+        });
+      }).catch(fout);
+    }
+    tekenLijst();
+  }).catch(fout);
+}
+// ============================================================
+// Meldingen "klopt niet"
+// ============================================================
+function tabMeldingen(inhoud) {
+  api('meldingen').then(function(d) {
+    inhoud.innerHTML = '';
+    var s = el('div', { class: 'section' }, [
+      el('h2', { text: 'Meldingen "klopt niet"' }),
+      el('p', { class: 'uitleg', text: 'Gebruikers kunnen bij elk antwoord melden dat iets niet klopt. Maak er een voorstel van om het juiste feit in de kennisbank te zetten, of handel de melding af. Controleer ook de gebruikte kennisbankfeiten: trek een fout feit in via het tabblad Kennisbank.' })
+    ]);
+    if (d.meldingen.length === 0) s.appendChild(el('p', { class: 'leeg', text: 'Geen openstaande meldingen.' }));
+    d.meldingen.forEach(function(m) {
+      var card = el('div', { class: 'card' });
+      card.appendChild(el('div', { class: 'meta', text: new Date(m.tijd).toLocaleString('nl-NL') }));
+      card.appendChild(el('div', { class: 'tegenspraak' }, [el('b', { text: 'Melding: ' }), m.toelichting || '(geen toelichting)']));
+      if (m.vraag) card.appendChild(el('div', { class: 'tekst' }, [el('b', { text: 'Vraag: ' }), m.vraag]));
+      if (m.antwoord) {
+        var ant = el('div', { class: 'tekst', style: 'display:none;font-size:0.8rem;background:#fff;border-radius:6px;padding:8px' , text: m.antwoord });
+        card.appendChild(el('button', { class: 'btn secundair klein', text: 'Antwoord tonen', onclick: function() { ant.style.display = ant.style.display === 'none' ? '' : 'none'; } }));
+        card.appendChild(ant);
+      }
+      if (m.feiten && m.feiten.length) card.appendChild(el('div', { class: 'meta', text: 'Gebruikte kennisbankfeiten: ' + m.feiten.join(', ') }));
+      if (m.web && m.web.length) card.appendChild(el('div', { class: 'meta', text: 'Gebruikte websites: ' + m.web.join(', ') }));
+      card.appendChild(el('div', { class: 'acties' }, [
+        el('button', { class: 'btn primair klein', text: '→ Maak voorstel', onclick: function() {
+          api('melding-naar-voorstel', { id: m.id }).then(function() { melding('Voorstel aangemaakt'); return laadOverzicht(); })
+            .then(function() { toonTab('voorstellen'); }).catch(fout);
+        } }),
+        el('button', { class: 'btn secundair klein', text: '✓ Afgehandeld', onclick: function() {
+          api('melding-afhandelen', { id: m.id }).then(function() { melding('Afgehandeld'); return laadOverzicht(); })
+            .then(function() { toonTab('meldingen'); }).catch(fout);
+        } })
+      ]));
+      s.appendChild(card);
+    });
+    inhoud.appendChild(s);
+  }).catch(fout);
 }
 
-function renderPending(list) {
-  var el = document.getElementById('pendingList');
-  if (list.length === 0) { el.innerHTML = '<p class="empty">Geen openstaande suggesties.</p>'; return; }
-  el.innerHTML = '';
-  list.forEach(function(c, i) {
-    var div = document.createElement('div'); div.className = 'item';
-    var span = document.createElement('span'); span.textContent = c;
-    var actions = document.createElement('div'); actions.className = 'actions';
-    var approve = document.createElement('button'); approve.className = 'btn-approve'; approve.textContent = '✓ Accorderen';
-    approve.onclick = (function(idx) { return function() { doAction('approve', idx); }; })(i);
-    var reject = document.createElement('button'); reject.className = 'btn-reject'; reject.textContent = '✗ Afwijzen';
-    reject.onclick = (function(idx) { return function() { doAction('reject', idx); }; })(i);
-    actions.appendChild(approve); actions.appendChild(reject);
-    div.appendChild(span); div.appendChild(actions);
-    el.appendChild(div);
-  });
+// ============================================================
+// Logboek (steekproeven)
+// ============================================================
+function tabLogboek(inhoud, opties) {
+  var vanaf = opties.vanaf || 0;
+  api('logboek', { vanaf: vanaf }).then(function(d) {
+    inhoud.innerHTML = '';
+    var s = el('div', { class: 'section' }, [
+      el('h2', { text: 'Logboek' }),
+      el('p', { class: 'uitleg', text: 'Alle vragen en antwoorden van de afgelopen 90 dagen, zonder persoonsgegevens. Doe wekelijks een steekproef: klopt het antwoord, en zijn de gebruikte feiten juist?' }),
+      el('div', { class: 'meta', text: 'Laatste 30 dagen: ' + d.samenvatting.vragen30 + ' vragen · geschatte API-kosten $ ' + d.samenvatting.kosten30.toFixed(2).replace('.', ',') + ' (schatting; zie de Anthropic-console voor de werkelijke kosten)' })
+    ]);
+    if (d.items.length === 0) s.appendChild(el('p', { class: 'leeg', text: 'Nog geen vragen in het logboek.' }));
+    d.items.forEach(function(e) {
+      var card = el('div', { class: 'card' });
+      card.appendChild(el('div', { class: 'badges' }, [
+        el('span', { class: 'badge', text: new Date(e.tijd).toLocaleString('nl-NL') }),
+        el('span', { class: 'badge' + (e.rol === 'anoniem' ? '' : ' groen'), text: e.rol === 'anoniem' ? 'niet ingelogd' : e.rol }),
+        e.mode === 'storytelling' ? el('span', { class: 'badge', text: 'verhaal' }) : null,
+        el('span', { class: 'badge', text: (e.feiten || []).length + ' kennisbankfeit(en)' }),
+        (e.web || []).length ? el('span', { class: 'badge warn', text: e.web.length + ' website(s)' }) : null,
+        e.stop && e.stop !== 'end_turn' ? el('span', { class: 'badge rood', text: e.stop }) : null
+      ]));
+      card.appendChild(el('div', { class: 'tekst' }, [el('b', { text: 'Vraag: ' }), e.vraag || '']));
+      var ant = el('div', { class: 'tekst', style: 'display:none;font-size:0.8rem;background:#fff;border-radius:6px;padding:8px', text: e.antwoord + (e.aanvulling && e.aanvulling.tekst && !/^GEEN_AANVULLING/.test(e.aanvulling.tekst) ? '\n\n— Aanvulling (websites) —\n' + e.aanvulling.tekst : '') });
+      var bronnen = el('div', { class: 'meta', style: 'display:none', text: 'Feiten: ' + ((e.feiten || []).join(', ') || '—') + ' · Websites: ' + ((e.web || []).concat((e.aanvulling && e.aanvulling.web) || []).join(', ') || '—') });
+      card.appendChild(el('button', { class: 'btn secundair klein', text: 'Antwoord tonen', onclick: function() {
+        var zichtbaar = ant.style.display === 'none';
+        ant.style.display = zichtbaar ? '' : 'none'; bronnen.style.display = zichtbaar ? '' : 'none';
+      } }));
+      card.appendChild(ant);
+      card.appendChild(bronnen);
+      s.appendChild(card);
+    });
+    var nav = el('div', { class: 'acties' });
+    if (vanaf > 0) nav.appendChild(el('button', { class: 'btn secundair klein', text: '← Nieuwer', onclick: function() { toonTab('logboek', { vanaf: Math.max(0, vanaf - 50) }); } }));
+    if (vanaf + 50 < d.totaal) nav.appendChild(el('button', { class: 'btn secundair klein', text: 'Ouder →', onclick: function() { toonTab('logboek', { vanaf: vanaf + 50 }); } }));
+    s.appendChild(nav);
+    inhoud.appendChild(s);
+  }).catch(fout);
 }
 
-function renderApproved(list) {
-  var el = document.getElementById('approvedList');
-  if (list.length === 0) { el.innerHTML = '<p class="empty">Geen geaccordeerde correcties.</p>'; return; }
-  el.innerHTML = '';
-  list.forEach(function(c, i) {
-    var div = document.createElement('div'); div.className = 'item';
-    var span = document.createElement('span'); span.textContent = c;
-    var actions = document.createElement('div'); actions.className = 'actions';
-    var badge = document.createElement('span'); badge.className = 'approved-badge'; badge.textContent = '✓ actief';
-    var del = document.createElement('button'); del.className = 'btn-delete'; del.textContent = 'Verwijder';
-    del.onclick = (function(idx) { return function() { doAction('delete-approved', idx); }; })(i);
-    actions.appendChild(badge); actions.appendChild(del);
-    div.appendChild(span); div.appendChild(actions);
-    el.appendChild(div);
-  });
+// ============================================================
+// Back-up
+// ============================================================
+function download(naam, inhoud) {
+  var blob = new Blob([JSON.stringify(inhoud, null, 2)], { type: 'application/json' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = naam;
+  document.body.appendChild(a); a.click(); a.remove();
 }
 
-function doAction(action, index) {
-  fetch('/api/corrections-set', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: action, index: index, password: ww })
-  })
-  .then(function(r) { return r.json(); })
-  .then(function(data) {
-    if (data.error) { alert('Fout: ' + data.error); return; }
-    loadAll();
-  });
+function tabBackup(inhoud) {
+  api('backups').then(function(d) {
+    inhoud.innerHTML = '';
+    var s = el('div', { class: 'section' }, [
+      el('h2', { text: 'Back-up' }),
+      el('p', { class: 'uitleg', text: 'Elke week wordt automatisch een back-up gemaakt van de kennisbank, voorstellen, websites en gebruikers (zonder inlogcodes); ze worden 10 weken bewaard. Download ook af en toe een back-up naar je eigen computer. Terugzetten herstelt kennisbank, voorstellen en websites (niet de gebruikers); vooraf wordt automatisch een back-up van de huidige stand gemaakt.' }),
+      el('div', { class: 'meta', text: 'Laatste back-up: ' + (d.laatste ? datumNL(d.laatste) : 'nog geen') })
+    ]);
+    s.appendChild(el('div', { class: 'acties', style: 'margin:10px 0' }, [
+      el('button', { class: 'btn primair klein', text: '⬇ Download huidige stand', onclick: function() {
+        api('backup-download', { id: 'nu' }).then(function(r) { download('planken-wambuis-backup-' + new Date().toISOString().slice(0, 10) + '.json', r.inhoud); }).catch(fout);
+      } }),
+      el('button', { class: 'btn secundair klein', text: '+ Back-up maken', onclick: function() {
+        api('backup-maken').then(function() { melding('Back-up gemaakt'); toonTab('backup'); }).catch(fout);
+      } })
+    ]));
+    if (d.backups.length === 0) s.appendChild(el('p', { class: 'leeg', text: 'Nog geen back-ups in de database.' }));
+    d.backups.forEach(function(id) {
+      s.appendChild(el('div', { class: 'site-rij' }, [
+        el('span', { text: id }),
+        el('button', { class: 'btn secundair klein', text: '⬇ Download', onclick: function() {
+          api('backup-download', { id: id }).then(function(r) { download('planken-wambuis-backup-' + id + '.json', r.inhoud); }).catch(fout);
+        } }),
+        el('button', { class: 'btn gevaar klein', text: 'Terugzetten', onclick: function() {
+          if (!confirm('Kennisbank, voorstellen en websites terugzetten naar de stand van ' + id + '? De huidige stand wordt eerst als back-up bewaard.')) return;
+          api('backup-terugzetten', { id: id }).then(function(r) { melding(r.feiten + ' feiten teruggezet'); return laadOverzicht(); })
+            .then(function() { toonTab('backup'); }).catch(fout);
+        } })
+      ]));
+    });
+    inhoud.appendChild(s);
+  }).catch(fout);
 }
 </script>
 </body>
