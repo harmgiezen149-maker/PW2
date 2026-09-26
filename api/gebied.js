@@ -4,6 +4,7 @@ const kb = require('./_lib/kennisbank');
 const auth = require('./_lib/auth');
 const { setSecurityHeaders, checkRateLimit, vandaagISO, nlMaand } = require('./_lib/http');
 
+const kv = require('./_lib/kv');
 const MAANDNAMEN = ['januari', 'februari', 'maart', 'april', 'mei', 'juni', 'juli', 'augustus', 'september', 'oktober', 'november', 'december'];
 const NIEUWS_DAGEN = 60;
 
@@ -31,6 +32,53 @@ function publiek(f, vandaag) {
 function nmGoedgekeurd(f) {
   const h = (f.historie || []).find(x => x.herkomst === 'nm.nl' && /via voorstel/.test(x.actie || ''));
   return h ? String(h.datum).slice(0, 10) : null;
+}
+
+// Buurgebieden: horen níet bij Planken Wambuis (ander beheer), zie ook prompts.js
+const BUURGEBIEDEN = ['De Hoge Veluwe', 'Ginkelse Heide', 'Reijerscamp'];
+const K_GEBIEDEN = 'cfg:gebieden'; // per deelgebied: eigen korte beschrijving, foto, kaartpositie (beheer)
+
+async function gebiedInstellingen() {
+  const c = await kv.getJSON(K_GEBIEDEN, null);
+  return c && typeof c === 'object' ? c : {};
+}
+
+// Eerste zin van een tekst, ingekort tot ongeveer max tekens
+function eersteZin(t, max) {
+  const zin = (String(t).match(/^.*?[.!?](\s|$)/) || [t])[0].trim();
+  return zin.length <= max ? zin : zin.slice(0, max).replace(/\s+\S*$/, '') + '…';
+}
+
+const VOLGORDE = kb.ONDERWERPEN.map(o => o.slug);
+function sorteer(a, b) {
+  return VOLGORDE.indexOf(a.onderwerp) - VOLGORDE.indexOf(b.onderwerp) || a.id.localeCompare(b.id);
+}
+
+function gebieden(feiten, cfg) {
+  const lijst = kb.DEELGEBIEDEN.filter(d => d.slug !== 'heel').map(d => {
+    const eigen = feiten.filter(f => f.deelgebied === d.slug);
+    const c = cfg[d.slug] || {};
+    const landschap = eigen.filter(f => f.onderwerp === 'gebied').sort(sorteer)[0];
+    return {
+      slug: d.slug, titel: d.titel, aantal: eigen.length,
+      beschrijving: c.beschrijving || (landschap ? eersteZin(landschap.tekst, 110) : ''),
+      foto: c.foto || null, fotoBron: c.fotoBron || null
+    };
+  });
+  return { gebieden: lijst, buurgebieden: BUURGEBIEDEN, heelAantal: feiten.filter(f => (f.deelgebied || 'heel') === 'heel').length };
+}
+
+function gebied(feiten, cfg, slug, vandaag) {
+  const d = kb.DEELGEBIEDEN.find(x => x.slug === slug);
+  if (!d) return null;
+  const c = cfg[slug] || {};
+  const eigen = feiten.filter(f => (f.deelgebied || 'heel') === slug).sort(sorteer);
+  const onderwerpTitel = s => (kb.ONDERWERPEN.find(o => o.slug === s) || { titel: 'Overig' }).titel;
+  return {
+    slug, titel: d.titel, beschrijving: c.beschrijving || '', foto: c.foto || null, fotoBron: c.fotoBron || null,
+    feiten: eigen.filter(f => f.onderwerp !== 'routes').map(f => Object.assign(publiek(f, vandaag), { onderwerpTitel: onderwerpTitel(f.onderwerp) })),
+    routes: eigen.filter(f => f.onderwerp === 'routes').map(f => Object.assign(publiek(f, vandaag), { onderwerpTitel: onderwerpTitel(f.onderwerp) }))
+  };
 }
 
 function actueel(feiten, vandaag) {
@@ -68,6 +116,13 @@ module.exports = async function handler(req, res) {
     switch (body.actie) {
       case 'actueel':
         return res.json(Object.assign(basis, actueel(bruikbaar, vandaag)));
+      case 'gebieden':
+        return res.json(Object.assign(basis, gebieden(bruikbaar, await gebiedInstellingen())));
+      case 'gebied': {
+        const g = gebied(bruikbaar, await gebiedInstellingen(), String(body.slug || ''), vandaag);
+        if (!g) return res.status(404).json({ error: 'Onbekend gebied' });
+        return res.json(Object.assign(basis, g));
+      }
       default:
         return res.status(400).json({ error: 'Onbekende actie' });
     }
@@ -77,4 +132,7 @@ module.exports = async function handler(req, res) {
 };
 
 module.exports.actueel = actueel;
+module.exports.gebieden = gebieden;
+module.exports.K_GEBIEDEN = K_GEBIEDEN;
+module.exports.BUURGEBIEDEN = BUURGEBIEDEN;
 module.exports.publiek = publiek;

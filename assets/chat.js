@@ -636,6 +636,18 @@ function ask(q, label) {
 }
 PW.vraag = ask;
 
+// Chat openen met een begin van de vraag (bijv. vanuit Gebieden of de Kaart)
+PW.vulVraag = function(tekst) {
+  PW.ga('#chat');
+  setTimeout(function() {
+    var t = $('txt');
+    t.value = tekst;
+    t.dispatchEvent(new Event('input'));
+    t.focus();
+    t.setSelectionRange(tekst.length, tekst.length);
+  }, 60);
+};
+
 // Kop normaliseren voor het matchen (kleine letters, emoji en leestekens weg)
 function normKop(s) {
   return (s || '').replace(/[#*]/g, '').replace(/[^\p{L}\p{N}\s]/gu, ' ').toLowerCase().replace(/\s+/g, ' ').trim();
