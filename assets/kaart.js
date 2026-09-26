@@ -91,7 +91,8 @@ function tekenGegevens(L, map, d, opties) {
   (d.gebieden || []).forEach(function(g) {
     if (opties.filter && !opties.filter(g, 'gebied')) return;
     if (g.grens) {
-      var poly = L.polygon(g.grens, { color: '#2256A0', weight: 2, fillColor: '#2256A0', fillOpacity: 0.07, interactive: false }).addTo(groep);
+      // Elke ring is een eigen vlak (buitenrand); gaten worden niet opgeslagen
+      var poly = L.polygon(g.grens.map(function(r) { return [r]; }), { color: '#2256A0', weight: 2, fillColor: '#2256A0', fillOpacity: 0.07, interactive: false }).addTo(groep);
       items.grenzen.push(poly);
     }
     if (g.lat && g.lon) {
@@ -193,6 +194,7 @@ function feitRegel(f) {
   var r = PW.el('div', { class: 'blad-feit' });
   if (f.type === 'tijdelijk') r.appendChild(PW.el('span', { class: 'label label-tijdelijk', tekst: 'Tijdelijk' + (f.einddatum ? ' t/m ' + PW.nlDatumKort(f.einddatum) : '') }));
   if (f.intern) r.appendChild(PW.el('span', { class: 'label label-intern', html: PW.icoon('slot', { maat: 12, dikte: 2.4 }) + 'Intern' }));
+  var foto = PW.feitFoto(f); if (foto) r.appendChild(foto);
   r.appendChild(PW.el('p', { tekst: f.tekst }));
   var voet = PW.el('span', { class: f.verouderd ? 'gecontroleerd verouderd' : 'gecontroleerd',
     html: PW.icoon(f.verouderd ? 'waarschuwing' : 'vinkje', { maat: 15, dikte: 2.4 }) + (f.verouderd ? 'Mogelijk verouderd · gecontroleerd ' : 'Gecontroleerd ') + PW.nlDatumKort(f.gecontroleerdOp) });
@@ -289,7 +291,7 @@ function toonGebiedOpKaart(slug) {
   var groep = window.L.featureGroup();
   (d.gebieden || []).forEach(function(g) {
     if (g.slug !== slug) return;
-    if (g.grens) window.L.polygon(g.grens).addTo(groep);
+    if (g.grens) window.L.polygon(g.grens.map(function(r) { return [r]; })).addTo(groep);
     else if (g.lat) window.L.marker([g.lat, g.lon]).addTo(groep);
   });
   (d.plekken || []).forEach(function(p) { if (p.deelgebied === slug) window.L.marker([p.lat, p.lon]).addTo(groep); });

@@ -161,6 +161,98 @@ function chatAntwoord(body) {
                 : stream(ANTWOORD_ROUTES, { meta: META_ROUTES, log: 'log' + chatTeller });
 }
 
+
+// ---------------------------------------------------------------- herontwerp: meldingen, gebieden, kaart
+function item(o) {
+  return Object.assign({ onderwerp: 'bezoek', deelgebied: 'heel', deelgebiedTitel: 'Hele gebied', gecontroleerdOp: NU, verouderd: false, bron: 'natuurmonumenten.nl', intern: false }, o);
+}
+const ACTUEEL = {
+  bijgewerkt: '2026-09-26T12:03:00Z', ingelogd: true, maand: 'september',
+  tijdelijk: [
+    item({ id: 't1', type: 'tijdelijk', einddatum: '2026-10-15', deelgebied: 'reemst', deelgebiedTitel: 'Oud & Nieuw Reemst', plekId: 'p1', tekst: 'Het fiets- en wandelpad van Nieuw Reemst naar Mossel is afgesloten, zodat de jonge wolven niet aan mensen wennen. Volg de omleidingsroute (voorbeeld).', bronUrl: 'https://www.natuurmonumenten.nl/natuurgebieden/planken-wambuis/nieuws' }),
+    item({ id: 't2', type: 'tijdelijk', einddatum: '2026-10-04', startdatum: '2026-10-03', onderwerp: 'nm', tekst: 'Voorbeeld van een activiteit: excursie "Heide in de herfst".', intern: true })
+  ],
+  seizoen: [item({ id: 's1', type: 'seizoen', onderwerp: 'seizoen', maanden: [9], tekst: 'Voorbeeld uit de seizoenskalender: in september bloeit de struikheide na en begint de bronst van het edelhert.' })],
+  nieuws: [item({ id: 'n1', type: 'jaarlijks', onderwerp: 'nm', goedgekeurdOp: '2026-09-20', tekst: 'Natuurmonumenten heeft ongeveer 977.000 leden en donateurs.', bronUrl: 'https://www.natuurmonumenten.nl/over-natuurmonumenten' })]
+};
+const GEBIEDEN = {
+  bijgewerkt: '2026-09-26T12:03:00Z', ingelogd: true, heelAantal: 40, buurgebieden: ['De Hoge Veluwe', 'Ginkelse Heide', 'Reijerscamp'],
+  gebieden: [
+    { slug: 'wolfheze', titel: 'Wolfheze & Wolfhezerheide', aantal: 9, beschrijving: 'De Wodanseiken in Laag Wolfheze waren in 2021 ruim 450 jaar oud en behoren tot de bekendste…' },
+    { slug: 'mossel', titel: 'Mossel & Mosselse Zand', aantal: 4, beschrijving: 'Voorbeeld van een korte beschrijving van het Mosselse Zand.' },
+    { slug: 'reemst', titel: 'Oud & Nieuw Reemst', aantal: 3, beschrijving: '' },
+    { slug: 'buunderkamp', titel: 'Buunderkamp', aantal: 0, beschrijving: '' },
+    { slug: 'oude-hout', titel: 'Oude Hout', aantal: 1, beschrijving: '' }
+  ]
+};
+const GEBIED_WOLFHEZE = {
+  bijgewerkt: '2026-09-26T12:03:00Z', slug: 'wolfheze', titel: 'Wolfheze & Wolfhezerheide', beschrijving: '',
+  feiten: [
+    { id: 'w1', onderwerp: 'naam', onderwerpTitel: 'Naam & historie', tekst: 'Voorbeeld: in Laag-Wolfheze liggen grafheuvels uit de prehistorie.', gecontroleerdOp: NU, bron: 'Boekje Laag-Wolfheze' },
+    { id: 'w2', onderwerp: 'gebied', onderwerpTitel: 'Gebied & landschap', tekst: 'De Wodanseiken in Laag Wolfheze waren in 2021 ruim 450 jaar oud en behoren tot de bekendste bomen van Nederland.', gecontroleerdOp: NU, bron: 'Gebiedsfolder (2021)' },
+    { id: 'w3', onderwerp: 'gebied', onderwerpTitel: 'Gebied & landschap', tekst: 'De Heelsumse Beek is een spreng uit 1550.', gecontroleerdOp: '2023-02-01', verouderd: true, bron: 'Gebiedsfolder (2021)' },
+    { id: 'w4', onderwerp: 'overig', onderwerpTitel: 'Overig', intern: true, tekst: 'Voorbeeld van een intern feit: alleen zichtbaar voor wie is ingelogd.', gecontroleerdOp: NU, bron: 'Kiek' }
+  ],
+  routes: []
+};
+// Voorbeeldplekken met verzonnen coördinaten: alleen voor schermafbeeldingen en tests
+const KAART = {
+  bijgewerkt: '2026-09-26T12:03:00Z', midden: { lat: 52.04, lon: 5.77, zoom: 12 },
+  plekken: [
+    { id: 'p1', naam: 'Parkeerplaats (voorbeeld)', soort: 'parkeren', soortTitel: 'Parkeerplaats', lat: 52.064, lon: 5.793, deelgebied: 'reemst', deelgebiedTitel: 'Oud & Nieuw Reemst', gecontroleerdOp: NU, tijdelijk: true,
+      feiten: [
+        { id: 'f2', type: 'jaarlijks', tekst: 'Niet-leden betalen € 2,00 per uur, met een maximum van € 8,00 per dag. Leden parkeren gratis met hun ledenpas.', gecontroleerdOp: NU, bron: 'natuurmonumenten.nl', bronUrl: 'https://www.natuurmonumenten.nl/natuurgebieden/planken-wambuis', plekId: 'p1' },
+        { id: 't1', type: 'tijdelijk', einddatum: '2026-10-15', tekst: 'Het fiets- en wandelpad naar Mossel is tijdelijk afgesloten (voorbeeld).', gecontroleerdOp: NU, bron: 'natuurmonumenten.nl', plekId: 'p1' }] },
+    { id: 'p2', naam: 'Uitkijkpost (voorbeeld)', soort: 'uitkijk', soortTitel: 'Uitkijkpunt of observatiepost', lat: 52.056, lon: 5.757, deelgebied: 'mossel', deelgebiedTitel: 'Mossel & Mosselse Zand', gecontroleerdOp: NU, feiten: [] },
+    { id: 'p3', naam: 'Ingang (voorbeeld)', soort: 'ingang', soortTitel: 'Ingang of startpunt', lat: 52.004, lon: 5.788, deelgebied: 'wolfheze', deelgebiedTitel: 'Wolfheze & Wolfhezerheide', gecontroleerdOp: NU, feiten: [] }
+  ],
+  routes: [{ id: 'r1', naam: 'Wandelroute (voorbeeld)', lengteKm: 3.5, deelgebied: 'reemst', deelgebiedTitel: 'Oud & Nieuw Reemst', bron: 'GPX natuurmonumenten.nl', bronUrl: 'https://www.natuurmonumenten.nl/natuurgebieden/planken-wambuis', gecontroleerdOp: NU,
+    punten: [[52.064, 5.793], [52.068, 5.797], [52.072, 5.795], [52.074, 5.788], [52.070, 5.782], [52.066, 5.785], [52.064, 5.793]], feit: null }],
+  gebieden: [
+    { slug: 'reemst', titel: 'Oud & Nieuw Reemst', lat: 52.07, lon: 5.80, grens: [[[52.058, 5.775], [52.08, 5.775], [52.08, 5.815], [52.058, 5.815]]] },
+    { slug: 'mossel', titel: 'Mossel & Mosselse Zand', lat: 52.052, lon: 5.755, grens: null },
+    { slug: 'wolfheze', titel: 'Wolfheze & Wolfhezerheide', lat: 52.008, lon: 5.79, grens: null },
+    { slug: 'buunderkamp', titel: 'Buunderkamp', lat: null, lon: null, grens: null },
+    { slug: 'oude-hout', titel: 'Oude Hout', lat: null, lon: null, grens: null }
+  ]
+};
+const SOORTEN = [['parkeren', 'Parkeerplaats'], ['uitkijk', 'Uitkijkpunt of observatiepost'], ['ingang', 'Ingang of startpunt'], ['bezoekerscentrum', 'Bezoekerscentrum of informatiepunt'],
+  ['horeca', 'Horeca'], ['voorziening', 'Voorziening (bank, toilet, picknickplek)'], ['overig', 'Overige plek']].map(([slug, titel]) => ({ slug, titel }));
+const BEHEER_KAART = {
+  plekken: KAART.plekken.map(p => ({ id: p.id, naam: p.naam, soort: p.soort, lat: p.lat, lon: p.lon, deelgebied: p.deelgebied, zichtbaarheid: 'openbaar', status: 'actief',
+    gecontroleerdOp: NU, gecontroleerdDoor: 'Beheerder (voorbeeld)', feiten: p.feiten.map(f => ({ id: f.id, tekst: f.tekst, type: f.type })) })),
+  routes: KAART.routes.map(r => ({ id: r.id, naam: r.naam, lengteKm: r.lengteKm, punten: r.punten, deelgebied: r.deelgebied, zichtbaarheid: 'openbaar', bron: r.bron, gecontroleerdOp: NU })),
+  gebieden: { reemst: { lat: 52.07, lon: 5.80 }, mossel: { lat: 52.052, lon: 5.755, beschrijving: 'Voorbeeld van een korte beschrijving.' }, wolfheze: { lat: 52.008, lon: 5.79 } },
+  grenzen: { reemst: KAART.gebieden[0].grens },
+  soorten: Object.fromEntries(SOORTEN.map(s => [s.slug, s.titel])), midden: KAART.midden
+};
+OVERZICHT.soorten = SOORTEN;
+OVERZICHT.plekkenKort = KAART.plekken.map(p => ({ id: p.id, naam: p.naam, soort: p.soort }));
+OVERZICHT.aantallen.plekken = KAART.plekken.length;
+OVERZICHT.aantallen.routes = KAART.routes.length;
+OVERZICHT.kaartMidden = KAART.midden;
+let meldTeller = 0;
+// Standaardantwoorden voor de nieuwe endpoints (opties.api kan ze overschrijven)
+function herontwerpApi(pad, body, opties) {
+  if (pad === '/api/gebied') {
+    if (body.actie === 'actueel') return ACTUEEL;
+    if (body.actie === 'gebieden') return GEBIEDEN;
+    if (body.actie === 'gebied') return body.slug === 'wolfheze' ? GEBIED_WOLFHEZE
+      : Object.assign({}, GEBIED_WOLFHEZE, { slug: body.slug, titel: (GEBIEDEN.gebieden.find(g => g.slug === body.slug) || { titel: 'Gebied' }).titel, feiten: [] });
+    if (body.actie === 'kaart') return opties.legeKaart ? Object.assign({}, KAART, { plekken: [], routes: [] }) : KAART;
+  }
+  if (pad === '/api/feedback') {
+    if (body.actie === 'status') {
+      const s = {};
+      (body.ids || []).forEach((id, i) => { s[id] = [{ s: 'verwerkt', t: '2026-09-26T10:00:00Z' }, { s: 'in-behandeling', t: '2026-09-26T10:00:00Z' }, { s: 'ontvangen', t: '2026-09-26T10:00:00Z' }][i % 3]; });
+      return { statussen: s };
+    }
+    return { ok: true, id: 'meld_voorbeeld' + (++meldTeller) + 'abcdef' };
+  }
+  if (pad === '/api/beheer' && body.actie === 'kaart') return BEHEER_KAART;
+  return undefined;
+}
+
 // ---------------------------------------------------------------- routes
 const TYPES_MIME = { '.html': 'text/html; charset=utf-8', '.js': 'application/javascript', '.json': 'application/json', '.css': 'text/css',
   '.woff2': 'font/woff2', '.pdf': 'application/pdf', '.gpx': 'application/gpx+xml',
@@ -178,6 +270,8 @@ async function installeer(context, opties) {
       const extra = opties.api(url.pathname, body, url);
       if (extra !== undefined) return json(extra);
     }
+    const nieuw = herontwerpApi(url.pathname, body, opties);
+    if (nieuw !== undefined) return json(nieuw);
     switch (url.pathname) {
       case '/api/weather': return json(WEER);
       case '/api/auth':
@@ -212,10 +306,14 @@ async function installeer(context, opties) {
 
 const wacht = ms => new Promise(r => setTimeout(r, ms));
 
+// Lichte vervangtegel voor de PDOK-ondergrond (256x256, rasterlijnen), zodat schermafbeeldingen zonder internet werken
+const TEGEL = fs.readFileSync(path.join(__dirname, 'tegel.png'));
+
 async function nieuweContext(browser, viewport, opties) {
   const context = await browser.newContext({ viewport, deviceScaleFactor: 2, serviceWorkers: 'block', locale: 'nl-NL', timezoneId: 'Europe/Amsterdam' });
   await installeerFonts(context);
   await installeer(context, opties || {});
+  await context.route(/service\.pdok\.nl/, r => r.fulfill({ status: 200, contentType: 'image/png', body: opties && opties.tegel ? opties.tegel : TEGEL }));
   if (opties && opties.token) {
     await context.addInitScript(() => { try { localStorage.setItem('pw_token', 'voorbeeldtoken'); } catch (e) {} });
   }
@@ -223,4 +321,5 @@ async function nieuweContext(browser, viewport, opties) {
 }
 
 module.exports = { ROOT, ORIGIN, NU, ONDERWERPEN, DEELGEBIEDEN, TYPES, BEHEERDER, OVERZICHT, FEITEN, VOORSTELLEN, MELDINGEN, WEER,
+  ACTUEEL, GEBIEDEN, GEBIED_WOLFHEZE, KAART, BEHEER_KAART, SOORTEN,
   feit, sse, kb, stream, installeer, nieuweContext, wacht };

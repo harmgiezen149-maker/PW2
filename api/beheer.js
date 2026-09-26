@@ -30,6 +30,8 @@ function valideerFeit(inv) {
     bronDatum: tekstVeld(inv.bronDatum, 10),
     zichtbaarheid: inv.zichtbaarheid === 'intern' ? 'intern' : 'openbaar',
     plekId: tekstVeld(inv.plekId, 60),
+    foto: tekstVeld(inv.foto, 500),
+    fotoBron: tekstVeld(inv.fotoBron, 120),
     einddatum: tekstVeld(inv.einddatum, 10),
     startdatum: tekstVeld(inv.startdatum, 10),
     vervaltOp: tekstVeld(inv.vervaltOp, 10),
@@ -50,6 +52,9 @@ function valideerFeit(inv) {
   if (f.type !== 'seizoen') delete f.maanden;
   if (!f.bronUrl) delete f.bronUrl;
   if (!f.plekId) delete f.plekId;
+  if (f.foto && !/^https:\/\/\S+$/.test(f.foto)) return { fout: 'De foto-link moet met https:// beginnen.' };
+  if (f.foto && !f.fotoBron) return { fout: 'Vermeld van wie de foto is (je moet hem mogen gebruiken).' };
+  if (!f.foto) { delete f.foto; delete f.fotoBron; }
   return { feit: f };
 }
 
@@ -62,7 +67,7 @@ async function controleerPlek(feit) {
   return null;
 }
 
-const OPTIONELE_VELDEN = ['einddatum', 'startdatum', 'vervaltOp', 'maanden', 'bronUrl', 'bronDatum', 'plekId'];
+const OPTIONELE_VELDEN = ['einddatum', 'startdatum', 'vervaltOp', 'maanden', 'bronUrl', 'bronDatum', 'plekId', 'foto', 'fotoBron'];
 
 // Welk melder-id hoort bij een voorstel: de oorspronkelijke melding, of de suggestie zelf.
 function meldingVanVoorstel(v) {
@@ -92,9 +97,9 @@ module.exports = async function handler(req, res) {
   try {
     switch (body.actie) {
       case 'overzicht': {
-        const [feiten, voorstellen, sites, meldingen, cronStatus, nmPaginas, aantalPlekken, aantalRoutes] = await Promise.all([
+        const [feiten, voorstellen, sites, meldingen, cronStatus, nmPaginas, plekken, aantalRoutes] = await Promise.all([
           kb.alleFeiten(), kb.alleVoorstellen(), kb.getSites(), kv.cmd('HLEN', K_MELDINGEN),
-          kv.getJSON('cron:status', null), nmcheck.getPaginas(), kv.cmd('HLEN', kaart.K_PLEKKEN), kv.cmd('HLEN', kaart.K_ROUTES)
+          kv.getJSON('cron:status', null), nmcheck.getPaginas(), kaart.plekken(), kv.cmd('HLEN', kaart.K_ROUTES)
         ]);
         const lijst = Object.values(feiten);
         const actief = lijst.filter(f => f.status === 'actief');
@@ -107,10 +112,13 @@ module.exports = async function handler(req, res) {
             afgelopen: actief.filter(f => kb.beoordeel(f, vandaag).afgelopen).length,
             voorstellen: Object.keys(voorstellen).length,
             meldingen: meldingen || 0,
-            plekken: aantalPlekken || 0,
+            plekken: Object.keys(plekken).length,
             routes: aantalRoutes || 0
           },
           soorten: Object.entries(kaart.SOORTEN).map(([slug, titel]) => ({ slug, titel })),
+          // Voor het feitformulier: aan welke plek hangt een feit
+          plekkenKort: Object.values(plekken).filter(p => p.status !== 'ingetrokken')
+            .map(p => ({ id: p.id, naam: p.naam, soort: p.soort })).sort((a, b) => a.naam.localeCompare(b.naam)),
           kaartMidden: kaart.MIDDEN,
           cronStatus, nmPaginas,
           onderwerpen: kb.ONDERWERPEN, deelgebieden: kb.DEELGEBIEDEN,

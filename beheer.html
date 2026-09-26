@@ -5,93 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex">
 <title>Beheer · Planken Wambuis</title>
-<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;600;700&family=Source+Sans+3:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<style>
-  :root { --g:#1a5c38; --gl:#e8f2ec; --gp:#f2f8f4; --t:#1a1a1a; --tm:#4a4a4a; --tl:#767676; --b:#d0ddd5; --warn:#b5651d; --warnbg:#fdf3e8; --err:#c0392b; }
-  * { box-sizing:border-box; margin:0; padding:0; }
-  body { font-family:'Source Sans 3',sans-serif; background:var(--gp); color:var(--t); min-height:100vh; }
-  button, input, select, textarea { font-family:inherit; font-size:0.85rem; }
-
-  #login { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; padding:24px; text-align:center; }
-  #login .icon { font-size:3rem; margin-bottom:16px; }
-  #login h1 { font-family:'Source Serif 4',serif; font-size:1.3rem; color:var(--g); margin-bottom:6px; }
-  #login p { font-size:0.85rem; color:var(--tm); margin-bottom:18px; max-width:340px; line-height:1.5; }
-  #login input { width:100%; max-width:320px; border:1.5px solid var(--b); border-radius:8px; padding:11px 14px; outline:none; margin-bottom:10px; }
-  #login button { width:100%; max-width:320px; }
-  #login .err { color:var(--err); font-size:0.8rem; margin-top:8px; min-height:1em; }
-
-  #app { display:none; max-width:820px; margin:0 auto; padding:20px 16px 60px; }
-  .page-header { display:flex; align-items:center; gap:10px; margin-bottom:14px; padding-bottom:12px; border-bottom:2px solid var(--g); flex-wrap:wrap; }
-  .page-header h1 { font-family:'Source Serif 4',serif; font-size:1.15rem; color:var(--g); }
-  .page-header .wie { margin-left:auto; font-size:0.78rem; color:var(--tl); }
-  .page-header a { font-size:0.78rem; color:var(--tl); text-decoration:none; }
-
-  .tabs { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:16px; }
-  .tab { background:#fff; border:1px solid var(--b); border-radius:20px; padding:6px 14px; cursor:pointer; color:var(--tm); font-weight:600; }
-  .tab.actief { background:var(--g); color:#fff; border-color:var(--g); }
-  .tel { display:inline-block; min-width:18px; padding:0 5px; margin-left:4px; border-radius:9px; background:var(--warn); color:#fff; font-size:0.7rem; text-align:center; }
-  .tab.actief .tel { background:#fff; color:var(--g); }
-
-  .section { background:#fff; border-radius:12px; border:1px solid var(--b); padding:16px; margin-bottom:16px; }
-  .section h2 { font-family:'Source Serif 4',serif; font-size:1rem; color:var(--g); margin-bottom:4px; }
-  .uitleg { font-size:0.8rem; color:var(--tm); margin-bottom:12px; line-height:1.5; }
-
-  .stats { display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:10px; }
-  .stat { background:var(--gp); border:1px solid var(--b); border-radius:10px; padding:12px; cursor:pointer; }
-  .stat .n { font-size:1.6rem; font-weight:700; color:var(--g); }
-  .stat.warn .n { color:var(--warn); }
-  .stat .l { font-size:0.78rem; color:var(--tm); }
-
-  .filters { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
-  .filters input, .filters select { border:1.5px solid var(--b); border-radius:6px; padding:7px 9px; outline:none; background:#fff; }
-  .filters input { flex:1; min-width:160px; }
-
-  .card { background:var(--gp); border:1px solid var(--b); border-radius:10px; padding:12px; margin-bottom:10px; }
-  .card.ingetrokken { opacity:0.6; }
-  .card.verlopen { border-color:#e3b98c; background:var(--warnbg); }
-  .card .tekst { font-size:0.88rem; line-height:1.5; margin:6px 0; white-space:pre-wrap; }
-  .badges { display:flex; gap:5px; flex-wrap:wrap; }
-  .badge { font-size:0.66rem; font-weight:700; padding:2px 7px; border-radius:10px; background:#fff; border:1px solid var(--b); color:var(--tm); }
-  .badge.groen { background:var(--gl); border-color:var(--g); color:var(--g); }
-  .badge.warn { background:var(--warnbg); border-color:var(--warn); color:var(--warn); }
-  .badge.rood { background:#fbeaea; border-color:var(--err); color:var(--err); }
-  .meta { font-size:0.74rem; color:var(--tl); line-height:1.5; }
-  .meta a { color:var(--g); }
-  .acties { display:flex; gap:6px; margin-top:8px; flex-wrap:wrap; }
-
-  .btn { border:none; border-radius:6px; padding:6px 12px; font-weight:600; cursor:pointer; }
-  .btn.primair { background:var(--g); color:#fff; }
-  .btn.secundair { background:#fff; color:var(--g); border:1px solid var(--g); }
-  .btn.gevaar { background:#fff; color:var(--err); border:1px solid #e8c5c5; }
-  .btn.klein { padding:4px 9px; font-size:0.74rem; }
-  .btn:disabled { opacity:0.5; cursor:default; }
-
-  .form { background:#fff; border:1px solid var(--b); border-radius:8px; padding:12px; margin-top:8px; }
-  .form label { display:block; font-size:0.74rem; font-weight:600; color:var(--tm); margin:8px 0 3px; }
-  .form input, .form select, .form textarea { width:100%; border:1.5px solid var(--b); border-radius:6px; padding:7px 9px; outline:none; background:#fff; }
-  .form textarea { min-height:80px; resize:vertical; line-height:1.5; }
-  .form input:focus, .form select:focus, .form textarea:focus { border-color:var(--g); }
-  .rij { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-  @media (max-width:520px) { .rij { grid-template-columns:1fr; } }
-  .maanden { display:flex; flex-wrap:wrap; gap:6px; }
-  .maanden label { display:flex; align-items:center; gap:3px; font-weight:400; margin:0; }
-  .maanden input { width:auto; }
-  .hint { font-size:0.72rem; color:var(--tl); margin-top:3px; }
-
-  .historie { margin-top:8px; font-size:0.74rem; color:var(--tm); border-top:1px dashed var(--b); padding-top:6px; }
-  .historie div { margin:2px 0; }
-  .tegenspraak { background:var(--warnbg); border:1px solid #e3b98c; border-radius:8px; padding:8px 10px; margin:6px 0; font-size:0.8rem; line-height:1.45; }
-  .leeg { font-size:0.82rem; color:var(--tl); font-style:italic; }
-  .melding { position:fixed; left:50%; bottom:20px; transform:translateX(-50%); background:var(--g); color:#fff; padding:9px 16px; border-radius:8px; font-size:0.85rem; box-shadow:0 4px 16px rgba(0,0,0,0.2); display:none; z-index:10; max-width:90vw; }
-  .melding.fout { background:var(--err); }
-  .site-rij { display:flex; align-items:center; gap:8px; padding:5px 0; border-bottom:1px solid var(--gl); font-size:0.85rem; }
-  .site-rij span { flex:1; }
-</style>
+<link rel="stylesheet" href="/assets/beheer.css">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
 </head>
 <body>
 
 <div id="login">
-  <div class="icon">🌲</div>
+  <div class="icon"><svg width="28" height="28" viewBox="0 0 40 40" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M8 32 L32 8"/><path d="M14 26 l-6 -2 M14 26 l2 6 M19 21 l-7 -3 M19 21 l3 7 M24 16 l-6 -4 M24 16 l4 6 M29 11 l-4 -4 M29 11 l4 3"/></svg></div>
   <h1>Beheer Planken Wambuis</h1>
   <p id="loginUitleg">Laden…</p>
   <div id="startVak" style="display:none;width:100%;max-width:320px">
@@ -105,15 +25,16 @@
 </div>
 
 <div id="app">
-  <div class="page-header">
-    <span style="font-size:1.5rem">🌲</span>
-    <h1>Beheer · Planken Wambuis</h1>
+  <header class="bh-kop">
+    <div class="bh-logo"><svg width="28" height="28" viewBox="0 0 40 40" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M8 32 L32 8"/><path d="M14 26 l-6 -2 M14 26 l2 6 M19 21 l-7 -3 M19 21 l3 7 M24 16 l-6 -4 M24 16 l4 6 M29 11 l-4 -4 M29 11 l4 3"/></svg></div>
+    <h1>Beheer<span class="bh-lang"> · Planken Wambuis</span></h1>
     <span class="wie" id="wie"></span>
-    <a href="/">← App</a>
+    <a class="naar-app" href="/">Naar de app</a>
+  </header>
+  <div class="bh-body">
+    <nav class="tabs" id="tabs" aria-label="Beheer"></nav>
+    <main id="inhoud"></main>
   </div>
-
-  <div class="tabs" id="tabs"></div>
-  <div id="inhoud"></div>
 </div>
 
 <div class="melding" id="melding"></div>
@@ -160,6 +81,8 @@ function start() {
   laadOverzicht().then(function() {
     document.getElementById('login').style.display = 'none';
     document.getElementById('app').style.display = 'block';
+    var h = (location.hash || '').replace('#', '');
+    if (TABS.some(function(t) { return t.id === h; })) huidigeTab = h;
     toonTab(huidigeTab);
   }).catch(function(e) {
     if (e.status !== 401) { document.getElementById('loginUitleg').textContent = e.message; return; }
@@ -202,7 +125,7 @@ function toonLink(code, uitleg) {
     el('div', { text: uitleg }),
     el('div', { style: 'word-break:break-all;font-family:monospace;margin:8px 0;background:#fff;padding:6px;border-radius:6px', text: link })
   ]);
-  box.appendChild(el('button', { class: 'btn secundair klein', text: '📋 Kopiëren', onclick: function(ev) {
+  box.appendChild(el('button', { class: 'btn secundair klein', text: 'Kopiëren', onclick: function(ev) {
     var knop = ev.target;
     (navigator.clipboard ? navigator.clipboard.writeText(link) : Promise.reject())
       .then(function() { knop.textContent = '✓ Gekopieerd'; })
@@ -265,6 +188,7 @@ var TABS = [
   { id: 'meldingen', titel: 'Klopt niet', tel: function() { return OV && OV.aantallen.meldingen; } },
   { id: 'logboek', titel: 'Logboek' },
   { id: 'websites', titel: 'Websites & controle' },
+  { id: 'kaart', titel: 'Kaart en plekken' },
   { id: 'gebruikers', titel: 'Gebruikers' },
   { id: 'backup', titel: 'Back-up' }
 ];
@@ -275,7 +199,8 @@ function tekenTabs() {
   t.innerHTML = '';
   TABS.forEach(function(tab) {
     var n = tab.tel ? tab.tel() : 0;
-    var b = el('button', { class: 'tab' + (tab.id === huidigeTab ? ' actief' : ''), onclick: function() { toonTab(tab.id); } }, [tab.titel]);
+    var b = el('button', { class: 'tab' + (tab.id === huidigeTab ? ' actief' : ''), onclick: function() { toonTab(tab.id); } }, [el('span', { text: tab.titel })]);
+    if (tab.id === huidigeTab) b.setAttribute('aria-current', 'page');
     if (n) b.appendChild(el('span', { class: 'tel', text: String(n) }));
     t.appendChild(b);
   });
@@ -286,7 +211,9 @@ function toonTab(id, opties) {
   tekenTabs();
   var inhoud = document.getElementById('inhoud');
   inhoud.innerHTML = '<p class="leeg">Laden…</p>';
-  var tab = { overzicht: tabOverzicht, voorstellen: tabVoorstellen, kennisbank: tabKennisbank, meldingen: tabMeldingen, logboek: tabLogboek, websites: tabWebsites, gebruikers: tabGebruikers, backup: tabBackup }[id];
+  if (location.hash !== '#' + id) history.replaceState(null, '', '#' + id);
+  window.scrollTo(0, 0);
+  var tab = { overzicht: tabOverzicht, voorstellen: tabVoorstellen, kennisbank: tabKennisbank, meldingen: tabMeldingen, logboek: tabLogboek, websites: tabWebsites, kaart: window.tabKaart, gebruikers: tabGebruikers, backup: tabBackup }[id];
   tab(inhoud, opties || {});
 }
 
@@ -307,43 +234,67 @@ function tabOverzicht(inhoud) {
   laadOverzicht().then(function(d) {
     var a = d.aantallen;
     inhoud.innerHTML = '';
-    var s = el('div', { class: 'section' }, [
-      el('h2', { text: 'Overzicht' }),
-      el('p', { class: 'uitleg', text: 'De assistent gebruikt alleen actieve feiten uit de kennisbank. Feiten waarvan de vervaldatum voorbij is, gebruikt hij met de melding "mogelijk verouderd" — controleer ze en klik op "Gecontroleerd". Voorstellen (van gebruikers en van de wekelijkse controle) worden pas gebruikt na goedkeuring.' })
-    ]);
+    inhoud.appendChild(el('h1', { text: 'Overzicht' }));
+    inhoud.appendChild(el('p', { class: 'intro', text: 'Wat er dit weekend te doen is. Niets gaat live zonder jouw goedkeuring: de assistent gebruikt alleen actieve, gecontroleerde feiten.' }));
     var stats = el('div', { class: 'stats' });
-    function stat(n, label, warn, klik) {
-      stats.appendChild(el('div', { class: 'stat' + (warn && n ? ' warn' : ''), onclick: klik }, [
-        el('div', { class: 'n', text: String(n) }), el('div', { class: 'l', text: label })
+    function stat(n, label, soort, klik) {
+      stats.appendChild(el('button', { class: 'stat ' + (n ? soort : 'stil'), type: 'button', onclick: klik }, [
+        el('span', { class: 'n', text: String(n) }), el('span', { class: 'l', text: label })
       ]));
     }
-    stat(a.voorstellen, 'voorstellen wachten op beoordeling', true, function() { toonTab('voorstellen'); });
-    stat(a.meldingen, 'meldingen "klopt niet"', true, function() { toonTab('meldingen'); });
-    stat(a.verlopen, 'feiten mogelijk verouderd (opnieuw controleren)', true, function() { toonTab('kennisbank', { status: 'verlopen' }); });
-    stat(a.actief, 'actieve feiten', false, function() { toonTab('kennisbank', { status: 'actief' }); });
-    stat(a.afgelopen, 'tijdelijke feiten afgelopen (worden niet meer gebruikt)', false, function() { toonTab('kennisbank', { status: 'afgelopen' }); });
-    s.appendChild(stats);
-    inhoud.appendChild(s);
-    inhoud.appendChild(cronKaart(d.cronStatus));
+    stat(a.voorstellen, 'voorstellen wachten op beoordeling', 'warn', function() { toonTab('voorstellen'); });
+    stat(a.meldingen, 'meldingen "klopt niet"', 'warn', function() { toonTab('meldingen'); });
+    stat(a.verlopen, 'feiten mogelijk verouderd', 'bruin', function() { toonTab('kennisbank', { status: 'verlopen' }); });
+    stat(a.actief, 'actieve feiten', 'groen', function() { toonTab('kennisbank', { status: 'actief' }); });
+    stat(a.plekken + a.routes, 'plekken en routes op de kaart', 'groen', function() { toonTab('kaart'); });
+    inhoud.appendChild(stats);
+    var twee = el('div', { class: 'twee' }, [cronKaart(d.cronStatus), weekendlijst()]);
+    inhoud.appendChild(twee);
+    if (a.afgelopen) inhoud.appendChild(el('p', { class: 'meta', style: 'margin-top:14px', text: a.afgelopen + ' tijdelijk(e) feit(en) zijn afgelopen en worden niet meer gebruikt (filter "Tijdelijk, afgelopen" in de kennisbank).' }));
   }).catch(fout);
+}
+
+// Vaste taken per weekend; afvinken wordt per week op dit apparaat onthouden
+function weekendlijst() {
+  var week = (function() { var d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return d.toISOString().slice(0, 10); })();
+  var sleutel = 'pw_weekendlijst_' + week;
+  var klaar = {};
+  try { klaar = JSON.parse(localStorage.getItem(sleutel)) || {}; } catch (e) {}
+  var s = el('div', { class: 'section checklijst' }, [el('h2', { text: 'Weekendlijst' })]);
+  [['voorstellen', 'Voorstellen beoordelen'], ['meldingen', 'Meldingen "klopt niet" afhandelen'], ['steekproef', 'Steekproef van 3 à 5 antwoorden in het logboek'],
+   ['verouderd', 'Verouderde feiten nalopen'], ['kaart', 'Nieuwe plekken of afsluitingen op de kaart zetten']].forEach(function(t) {
+    var cb = el('input', { type: 'checkbox' });
+    cb.checked = !!klaar[t[0]];
+    cb.onchange = function() { klaar[t[0]] = cb.checked; try { localStorage.setItem(sleutel, JSON.stringify(klaar)); } catch (e) {} };
+    s.appendChild(el('label', null, [cb, t[1]]));
+  });
+  s.appendChild(el('p', { class: 'meta', style: 'margin-top:6px', text: 'Wordt elke week leeg; afvinken geldt alleen op dit apparaat.' }));
+  return s;
 }
 
 function cronKaart(cs) {
   var s = el('div', { class: 'section' }, [el('h2', { text: 'Wekelijkse controle natuurmonumenten.nl' })]);
   if (!cs || !cs.nm) {
-    s.appendChild(el('p', { class: 'leeg', text: 'Nog niet uitgevoerd. De controle draait elke zaterdag om 07:00 automatisch (na livegang), of start hem via "Websites & controle".' }));
+    s.appendChild(el('p', { class: 'leeg', text: 'Nog niet uitgevoerd. De controle draait elke zaterdag om 07:00 automatisch, of start hem via "Websites & controle".' }));
     return s;
   }
   var nm = cs.nm;
-  var regels = [];
-  if (nm.fout) regels.push('❌ Mislukt: ' + nm.fout);
-  else {
-    regels.push('Laatst: ' + new Date(cs.tijd).toLocaleString('nl-NL') + (cs.handmatig ? ' (handmatig door ' + cs.handmatig + ')' : ''));
-    regels.push(nm.paginas + ' pagina(\'s) gelezen, ' + nm.gewijzigd + ' gewijzigd, ' + nm.nieuweBerichten + ' nieuwe bericht(en), ' + nm.voorstellen + ' nieuw(e) voorstel(len)' + (nm.terugval ? ' (via terugvalcontrole)' : ''));
-    (nm.fouten || []).forEach(function(f) { regels.push('⚠ ' + f); });
+  s.appendChild(el('div', { class: 'meta', text: 'Elke zaterdag om 07:00 · laatst: ' + new Date(cs.tijd).toLocaleString('nl-NL') + (cs.handmatig ? ' (handmatig door ' + cs.handmatig + ')' : '') }));
+  if (nm.fout) {
+    s.appendChild(el('div', { class: 'tegenspraak', text: 'Mislukt: ' + nm.fout }));
+  } else {
+    s.appendChild(el('div', { class: 'cijfers' }, [
+      el('div', null, [el('b', { text: String(nm.paginas) }), el('span', { text: 'pagina\'s gelezen' })]),
+      el('div', null, [el('b', { text: String(nm.nieuweBerichten) }), el('span', { text: 'nieuwe berichten' })]),
+      el('div', null, [el('b', { text: String(nm.voorstellen) }), el('span', { text: 'nieuwe voorstellen' + (nm.terugval ? ' (terugval)' : '') })])
+    ]));
+    (nm.fouten || []).forEach(function(f) { s.appendChild(el('div', { class: 'meta', text: 'Let op: ' + f })); });
   }
-  if (cs.backup && cs.backup.id) regels.push('Back-up gemaakt: ' + cs.backup.id);
-  regels.forEach(function(r) { s.appendChild(el('div', { class: 'meta', text: r })); });
+  if (cs.backup && cs.backup.id) s.appendChild(el('div', { class: 'meta', text: 'Back-up gemaakt: ' + cs.backup.id }));
+  s.appendChild(el('div', { class: 'acties' }, [
+    el('button', { class: 'btn primair', text: 'Voorstellen bekijken', onclick: function() { toonTab('voorstellen'); } }),
+    el('button', { class: 'btn secundair', text: 'Websites & controle', onclick: function() { toonTab('websites'); } })
+  ]));
   return s;
 }
 
@@ -374,6 +325,9 @@ function feitFormulier(start, knoppen) {
   var startdatum = el('input', { type: 'date' }); startdatum.value = start.startdatum || '';
   var einddatum = el('input', { type: 'date' }); einddatum.value = start.einddatum || '';
   var vervaltOp = el('input', { type: 'date' }); vervaltOp.value = start.vervaltOp || '';
+  var plek = select([{ slug: '', titel: '— geen plek —' }].concat((OV.plekkenKort || []).map(function(p) { return { slug: p.id, titel: p.naam }; })), start.plekId || '');
+  var foto = el('input', { placeholder: 'https://… (alleen een foto die je mag gebruiken)' }); foto.value = start.foto || '';
+  var fotoBron = el('input', { placeholder: 'Bijv. Natuurmonumenten / naam fotograaf' }); fotoBron.value = start.fotoBron || '';
   var maanden = el('div', { class: 'maanden' });
   var gekozen = start.maanden || [];
   MAANDEN.forEach(function(m, i) {
@@ -398,6 +352,8 @@ function feitFormulier(start, knoppen) {
   f.appendChild(veld('Bron', bron));
   f.appendChild(el('div', { class: 'rij' }, [veld('Link naar bron (optioneel)', bronUrl), veld('Datum van de bron (optioneel)', bronDatum)]));
   f.appendChild(veld('Handmatige vervaldatum (optioneel)', vervaltOp, 'Leeg = automatisch volgens het type.'));
+  f.appendChild(veld('Plek op de kaart (optioneel)', plek, 'Het feit verschijnt dan bij die plek op de kaart en in antwoorden met een kaartje. Nieuwe plekken maak je onder "Kaart en plekken". Feiten over de wolf krijgen nooit een plek.'));
+  f.appendChild(el('div', { class: 'rij' }, [veld('Foto (optioneel)', foto), veld('Foto van (verplicht bij een foto)', fotoBron)]));
   typeWissel();
 
   f.waarde = function() {
@@ -406,7 +362,8 @@ function feitFormulier(start, knoppen) {
     return {
       tekst: tekst.value, onderwerp: onderwerp.value, deelgebied: deelgebied.value, type: type.value,
       zichtbaarheid: zicht.value, bron: bron.value, bronUrl: bronUrl.value, bronDatum: bronDatum.value,
-      startdatum: startdatum.value, einddatum: einddatum.value, vervaltOp: vervaltOp.value, maanden: ms
+      startdatum: startdatum.value, einddatum: einddatum.value, vervaltOp: vervaltOp.value, maanden: ms,
+      plekId: plek.value, foto: foto.value, fotoBron: fotoBron.value
     };
   };
   var acties = el('div', { class: 'acties' });
@@ -440,7 +397,7 @@ function tabVoorstellen(inhoud) {
       if (v.toelichting) card.appendChild(el('div', { class: 'meta', text: v.toelichting }));
       if (v.huidigFeit) {
         card.appendChild(el('div', { class: 'tegenspraak' }, [
-          el('b', { text: '⚠ Huidig feit (gecontroleerd ' + datumNL(v.huidigFeit.gecontroleerdOp) + '): ' }),
+          el('b', { text: 'Huidig feit (gecontroleerd ' + datumNL(v.huidigFeit.gecontroleerdOp) + '): ' }),
           v.huidigFeit.tekst
         ]));
       }
@@ -473,7 +430,7 @@ function tabVoorstellen(inhoud) {
 // Document (bijv. uit Kiek) omzetten in voorstellen: tekst plakken, wordt in delen verwerkt
 function documentImport() {
   var wrap = el('div', { class: 'card', style: 'background:#fff' });
-  var open = el('button', { class: 'btn secundair klein', text: '📄 Tekst uit document omzetten in voorstellen' });
+  var open = el('button', { class: 'btn secundair klein', text: 'Tekst uit document omzetten in voorstellen' });
   var vak = el('div', { style: 'display:none' });
   open.onclick = function() { vak.style.display = vak.style.display === 'none' ? '' : 'none'; };
   wrap.appendChild(open);
@@ -515,7 +472,7 @@ function documentImport() {
     var totaal = 0, i = 0;
     function volgende() {
       if (i >= stukken.length) {
-        status.textContent = '✓ Klaar: ' + totaal + ' voorstel(len) aangemaakt uit ' + stukken.length + ' deel/delen.';
+        status.textContent = 'Klaar: ' + totaal + ' voorstel(len) aangemaakt uit ' + stukken.length + ' deel/delen.';
         knop.disabled = false;
         laadOverzicht().then(function() { setTimeout(function() { toonTab('voorstellen'); }, 1500); });
         return;
@@ -563,7 +520,7 @@ function tabKennisbank(inhoud, opties) {
     var nieuwVak = el('div');
     nieuwKnop.onclick = function() {
       if (nieuwVak.firstChild) { nieuwVak.innerHTML = ''; return; }
-      var opslaan = el('button', { class: 'btn primair klein', text: '💾 Opslaan' });
+      var opslaan = el('button', { class: 'btn primair klein', text: 'Opslaan' });
       var form = feitFormulier({ onderwerp: filter.onderwerp, deelgebied: filter.deelgebied || 'heel' }, [opslaan]);
       opslaan.onclick = function() {
         api('feit-opslaan', { feit: form.waarde() }).then(function() { melding('Feit toegevoegd'); nieuwVak.innerHTML = ''; return laadOverzicht(); })
@@ -613,7 +570,9 @@ function feitKaart(f) {
     el('span', { class: 'badge groen', text: titelVan(OV.onderwerpen, f.onderwerp) }),
     el('span', { class: 'badge', text: titelVan(OV.deelgebieden, f.deelgebied) }),
     el('span', { class: 'badge', text: titelVan(OV.types, f.type) + (f.type === 'seizoen' && f.maanden && f.maanden.length ? ': ' + f.maanden.map(function(m) { return MAANDEN[m - 1]; }).join(', ') : '') }),
-    f.zichtbaarheid === 'intern' ? el('span', { class: 'badge warn', text: 'Intern' }) : null,
+    f.zichtbaarheid === 'intern' ? el('span', { class: 'badge intern', text: 'Intern' }) : null,
+    f.plekId ? el('span', { class: 'badge', text: 'Op de kaart: ' + ((OV.plekkenKort || []).filter(function(p) { return p.id === f.plekId; })[0] || { naam: 'plek' }).naam }) : null,
+    f.foto ? el('span', { class: 'badge', text: 'Met foto' }) : null,
     f.status === 'ingetrokken' ? el('span', { class: 'badge rood', text: 'Ingetrokken' }) : null,
     f.status === 'actief' && b.verlopen ? el('span', { class: 'badge warn', text: 'Mogelijk verouderd' }) : null,
     f.status === 'actief' && b.afgelopen ? el('span', { class: 'badge rood', text: 'Afgelopen' }) : null
@@ -632,10 +591,10 @@ function feitKaart(f) {
 
   var acties = el('div', { class: 'acties' });
   var vak = el('div');
-  var bewerk = el('button', { class: 'btn secundair klein', text: '✏️ Bewerken' });
+  var bewerk = el('button', { class: 'btn secundair klein', text: 'Bewerken' });
   bewerk.onclick = function() {
     if (vak.firstChild) { vak.innerHTML = ''; return; }
-    var opslaan = el('button', { class: 'btn primair klein', text: '💾 Opslaan (= gecontroleerd)' });
+    var opslaan = el('button', { class: 'btn primair klein', text: 'Opslaan (= gecontroleerd)' });
     var form = feitFormulier(f, [opslaan]);
     opslaan.onclick = function() {
       var w = form.waarde(); w.id = f.id;
@@ -705,7 +664,7 @@ function tabWebsites(inhoud) {
     } });
     s.appendChild(el('div', { style: 'display:flex;gap:8px;margin-top:10px' }, [nieuw, toevoegen]));
     s.appendChild(el('div', { class: 'acties', style: 'margin-top:12px' }, [
-      el('button', { class: 'btn primair', text: '💾 Lijst opslaan', onclick: function() {
+      el('button', { class: 'btn primair', text: 'Lijst opslaan', onclick: function() {
         api('sites-opslaan', { sites: sites }).then(function(r) { sites = r.sites; teken(); melding('Opgeslagen'); }).catch(fout);
       } })
     ]));
@@ -719,16 +678,16 @@ function tabWebsites(inhoud) {
     var ta = el('textarea', { style: 'width:100%;min-height:90px;border:1.5px solid var(--b);border-radius:6px;padding:8px;font-family:monospace;font-size:0.78rem;' });
     ta.value = (d.nmPaginas || []).join('\n');
     s2.appendChild(ta);
-    var nu = el('button', { class: 'btn secundair', text: '🔎 Nu controleren' });
+    var nu = el('button', { class: 'btn secundair', text: 'Nu controleren' });
     nu.onclick = function() {
       nu.disabled = true; nu.textContent = 'Bezig… (kan een minuut duren)';
       api('nm-controleren').then(function(r) {
         melding(r.nm.voorstellen + ' nieuw(e) voorstel(len)');
         return laadOverzicht();
-      }).then(function() { toonTab('websites'); }).catch(function(e) { nu.disabled = false; nu.textContent = '🔎 Nu controleren'; fout(e); });
+      }).then(function() { toonTab('websites'); }).catch(function(e) { nu.disabled = false; nu.textContent = 'Nu controleren'; fout(e); });
     };
     s2.appendChild(el('div', { class: 'acties', style: 'margin-top:10px' }, [
-      el('button', { class: 'btn primair', text: '💾 Pagina\'s opslaan', onclick: function() {
+      el('button', { class: 'btn primair', text: 'Pagina\'s opslaan', onclick: function() {
         api('nm-paginas-opslaan', { paginas: ta.value.split('\n') }).then(function() { melding('Opgeslagen'); }).catch(fout);
       } }),
       nu
@@ -891,11 +850,11 @@ function tabBackup(inhoud) {
     inhoud.innerHTML = '';
     var s = el('div', { class: 'section' }, [
       el('h2', { text: 'Back-up' }),
-      el('p', { class: 'uitleg', text: 'Elke week wordt automatisch een back-up gemaakt van de kennisbank, voorstellen, websites en gebruikers (zonder inlogcodes); ze worden 10 weken bewaard. Download ook af en toe een back-up naar je eigen computer. Terugzetten herstelt kennisbank, voorstellen en websites (niet de gebruikers); vooraf wordt automatisch een back-up van de huidige stand gemaakt.' }),
+      el('p', { class: 'uitleg', text: 'Elke week wordt automatisch een back-up gemaakt van de kennisbank, voorstellen, websites, kaart (plekken, routes, gebieden) en gebruikers (zonder inlogcodes); ze worden 10 weken bewaard. Download ook af en toe een back-up naar je eigen computer. Terugzetten herstelt kennisbank, voorstellen, websites en kaart (niet de gebruikers); vooraf wordt automatisch een back-up van de huidige stand gemaakt.' }),
       el('div', { class: 'meta', text: 'Laatste back-up: ' + (d.laatste ? datumNL(d.laatste) : 'nog geen') })
     ]);
     s.appendChild(el('div', { class: 'acties', style: 'margin:10px 0' }, [
-      el('button', { class: 'btn primair klein', text: '⬇ Download huidige stand', onclick: function() {
+      el('button', { class: 'btn primair klein', text: 'Download huidige stand', onclick: function() {
         api('backup-download', { id: 'nu' }).then(function(r) { download('planken-wambuis-backup-' + new Date().toISOString().slice(0, 10) + '.json', r.inhoud); }).catch(fout);
       } }),
       el('button', { class: 'btn secundair klein', text: '+ Back-up maken', onclick: function() {
@@ -906,11 +865,11 @@ function tabBackup(inhoud) {
     d.backups.forEach(function(id) {
       s.appendChild(el('div', { class: 'site-rij' }, [
         el('span', { text: id }),
-        el('button', { class: 'btn secundair klein', text: '⬇ Download', onclick: function() {
+        el('button', { class: 'btn secundair klein', text: 'Download', onclick: function() {
           api('backup-download', { id: id }).then(function(r) { download('planken-wambuis-backup-' + id + '.json', r.inhoud); }).catch(fout);
         } }),
         el('button', { class: 'btn gevaar klein', text: 'Terugzetten', onclick: function() {
-          if (!confirm('Kennisbank, voorstellen en websites terugzetten naar de stand van ' + id + '? De huidige stand wordt eerst als back-up bewaard.')) return;
+          if (!confirm('Kennisbank, voorstellen, websites en kaart terugzetten naar de stand van ' + id + '? De huidige stand wordt eerst als back-up bewaard.')) return;
           api('backup-terugzetten', { id: id }).then(function(r) { melding(r.feiten + ' feiten teruggezet'); return laadOverzicht(); })
             .then(function() { toonTab('backup'); }).catch(fout);
         } })
@@ -920,5 +879,6 @@ function tabBackup(inhoud) {
   }).catch(fout);
 }
 </script>
+<script src="/assets/beheer-kaart.js"></script>
 </body>
 </html>

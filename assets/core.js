@@ -72,6 +72,13 @@ PW.el = function(tag, attrs, inhoud) {
   return e;
 };
 
+// Foto bij een feit (met naam van de maker: alleen foto's met gebruiksrecht)
+PW.feitFoto = function(f) {
+  if (!f.foto) return null;
+  return PW.el('figure', { class: 'feit-foto' }, [PW.el('img', { src: f.foto, alt: '', loading: 'lazy' }),
+    PW.el('figcaption', { tekst: 'Foto: ' + (f.fotoBron || 'onbekend') })]);
+};
+
 PW.nlDatumKort = function(iso) {
   if (!iso) return '';
   var p = String(iso).slice(0, 10).split('-');

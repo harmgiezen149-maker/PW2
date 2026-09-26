@@ -24,6 +24,7 @@ function publiek(f, vandaag) {
   };
   if (f.bronUrl) uit.bronUrl = f.bronUrl;
   if (f.plekId) uit.plekId = f.plekId;
+  if (f.foto) { uit.foto = f.foto; uit.fotoBron = f.fotoBron || ''; }
   if (f.type === 'tijdelijk') { uit.einddatum = f.einddatum || null; if (f.startdatum) uit.startdatum = f.startdatum; }
   if (f.type === 'seizoen') uit.maanden = f.maanden || [];
   return uit;

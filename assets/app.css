@@ -376,3 +376,7 @@ html body .leaflet-control-attribution { font-size: 0.6875rem; }
 .legenda-stip { width: 0.75rem; height: 0.75rem; border-radius: 50%; display: inline-block; }
 .gebied-plekken { display: flex; flex-direction: column; gap: 0.5rem; }
 .gebied-plekken .lijst-rij { border-top: none; border-radius: 1rem; }
+
+.feit-foto { margin: 0; border-radius: 0.75rem; overflow: hidden; background: var(--zand); align-self: stretch; }
+.feit-foto img { display: block; width: 100%; max-height: 13rem; object-fit: cover; }
+.feit-foto figcaption { font-size: 0.75rem; color: var(--tekst-3); padding: 0.25rem 0.5rem; }
