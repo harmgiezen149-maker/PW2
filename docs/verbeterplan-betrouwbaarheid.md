@@ -163,6 +163,9 @@ bewaart oudere versies. Zet daarom nooit interne informatie in deze repository.
 
 ## Stand van de bouw (26 september 2026)
 
+> Het nieuwe ontwerp van de app (vijf tabbladen, kaart, meldingen) staat beschreven in
+> [`herontwerp.md`](herontwerp.md). De betrouwbaarheidsregels hieronder gelden onverkort.
+
 Alle vijf fasen zijn gebouwd op branch `claude/chatbot-planken-wambuis-accuracy-1mhbl7`,
 getest (automatische tests met nagebootste database en Claude-API) en op de
 preview-deployment met de echte Claude-API gecontroleerd.
