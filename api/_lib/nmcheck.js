@@ -1,4 +1,4 @@
-// Dagelijkse controle van de Planken Wambuis-pagina's op natuurmonumenten.nl
+// Wekelijkse controle (zaterdag 07:00) van de Planken Wambuis-pagina's op natuurmonumenten.nl
 // (vraag 16 en 25). Gewijzigde pagina's en nieuwe nieuws-/agendaberichten worden
 // door Claude vergeleken met de kennisbank; wat nieuw of anders is, komt als
 // voorstel in het beheerpaneel. Niets gaat live zonder goedkeuring.
@@ -46,7 +46,7 @@ function berichtLinks(html) {
 
 async function haal(url) {
   const r = await fetch(url, {
-    headers: { 'User-Agent': 'PlankenWambuisAssistent/1.0 (dagelijkse controle voor boswachters)', 'Accept': 'text/html' },
+    headers: { 'User-Agent': 'PlankenWambuisAssistent/1.0 (wekelijkse controle voor boswachters)', 'Accept': 'text/html' },
     redirect: 'follow', signal: AbortSignal.timeout(10000)
   });
   if (!r.ok) throw new Error(`${url}: HTTP ${r.status}`);
@@ -198,7 +198,7 @@ async function controleer() {
       const voorstel = {
         id, soort: wijziging ? 'wijziging' : 'nieuw', feitId: wijziging ? v.feitId : undefined,
         onderwerp: v.onderwerp, deelgebied: v.deelgebied || 'heel', type: v.type, tekst,
-        bron: 'natuurmonumenten.nl (dagelijkse controle)', bronUrl: /^https:\/\/www\.natuurmonumenten\.nl\//.test(v.bronUrl) ? v.bronUrl : undefined,
+        bron: 'natuurmonumenten.nl (wekelijkse controle)', bronUrl: /^https:\/\/www\.natuurmonumenten\.nl\//.test(v.bronUrl) ? v.bronUrl : undefined,
         bronDatum: /^\d{4}-\d{2}-\d{2}$/.test(v.bronDatum) ? v.bronDatum : undefined,
         einddatum: /^\d{4}-\d{2}-\d{2}$/.test(v.einddatum) ? v.einddatum : undefined,
         startdatum: /^\d{4}-\d{2}-\d{2}$/.test(v.startdatum) ? v.startdatum : undefined,

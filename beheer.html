@@ -309,7 +309,7 @@ function tabOverzicht(inhoud) {
     inhoud.innerHTML = '';
     var s = el('div', { class: 'section' }, [
       el('h2', { text: 'Overzicht' }),
-      el('p', { class: 'uitleg', text: 'De assistent gebruikt alleen actieve feiten uit de kennisbank. Feiten waarvan de vervaldatum voorbij is, gebruikt hij met de melding "mogelijk verouderd" — controleer ze en klik op "Gecontroleerd". Voorstellen (van gebruikers en van de dagelijkse controle) worden pas gebruikt na goedkeuring.' })
+      el('p', { class: 'uitleg', text: 'De assistent gebruikt alleen actieve feiten uit de kennisbank. Feiten waarvan de vervaldatum voorbij is, gebruikt hij met de melding "mogelijk verouderd" — controleer ze en klik op "Gecontroleerd". Voorstellen (van gebruikers en van de wekelijkse controle) worden pas gebruikt na goedkeuring.' })
     ]);
     var stats = el('div', { class: 'stats' });
     function stat(n, label, warn, klik) {
@@ -329,9 +329,9 @@ function tabOverzicht(inhoud) {
 }
 
 function cronKaart(cs) {
-  var s = el('div', { class: 'section' }, [el('h2', { text: 'Dagelijkse controle natuurmonumenten.nl' })]);
+  var s = el('div', { class: 'section' }, [el('h2', { text: 'Wekelijkse controle natuurmonumenten.nl' })]);
   if (!cs || !cs.nm) {
-    s.appendChild(el('p', { class: 'leeg', text: 'Nog niet uitgevoerd. De controle draait elke ochtend automatisch (na livegang), of start hem via "Websites & controle".' }));
+    s.appendChild(el('p', { class: 'leeg', text: 'Nog niet uitgevoerd. De controle draait elke zaterdag om 07:00 automatisch (na livegang), of start hem via "Websites & controle".' }));
     return s;
   }
   var nm = cs.nm;
@@ -418,7 +418,7 @@ function feitFormulier(start, knoppen) {
 // ============================================================
 // Voorstellen
 // ============================================================
-var HERKOMST = { gebruiker: 'Suggestie gebruiker', 'nm.nl': 'Dagelijkse controle nm.nl', claude: 'Voorstel assistent', feedback: 'Melding "klopt niet"', document: 'Uit document' };
+var HERKOMST = { gebruiker: 'Suggestie gebruiker', 'nm.nl': 'Wekelijkse controle nm.nl', claude: 'Voorstel assistent', feedback: 'Melding "klopt niet"', document: 'Uit document' };
 
 function tabVoorstellen(inhoud) {
   api('voorstellen').then(function(d) {
@@ -711,10 +711,10 @@ function tabWebsites(inhoud) {
     ]));
     inhoud.appendChild(s);
 
-    // Pagina's voor de dagelijkse controle
+    // Pagina's voor de wekelijkse controle
     var s2 = el('div', { class: 'section' }, [
-      el('h2', { text: 'Dagelijkse controle natuurmonumenten.nl' }),
-      el('p', { class: 'uitleg', text: 'Elke ochtend worden deze pagina\'s gelezen. Is er iets gewijzigd of staat er een nieuw nieuws- of agendabericht, dan vergelijkt de assistent dat met de kennisbank en zet wat nieuw of anders is klaar als voorstel. Niets gaat live zonder jouw goedkeuring. Eén pagina per regel.' })
+      el('h2', { text: 'Wekelijkse controle natuurmonumenten.nl' }),
+      el('p', { class: 'uitleg', text: 'Elke zaterdag om 07:00 worden deze pagina\'s gelezen. Is er iets gewijzigd of staat er een nieuw nieuws- of agendabericht, dan vergelijkt de assistent dat met de kennisbank en zet wat nieuw of anders is klaar als voorstel. Niets gaat live zonder jouw goedkeuring. Eén pagina per regel.' })
     ]);
     var ta = el('textarea', { style: 'width:100%;min-height:90px;border:1.5px solid var(--b);border-radius:6px;padding:8px;font-family:monospace;font-size:0.78rem;' });
     ta.value = (d.nmPaginas || []).join('\n');

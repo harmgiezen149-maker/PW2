@@ -62,8 +62,8 @@ Startlijst toegestane sites:
 | 13 | Twijfelachtige huidige feiten | Worden uitgezocht en als voorstel klaargezet; de beheerder keurt goed. |
 | 14 | Seizoenskalender | Concept per maand op basis van Kiek, nm.nl en waarneming.nl; de beheerder keurt per maand goed. |
 | 15 | Extra onderwerpen | Praktisch bezoek, veiligheid, Natuurmonumenten en activiteiten, beheer per deelgebied. |
-| 16 | Actueel beheer | Via de dagelijkse controle van nm.nl, met goedkeuring. |
-| 25 | Dagelijkse controle | Elke ochtend de Planken Wambuis-pagina's op nm.nl (nieuws, agenda, praktische info); wijzigingen worden voorstellen. |
+| 16 | Actueel beheer | Via de wekelijkse controle van nm.nl, met goedkeuring. |
+| 25 | Wekelijkse controle | Elke zaterdag om 07:00 de Planken Wambuis-pagina's op nm.nl (nieuws, agenda, praktische info); wijzigingen worden voorstellen. Eerst was dit dagelijks; omdat het team alleen in het weekend actief is, is dat op 26-09-2026 teruggebracht naar één keer per week. |
 | 26 | Opslag | Alles in de database, beheerd via het beheerpaneel, met historie en wekelijkse back-up. Niets intern in de openbare repository. |
 
 Twijfelachtige feiten die bij vraag 13 horen:
@@ -136,7 +136,7 @@ Twijfelachtige feiten die bij vraag 13 horen:
    - interne feiten alleen voor ingelogde gebruikers;
    - gedeeld beheerwachtwoord uitfaseren.
 4. **Actualiteit en controle**
-   - dagelijkse controle van nm.nl (Vercel Cron) die voorstellen klaarzet;
+   - wekelijkse controle van nm.nl (Vercel Cron, zaterdag 07:00) die voorstellen klaarzet;
    - logboek van 90 dagen;
    - knop "Klopt niet";
    - teller met meldingen in het beheerpaneel;
@@ -172,13 +172,14 @@ preview-deployment met de echte Claude-API gecontroleerd.
 | 1 | Opus 5, nieuwe instructie, webzoeken alleen op toegestane sites, suggesties pas na goedkeuring, geen "✓ actueel", beveiliging | Klaar |
 | 2 | Kennisbank als losse feiten met bron, controle, vervaldatum en zichtbaarheid; citaties met voetnoten; nieuw beheerpaneel | Klaar |
 | 3 | Persoonlijke links, rollen, interne feiten alleen voor ingelogden | Klaar |
-| 4 | Dagelijkse controle nm.nl (cron, 07:00), logboek 90 dagen, "Klopt niet", back-up | Klaar; op de preview getest: 10 voorstellen uit nm.nl |
+| 4 | Wekelijkse controle nm.nl (cron, zaterdag 07:00), logboek 90 dagen, "Klopt niet", back-up | Klaar; op de preview getest: 10 voorstellen uit nm.nl |
 | 5 | Voorstellen voor de twijfelachtige feiten, nieuwe onderwerpen, seizoenskalender, documenten uit de bronnenmap, importfunctie | Klaar |
 
 ### Livegang (door de beheerder)
 
 1. Merge de branch naar `main` (net als bij eerdere wijzigingen). Vercel zet de
-   nieuwe versie dan live op pwpb2.vercel.app en start de dagelijkse controle.
+   nieuwe versie dan live op pwpb2.vercel.app en start de wekelijkse controle
+   (elke zaterdag om 07:00).
 2. Open https://pwpb2.vercel.app/beheer.html en maak met het beheerwachtwoord de
    eerste beheerder aan. Bewaar je persoonlijke link goed; het wachtwoord werkt
    daarna niet meer voor het beheerpaneel.

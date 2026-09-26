@@ -8,7 +8,7 @@ module.exports = async function handler(req, res) {
   if (process.env.VERCEL_ENV !== 'preview') return res.status(404).end();
   if (!(await checkRateLimit(req, 'zelftest', 20, 3600))) return res.status(429).json({ error: 'te vaak' });
 
-  // ?taak=nm: de nm.nl-controle direct uitvoeren (zonder de dagelijkse vergrendeling)
+  // ?taak=nm: de nm.nl-controle direct uitvoeren (zonder de tijd- en dagvergrendeling)
   if (req.query.taak === 'nm') {
     const t0 = Date.now();
     try {
