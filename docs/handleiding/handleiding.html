@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<title>Handleiding Boswachter Assistent Planken Wambuis</title>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;600;700&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --g:#1a5c38; --gl:#e8f2ec; --gp:#f2f8f4; --t:#1f1f1f; --tm:#4a4a4a; --b:#d0ddd5; --warn:#b5651d; --warnbg:#fdf3e8; }
+  @page { size: A4; margin: 16mm 17mm 18mm 17mm; }
+  * { box-sizing: border-box; }
+  body { font-family: 'Source Sans 3', sans-serif; color: var(--t); font-size: 10.3pt; line-height: 1.45; margin: 0; }
+  h1, h2, h3 { font-family: 'Source Serif 4', serif; color: var(--g); line-height: 1.2; }
+  h1 { font-size: 21pt; margin: 0 0 3mm; }
+  h2 { font-size: 13.5pt; margin: 6mm 0 2mm; break-after: avoid; }
+  h3 { font-size: 11pt; margin: 4mm 0 1.5mm; break-after: avoid; }
+  p { margin: 0 0 2.2mm; }
+  ul, ol { margin: 0 0 2.5mm; padding-left: 5.5mm; }
+  li { margin: 0 0 1mm; }
+  a { color: var(--g); }
+  .deel { break-before: page; }
+  .deel-kop { background: var(--g); color: #fff; border-radius: 3mm; padding: 5mm 7mm; margin-bottom: 4mm; }
+  .deel-kop .nr { font-size: 9pt; letter-spacing: .08em; text-transform: uppercase; opacity: .85; }
+  .deel-kop h1 { color: #fff; margin: 1mm 0 1mm; }
+  .deel-kop p { margin: 0; opacity: .92; }
+  .kader { background: var(--gp); border: 1px solid var(--b); border-radius: 2.5mm; padding: 3.5mm 4.5mm; margin: 3mm 0; break-inside: avoid; }
+  .kader.warn { background: var(--warnbg); border-color: #e3b98c; }
+  .kader h3 { margin-top: 0; }
+  .kader ul:last-child, .kader p:last-child { margin-bottom: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 2mm 0 3mm; font-size: 9.6pt; }
+  tr { break-inside: avoid; }
+  .compact table, table.compact { font-size: 8.9pt; }
+  .compact th, .compact td { padding: 1mm 2mm; }
+  .compact td:first-child { width: 31%; }
+  th, td { text-align: left; vertical-align: top; padding: 1.6mm 2.2mm; border-bottom: 1px solid var(--b); }
+  th { background: var(--gl); color: var(--g); font-weight: 700; }
+  td:first-child { font-weight: 600; width: 34%; }
+  .fig { margin: 3mm 0; text-align: center; break-inside: avoid; }
+  .fig img { border: 1px solid var(--b); border-radius: 2mm; box-shadow: 0 .6mm 2mm rgba(0,0,0,.08); }
+  .fig .onder { font-size: 8.6pt; color: var(--tm); margin-top: 1.5mm; font-style: italic; }
+  .naast { display: grid; grid-template-columns: 1fr auto; gap: 6mm; align-items: start; }
+  .naast .fig { margin-top: 0; }
+  .knip { overflow: hidden; border: 1px solid var(--b); border-radius: 2mm; box-shadow: 0 .6mm 2mm rgba(0,0,0,.08); }
+  .knip img { display: block; width: 100%; border: 0; border-radius: 0; box-shadow: none; }
+  .twee-fig { display: flex; gap: 5mm; justify-content: center; align-items: flex-start; }
+  .stroom { display: flex; align-items: stretch; gap: 1.5mm; margin: 3mm 0; break-inside: avoid; }
+  .stroom .stap { flex: 1; background: #fff; border: 1.2px solid var(--g); border-radius: 2mm; padding: 2.2mm 2.5mm; font-size: 8.8pt; line-height: 1.35; }
+  .stroom .stap b { display: block; color: var(--g); font-size: 9.4pt; margin-bottom: .8mm; }
+  .stroom .stap.grijs { border-style: dashed; border-color: var(--warn); }
+  .stroom .stap.grijs b { color: var(--warn); }
+  .stroom .pijl { align-self: center; color: var(--g); font-weight: 700; font-size: 13pt; }
+  .klein { font-size: 8.8pt; color: var(--tm); }
+  .check li { list-style: none; margin-left: -5mm; }
+  .check li::before { content: '☐ '; color: var(--g); }
+  .tag { display: inline-block; font-size: 8.4pt; font-weight: 700; padding: 0 2mm; border-radius: 3mm; border: 1px solid var(--g); color: var(--g); background: var(--gl); white-space: nowrap; }
+  .tag.o { border-color: var(--warn); color: var(--warn); background: var(--warnbg); }
+  code { font-family: 'Source Sans 3', sans-serif; background: var(--gl); padding: 0 1mm; border-radius: 1mm; font-size: 9.4pt; }
+  sup.fn { color: var(--g); font-weight: 700; }
+  .blok { break-inside: avoid; }
+
+  /* Voorblad */
+  .voorblad { height: 262mm; display: flex; flex-direction: column; }
+  .voorblad .band { background: linear-gradient(135deg, #0f3d24, #1a5c38 60%, #2a7a4d); color: #fff; border-radius: 4mm; padding: 16mm 12mm 13mm; }
+  .voorblad .band .boom { font-size: 30pt; }
+  .voorblad .band h1 { color: #fff; font-size: 28pt; margin: 3mm 0 2mm; }
+  .voorblad .band .sub { font-size: 13pt; opacity: .92; }
+  .voorblad .inhoud { margin-top: 10mm; }
+  .voorblad .inhoud .rij { display: grid; grid-template-columns: 20mm 1fr; gap: 3mm; padding: 3.5mm 0; border-bottom: 1px solid var(--b); }
+  .voorblad .inhoud .rij .n { font-family: 'Source Serif 4', serif; font-size: 18pt; color: var(--g); font-weight: 700; }
+  .voorblad .inhoud .rij b { font-size: 12pt; color: var(--g); }
+  .voorblad .onderaan { margin-top: auto; }
+</style>
+</head>
+<body>
+
+<!-- ============================================================ VOORBLAD -->
+<section class="voorblad">
+  <div class="band">
+    <div class="boom">🌲</div>
+    <h1>Boswachter Assistent<br>Planken Wambuis</h1>
+    <div class="sub">Handleiding voor publieksboswachters, vrijwilligers en beheerders</div>
+  </div>
+
+  <div class="inhoud">
+    <div class="rij"><div class="n">1</div><div><b>Voor boswachters en vrijwilligers</b><br>De assistent gebruiken in het werk, wat je aan antwoorden kunt verwachten en hoe je fouten meldt. Plus: waar de informatie vandaan komt en hoe we fouten voorkomen.</div></div>
+    <div class="rij"><div class="n">2</div><div><b>Voor beheerders</b><br>Wat je kunt aanpassen en waar: de schermen van het beheerpaneel en een vast werkritme.</div></div>
+    <div class="rij"><div class="n">3</div><div><b>Technische samenvatting</b><br>De opzet van de app en de keuzes achter het huidige ontwerp.</div></div>
+  </div>
+
+  <div class="kader" style="margin-top:9mm">
+    <h3>In het kort</h3>
+    <ul>
+      <li>Feiten over Planken Wambuis haalt de assistent alleen uit een <b>kennisbank die door een beheerder is gecontroleerd</b>, of van een vaste lijst betrouwbare websites.</li>
+      <li>Elk feit uit de kennisbank krijgt een <b>voetnoot</b> met bron en controledatum.</li>
+      <li>Staat iets niet in de kennisbank, dan zegt de assistent <b>"Dat weet ik niet"</b> in plaats van te gokken.</li>
+      <li>Informatie van websites staat er apart bij, met het label <b>"niet gecontroleerd"</b>.</li>
+      <li>Zie je een fout? Tik op <b>"Klopt er iets niet?"</b> onder het antwoord.</li>
+    </ul>
+  </div>
+
+  <div class="onderaan klein">
+    Versie september 2026 (app v77) · pwpb2.vercel.app<br>
+    De schermafbeeldingen in deze handleiding bevatten voorbeeldgegevens.
+  </div>
+</section>
+
+<!-- ============================================================ DEEL 1 -->
+<section class="deel">
+  <div class="deel-kop">
+    <div class="nr">Deel 1</div>
+    <h1>Voor boswachters en vrijwilligers</h1>
+    <p>De assistent gebruiken in het werk</p>
+  </div>
+
+  <h2>1.1 Wat is de Boswachter Assistent?</h2>
+  <p>De Boswachter Assistent helpt je bij bezoekersgesprekken in Planken Wambuis. Dat zijn ook Wolfheze en de Wolfhezerheide, Mossel en het Mosselse Zand, Oud en Nieuw Reemst, de Buunderkamp en het Oude Hout. Je stelt een vraag in gewone taal en krijgt een antwoord met achtergrond en gesprekstips. Gebruik hem om je voor te bereiden, iets op te zoeken of inspiratie op te doen. Je eigen kennis en die van je collega's blijven leidend.</p>
+  <ul>
+    <li><b>Adres:</b> pwpb2.vercel.app. De assistent werkt op telefoon, tablet en computer, maar alleen met internet.</li>
+    <li><b>Op je telefoon zetten:</b> open het adres en kies in het menu van de browser <i>Zet op beginscherm</i> (iPhone: deelknop → <i>Zet op beginscherm</i>). Hij opent dan als een app.</li>
+    <li><b>Buurgebieden</b> zoals De Hoge Veluwe, de Ginkelse Heide en de Reijerscamp horen er niet bij. De assistent noemt ze alleen als buurgebied.</li>
+  </ul>
+
+  <h2>1.2 Inloggen met je persoonlijke link</h2>
+  <div class="naast">
+    <div>
+      <p>Van de beheerder krijg je een persoonlijke link, via mail of WhatsApp. Open die link één keer op elk apparaat dat je gebruikt. Daarna blijf je ingelogd.</p>
+      <ul>
+        <li><b>Ingelogd</b> krijg je ook interne informatie, bijvoorbeeld uit Kiek. <b>Niet ingelogd</b> werkt de assistent ook, maar dan alleen met openbare informatie.</li>
+        <li>Onder <b>⚙️</b> rechtsboven zie je of je bent ingelogd. Daar kun je ook uitloggen.</li>
+        <li>Je link is persoonlijk: deel hem niet. Ben je hem kwijt, of heb je een nieuwe telefoon? Vraag de beheerder om een nieuwe link. De oude werkt dan niet meer.</li>
+      </ul>
+    </div>
+    <div class="fig" style="width:70mm"><img src="shots/app-instellingen.png" style="width:70mm"><div class="onder">Het ⚙️-venster: inlogstatus en suggestie indienen</div></div>
+  </div>
+
+  <h2>1.3 Een vraag stellen</h2>
+  <div class="naast">
+    <div>
+      <ul>
+        <li><b>Eigen vraag:</b> typ je vraag onderin en tik op <b>Verstuur</b>.</li>
+        <li><b>Vaste knoppen:</b> klap <i>Boswachter Assistent</i> uit en kies bijvoorbeeld <i>Wat is er nu te zien?</i>, <i>Talking points</i>, <i>Begrazing</i>, <i>De wolf</i> of <i>Leden werven</i>.</li>
+        <li><b>Verhaal:</b> met de schakelaar bovenin krijg je het antwoord als verhaal voor een bezoekersgesprek. Het bevat een sfeervolle opening, een "Wist je dat…", het feit, een vraag aan de bezoeker en gesprekstips.</li>
+        <li><b>Extra's:</b> met 🔊 <i>Voorlezen</i> hoor je het antwoord. De knop ▶ naast een vogelnaam laat het geluid horen. Bij soorten verschijnen foto's (tik om te vergroten). Bovenin staat het weer voor het gebied.</li>
+      </ul>
+      <div class="kader">
+        <h3>Tips voor een goede vraag</h3>
+        <ul>
+          <li><b>Elke vraag staat op zichzelf:</b> de assistent onthoudt je vorige vraag niet. Zeg dus steeds waar het over gaat.</li>
+          <li>Noem het deelgebied als dat uitmaakt, bijvoorbeeld "bij Oud Reemst".</li>
+          <li>Vraag liever één ding per keer dan vijf tegelijk.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="fig" style="width:60mm"><img src="shots/app-start.png" style="width:60mm"><div class="onder">Startscherm met de knoppen uitgeklapt</div></div>
+  </div>
+
+  <h2>1.4 Wat voor antwoorden kun je verwachten?</h2>
+  <p>Een antwoord begint met een korte inleiding. Daarna volgen kopjes per onderwerp, en vaak gesprekstips. Het antwoord is zo lang als nodig: kort als er weinig bekend is, uitgebreider als de kennisbank veel biedt. Zo herken je waar de informatie vandaan komt:</p>
+  <table>
+    <tr><th>Wat je ziet</th><th>Wat het betekent</th></tr>
+    <tr><td>Voetnoot <sup class="fn">1</sup> met 📚 Kennisbank in de bronnenlijst</td><td>Een feit uit de kennisbank dat een beheerder heeft gecontroleerd. De bronnenlijst toont onderwerp, deelgebied, controledatum en de oorspronkelijke bron.</td></tr>
+    <tr><td><span class="tag o">mogelijk verouderd</span></td><td>Het feit is een tijd niet gecontroleerd. Waarschijnlijk klopt het nog, maar controleer het bij twijfel.</td></tr>
+    <tr><td>Voetnoot met 🔎 website in de bronnenlijst</td><td>Gevonden op een toegestane website, maar <b>niet gecontroleerd</b> door een boswachter. De bron en de datum staan erbij.</td></tr>
+    <tr><td>Blok <span class="tag">🔎 Van website · niet gecontroleerd</span></td><td>Een aanvulling die de assistent nog zoekt terwijl jij het antwoord leest. De links staan onder <i>Bronnen aanvulling</i>. Vindt hij niets, dan verschijnt er geen blok.</td></tr>
+    <tr><td>Tekst zonder voetnoot</td><td>Algemene natuurkennis (hoe een soort leeft, hoe begrazing werkt), een samenvatting of een gesprekstip. Een feit over het gebied zelf hoort altijd een voetnoot te hebben. Zie je er een zonder? Meld het.</td></tr>
+    <tr><td>"Dat weet ik niet"</td><td>Het staat niet in de kennisbank en niet op de toegestane websites. De assistent gokt niet en verwijst naar de boswachter of natuurmonumenten.nl.</td></tr>
+  </table>
+
+  <div class="twee-fig">
+    <div class="fig" style="margin:0"><img src="shots/app-antwoord-1.png" style="width:60mm"></div>
+    <div class="fig" style="margin:0"><img src="shots/app-antwoord-2.png" style="width:60mm"></div>
+  </div>
+  <div class="fig" style="margin-top:1mm"><div class="onder">Voorbeeldantwoord, in twee delen naast elkaar gezet. Onderaan staat de genummerde bronnenlijst, met één feit dat "mogelijk verouderd" is.<br>Het groene blok met de website-aanvulling heeft een eigen lijstje: "Bronnen aanvulling".</div></div>
+  <div class="kader warn">
+        <h3>Blijf kritisch</h3>
+        <p>Deze maatregelen maken fouten veel minder waarschijnlijk, maar niet onmogelijk. Een feit kan bijvoorbeeld onhandig worden samengevat. Controleer belangrijke of verrassende feiten via de voetnoot voordat je ze aan bezoekers vertelt. Zie je een fout, meld die dan: zo wordt de assistent voor iedereen beter.</p>
+      </div>
+
+  <div class="naast blok">
+    <div>
+      <h3>Voorbeeld: iets wat niet bekend is</h3>
+      <p>Het aantal boommarters in het gebied staat niet in de kennisbank. De assistent zegt dat eerlijk en verwijst door. Daarna geeft hij wat wél bekend is, met voetnoot, en algemene kennis over de soort, zonder voetnoot.</p>
+
+    </div>
+    <div class="fig" style="width:58mm"><img src="shots/app-weetniet.png" style="width:58mm"><div class="onder">Een eerlijk "Dat weet ik niet"</div></div>
+  </div>
+
+  <h2>1.5 Fouten en opmerkingen doorgeven</h2>
+  <div class="naast">
+    <div>
+      <h3>"Klopt er iets niet?" onder een antwoord</h3>
+      <ol>
+        <li>Tik onder het antwoord op <b>⚠️ Klopt er iets niet?</b></li>
+        <li>Schrijf wat er niet klopt. Weet je wat het juiste feit is en waar het staat? Zet dat erbij, bijvoorbeeld "folder 2026", "bord bij de parkeerplaats" of "Kiek-document …".</li>
+        <li>Tik op <b>Versturen</b>.</li>
+      </ol>
+      <p>De beheerder ziet je melding samen met je vraag, het antwoord en de gebruikte feiten. Je naam wordt niet meegestuurd.</p>
+      <h3>Suggestie indienen via ⚙️</h3>
+      <p>Heb je nieuwe informatie die los staat van een antwoord? Bijvoorbeeld een gewijzigde route of een nieuwe afspraak. Open dan ⚙️, typ je suggestie en tik op <b>Indienen</b>.</p>
+      <h3>Wat gebeurt er daarna?</h3>
+      <p>De beheerder beoordeelt elke melding en suggestie. Pas na goedkeuring komt de informatie in de kennisbank en gebruikt de assistent die. Een fout feit kan de beheerder direct uit de antwoorden halen.</p>
+    </div>
+    <div class="fig" style="width:62mm"><img src="shots/app-kloptniet.png" style="width:62mm"><div class="onder">Melding bij een antwoord</div></div>
+  </div>
+
+  <h2>1.6 Waar komt de informatie vandaan, en hoe voorkomen we fouten?</h2>
+  <div class="stroom">
+    <div class="stap"><b>Bronnen</b>natuurmonumenten.nl (elke zaterdag gecontroleerd), documenten uit Kiek en de bronnenmap, meldingen en suggesties</div>
+    <div class="pijl">→</div>
+    <div class="stap"><b>Voorstel</b>Nieuwe of gewijzigde informatie wordt eerst een voorstel</div>
+    <div class="pijl">→</div>
+    <div class="stap"><b>Beheerder</b>Controleert aan de bron en keurt goed of af</div>
+    <div class="pijl">→</div>
+    <div class="stap"><b>Kennisbank</b>Gecontroleerde feiten met bron, datum en houdbaarheid</div>
+    <div class="pijl">→</div>
+    <div class="stap"><b>Antwoord</b>Met voetnoten naar de gebruikte feiten</div>
+  </div>
+  <div class="stroom" style="margin-top:-1mm">
+    <div class="stap grijs" style="flex:0 0 52%"><b>Toegestane websites</b>Natuurmonumenten, overheden, soortenorganisaties en regionaal nieuws. Alleen als aanvulling, altijd gelabeld als "niet gecontroleerd"</div>
+    <div class="pijl">→</div>
+    <div class="stap grijs"><b>Aanvulling</b>Apart zichtbaar in het antwoord, met bron en datum</div>
+  </div>
+
+  <div class="blok">
+  <h3>Zo bewaken we de juistheid</h3>
+  <ul>
+    <li><b>Eén bron van waarheid.</b> Feiten over het gebied komen alleen uit de kennisbank of van de vaste lijst websites. Weet de assistent iets niet, dan zegt hij dat.</li>
+    <li><b>Niets zonder controle.</b> Ook nieuws van natuurmonumenten.nl en jouw suggesties komen eerst bij een beheerder terecht.</li>
+    <li><b>Houdbaarheid.</b> Elk feit heeft een controledatum en een termijn: vaste feiten 3 jaar, jaarlijkse feiten 12 maanden, seizoensfeiten per seizoen. Tijdelijke zaken, zoals een afsluiting of omleiding, gelden tot hun einddatum en worden daarna niet meer gebruikt. Is een termijn voorbij, dan staat er "mogelijk verouderd" bij.</li>
+    <li><b>Herleidbaar.</b> Via de voetnoten zie je bij elk gebiedsfeit waar het vandaan komt.</li>
+    <li><b>Tegenstrijdige bronnen.</b> De nieuwste gecontroleerde bron wint. De oude tekst blijft bewaard.</li>
+    <li><b>Controle achteraf.</b> Vragen en antwoorden worden 90 dagen bewaard, zonder persoonsgegevens. De beheerder bekijkt elke week een steekproef en kan een fout feit met één klik intrekken.</li>
+    <li><b>Openbaar en intern.</b> Interne informatie krijgen alleen ingelogde boswachters en vrijwilligers te zien.</li>
+  </ul>
+  </div>
+</section>
+
+<!-- ============================================================ DEEL 2 -->
+<section class="deel">
+  <div class="deel-kop">
+    <div class="nr">Deel 2</div>
+    <h1>Voor beheerders</h1>
+    <p>Wat je kunt aanpassen, en waar</p>
+  </div>
+
+  <h2>2.1 Het beheerpaneel openen</h2>
+  <div class="naast">
+    <div>
+      <ul>
+        <li>Ga naar <b>pwpb2.vercel.app/beheer.html</b>. Je kunt ook in de app op ⚙️ → <i>Beheerpaneel openen</i> tikken; die link zien alleen beheerders.</li>
+        <li>Je logt in met je <b>persoonlijke beheerderslink</b>.</li>
+        <li><b>De allereerste keer</b> is er nog geen beheerder. Vul dan je naam en het beheerwachtwoord in en klik op <i>Eerste beheerder aanmaken</i>. Je krijgt je persoonlijke link te zien: bewaar die goed, als bladwijzer of in een wachtwoordkluis. Het wachtwoord werkt daarna niet meer.</li>
+        <li>Het paneel heeft acht tabbladen. Een oranje getal op een tabblad betekent dat er werk wacht.</li>
+      </ul>
+      <div class="kader warn"><b>Tip:</b> geef minstens twee mensen de rol beheerder. Is iemand zijn link kwijt, dan kan de ander een nieuwe maken.</div>
+    </div>
+    <div class="fig" style="width:56mm"><img src="shots/beheer-start.png" style="width:56mm"><div class="onder">Eerste beheerder aanmaken (eenmalig)</div></div>
+  </div>
+
+  <h2>2.2 Overzicht</h2>
+  <p>Hier zie je in één oogopslag wat er te doen is: voorstellen die wachten, meldingen "klopt niet", feiten die mogelijk verouderd zijn, het aantal actieve feiten en tijdelijke feiten die zijn afgelopen. Klik op een teller om naar de lijst te gaan. Onderaan staat het resultaat van de laatste wekelijkse controle van natuurmonumenten.nl en de laatste back-up.</p>
+  <div class="fig"><img src="shots/beheer-overzicht.png" style="width:104mm"></div>
+
+  <h2>2.3 Voorstellen</h2>
+  <p>Alles wat nog niet in de kennisbank staat, komt hier binnen. Het groene label toont de herkomst: <span class="tag">Wekelijkse controle nm.nl</span> <span class="tag">Suggestie gebruiker</span> <span class="tag">Melding "klopt niet"</span> <span class="tag">Uit document</span> <span class="tag">Voorstel assistent</span>.</p>
+  <div class="naast">
+    <div>
+      <h3>Een voorstel beoordelen</h3>
+      <ol>
+        <li>Lees de tekst en controleer die aan de bron (via de link). Pas hem aan waar nodig: <b>één feit per blok</b>, met vaste datums ("in 2033", niet "over zeven jaar").</li>
+        <li>Kies <b>onderwerp</b>, <b>deelgebied</b>, <b>type</b> en <b>zichtbaarheid</b>. Kies <i>intern</i> voor informatie die niet voor bezoekers is.</li>
+        <li>Vul de <b>bron</b> in, en als je die hebt ook de link en de datum van de bron.</li>
+        <li>Klik op <b>✓ Goedkeuren</b>. Het voorstel wordt direct een actief feit, gecontroleerd door jou op de datum van vandaag. Klopt het niet? Klik dan op <b>✗ Afwijzen</b>.</li>
+      </ol>
+      <p>Bij <span class="tag">Wijziging bestaand feit</span> zie je in oranje het huidige feit. Keur je de wijziging goed, dan vervangt die het oude feit. De oude tekst blijft in de historie.</p>
+    </div>
+    <div class="fig" style="width:78mm"><img src="shots/beheer-voorstellen.png" style="width:78mm"></div>
+  </div>
+  <div class="kader blok">
+    <h3>📄 Een document omzetten in voorstellen</h3>
+    <p>Gebruik dit voor documenten uit Kiek of uit de bronnenmap. Klik op <i>Tekst uit document omzetten in voorstellen</i>. Vul de naam van het document in (die wordt de bron) en eventueel een link en datum. Kies de zichtbaarheid: <i>intern</i> voor Kiek-documenten. Plak de tekst en klik op <i>Omzetten in voorstellen</i>. De assistent haalt de feiten over het gebied eruit en zet ze klaar als voorstel. Lange documenten worden in delen verwerkt, ongeveer een halve minuut per deel. Controleer daarna elk voorstel.</p>
+  </div>
+  <table>
+    <tr><th>Type</th><th>Waarvoor</th><th>Houdbaarheid</th></tr>
+    <tr><td>Vast</td><td>Naam, historie, ligging, landschap</td><td>3 jaar</td></tr>
+    <tr><td>Jaarlijks</td><td>Aantallen (roedel, kuddes), ledental, prijzen, regels</td><td>12 maanden</td></tr>
+    <tr><td>Seizoen</td><td>Wat er in bepaalde maanden te zien of te doen is; vink de maanden aan</td><td>Wordt gebruikt in die maanden en de maand ervoor</td></tr>
+    <tr><td>Tijdelijk</td><td>Afsluitingen, omleidingen, activiteiten; einddatum verplicht</td><td>Tot de einddatum, daarna niet meer gebruikt</td></tr>
+  </table>
+  <p class="klein">Met <i>Handmatige vervaldatum</i> kun je zelf een andere datum kiezen. Is de termijn voorbij, dan gebruikt de assistent het feit nog wel, maar met "mogelijk verouderd" erbij.</p>
+
+  <h2>2.4 Kennisbank</h2>
+  <div class="fig"><img src="shots/beheer-kennisbank.png" style="width:100mm"></div>
+  <p>Hier staan alle feiten waarop de assistent zijn antwoorden baseert. Met het zoekvak en de filters vind je snel wat je zoekt. Je kunt filteren op onderwerp, deelgebied en status: actief, mogelijk verouderd, tijdelijk afgelopen, intern, ingetrokken of alle. Een oranje kaart is mogelijk verouderd.</p>
+  <table>
+    <tr><th>Knop</th><th>Wat hij doet</th></tr>
+    <tr><td>+ Nieuw feit</td><td>Zelf een feit toevoegen, met hetzelfde formulier als bij voorstellen.</td></tr>
+    <tr><td>✏️ Bewerken</td><td>Het feit aanpassen. Opslaan telt ook als controle, met de datum van vandaag.</td></tr>
+    <tr><td>✓ Gecontroleerd</td><td>Het feit klopt nog. De controledatum wordt vandaag en de termijn begint opnieuw.</td></tr>
+    <tr><td>Intrekken</td><td>Haalt het feit direct uit de antwoorden, eventueel met een reden. Het blijft bewaard.</td></tr>
+    <tr><td>Heractiveren</td><td>Een ingetrokken feit weer in gebruik nemen.</td></tr>
+    <tr><td>Historie</td><td>Wie wat wanneer heeft gedaan, inclusief oude teksten.</td></tr>
+  </table>
+
+  <h2>2.5 Klopt niet</h2>
+  <p>Hier komen de meldingen van gebruikers binnen, met de vraag, het antwoord (<i>Antwoord tonen</i>) en de gebruikte kennisbankfeiten. Klopt de melding? Klik dan op <b>→ Maak voorstel</b>: je legt het juiste feit vast via het tabblad Voorstellen. Staat er een fout feit in de kennisbank? Trek het in bij Kennisbank. Is er niets te doen, klik dan op <b>✓ Afgehandeld</b>.</p>
+  <div class="fig"><img src="shots/beheer-kloptniet.png" style="width:104mm"></div>
+
+  <h2>2.6 Logboek</h2>
+  <p>Hier staan alle vragen en antwoorden van de afgelopen 90 dagen, zonder persoonsgegevens. Je ziet alleen of iemand niet ingelogd was, gebruiker of beheerder. De labels tonen hoeveel kennisbankfeiten er zijn gebruikt, of er websites zijn gebruikt (oranje) en of de verhaalmodus aan stond. Bovenaan staan het aantal vragen en de geschatte kosten over de laatste 30 dagen.</p>
+  <p><b>Steekproef:</b> open elke week een paar antwoorden. Klopt het antwoord, en kloppen de gebruikte feiten? Leg fouten vast via Kennisbank of Voorstellen.</p>
+  <div class="fig"><img src="shots/beheer-logboek.png" style="width:100mm"></div>
+
+  <h2>2.7 Websites &amp; controle</h2>
+  <p><b>Toegestane websites.</b> De assistent zoekt op internet alleen op deze websites, inclusief subdomeinen. Standaard zijn dat natuurmonumenten.nl, bij12.nl, gelderland.nl, ede.nl, rijksoverheid.nl, wolveninnederland.nl, sovon.nl, vogelbescherming.nl, vlinderstichting.nl, ravon.nl, zoogdiervereniging.nl, waarneming.nl, gld.nl, edestad.nl en barneveldsekrant.nl. Voeg een site toe of verwijder er een, en klik dan op <i>Lijst opslaan</i>.</p>
+  <p><b>Wekelijkse controle van natuurmonumenten.nl.</b> Elke zaterdag om 07:00 leest de assistent de pagina's in de lijst. Wat nieuw of anders is dan de kennisbank, wordt een voorstel. Met <i>Nu controleren</i> start je de controle direct; dat duurt ongeveer een minuut.</p>
+  <div class="fig"><img src="shots/beheer-websites.png" style="width:104mm"></div>
+
+  <h2>2.8 Gebruikers</h2>
+  <div class="naast">
+    <div>
+      <ul>
+        <li><b>Nieuwe gebruiker:</b> vul een naam in, kies de rol (<i>Boswachter / vrijwilliger</i> of <i>Beheerder</i>) en klik op <b>+ Link maken</b>. De link verschijnt maar één keer. Kopieer hem en stuur hem zelf door, via mail of WhatsApp.</li>
+        <li><b>Nieuwe link:</b> is iemand zijn link kwijt, of heeft hij een nieuw apparaat? Maak dan een nieuwe link. De oude werkt daarna niet meer.</li>
+        <li><b>Intrekken:</b> de toegang is direct weg, bijvoorbeeld als iemand stopt. De laatste beheerder kun je niet intrekken.</li>
+        <li><b>Rollen:</b> gebruikers krijgen ook interne feiten te zien. Beheerders kunnen daarnaast het beheerpaneel gebruiken.</li>
+      </ul>
+    </div>
+    <div class="fig" style="width:76mm"><img src="shots/beheer-gebruikers.png" style="width:76mm"></div>
+  </div>
+
+  <h2>2.9 Back-up</h2>
+  <p>Elke zaterdag wordt automatisch een back-up gemaakt van de kennisbank, voorstellen, websites en gebruikers (zonder inlogcodes). Back-ups worden 10 weken bewaard. Met <i>Download huidige stand</i> bewaar je een kopie op je eigen computer; doe dat af en toe, bijvoorbeeld maandelijks. Met <i>Terugzetten</i> zet je de kennisbank, voorstellen en websites terug naar een eerdere stand. De huidige stand wordt dan eerst als back-up bewaard.</p>
+
+  <div class="kader blok">
+    <h3>Werkritme voor beheerders</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:5mm">
+      <div>
+        <b>Elk weekend</b> (na de controle van zaterdag 07:00)
+        <ul class="check">
+          <li>Voorstellen beoordelen</li>
+          <li>Meldingen "klopt niet" afhandelen</li>
+          <li>Steekproef van 3 à 5 antwoorden in het logboek</li>
+          <li>Feiten met "mogelijk verouderd" nalopen</li>
+        </ul>
+      </div>
+      <div>
+        <b>Elke maand</b>
+        <ul class="check">
+          <li>Back-up downloaden</li>
+          <li>Kosten bekijken (logboek en Anthropic-console)</li>
+        </ul>
+        <b>Per seizoen en bij wisselingen</b>
+        <ul class="check">
+          <li>Seizoenskalender voor de komende maanden nalopen</li>
+          <li>Links maken of intrekken bij nieuwe of vertrekkende mensen</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ DEEL 3 -->
+<section class="deel compact">
+  <div class="deel-kop">
+    <div class="nr">Deel 3</div>
+    <h1>Technische samenvatting</h1>
+    <p>Opzet van de app en de keuzes achter het huidige ontwerp</p>
+  </div>
+
+  <h2>3.1 Opzet</h2>
+  <div class="stroom">
+    <div class="stap"><b>Browser</b>index.html (app, installeerbaar als PWA) en beheer.html. Gewone HTML en JavaScript, zonder framework.</div>
+    <div class="pijl">⇄</div>
+    <div class="stap" style="flex:1.3"><b>Vercel-functies (Node.js)</b>api/chat · api/beheer · api/auth · api/feedback · api/cron · api/weather</div>
+    <div class="pijl">⇄</div>
+    <div style="flex:1.3;display:flex;flex-direction:column;gap:1.5mm">
+      <div class="stap"><b>Upstash Redis (Vercel KV)</b>Kennisbank, voorstellen, gebruikers, meldingen, logboek, back-ups en instellingen</div>
+      <div class="stap"><b>Anthropic API</b>Claude Opus 5 met automatische terugval; webzoeken alleen op toegestane domeinen</div>
+    </div>
+  </div>
+  <ul>
+    <li><b>Hosting:</b> Vercel. Een wijziging op <code>main</code> gaat automatisch live op pwpb2.vercel.app. Andere branches krijgen een afgeschermde preview.</li>
+    <li><b>Geplande taak:</b> Vercel Cron start <code>api/cron</code> op zaterdag om 05:00 en 06:00 UTC. De functie draait alleen om 07:00 Nederlandse tijd, zodat zomer- en wintertijd kloppen. De taak controleert natuurmonumenten.nl, maakt een back-up en ruimt het logboek op.</li>
+    <li><b>Instellingen (omgevingsvariabelen):</b> <code>ANTHROPIC_API_KEY</code>, <code>KV_REST_API_URL</code>, <code>KV_REST_API_TOKEN</code>, <code>BEHEER_WACHTWOORD</code> (alleen voor de eerste beheerder) en optioneel <code>CRON_SECRET</code>.</li>
+    <li><b>Documentatie:</b> alle beslissingen uit de afstemming, de fasering en de stappen voor livegang staan in <code>docs/verbeterplan-betrouwbaarheid.md</code>.</li>
+  </ul>
+
+  <h2>3.2 Van vraag naar antwoord</h2>
+  <ol>
+    <li>De app stuurt de vraag, plus de persoonlijke code als je bent ingelogd, naar <code>api/chat</code>.</li>
+    <li>De server kiest de <b>bruikbare feiten</b>. Die zijn actief en openbaar; wie is ingelogd krijgt ook de interne feiten. Seizoensfeiten tellen mee voor deze en de volgende maand, tijdelijke feiten alleen binnen hun periode. Verlopen feiten krijgen het kenmerk "mogelijk verouderd".</li>
+    <li>De feiten gaan per onderwerp als <b>documenten met citaties</b> naar Claude. Daarbij zit een systeeminstructie met de afbakening van het gebied (deelgebieden, buurgebieden) en de bronregels: alleen kennisbank of toegestane websites, "weet ik niet" bij twijfel. Claude verwijst via de citatiefunctie van de API naar de feiten. De app maakt daar voetnoten van. Bron en controledatum in de bronnenlijst komen uit de database, niet uit de tekst van het model.</li>
+    <li><b>Fase 1:</b> het antwoord verschijnt direct (streaming), met maximaal één zoekactie op de toegestane sites. <b>Fase 2:</b> op de achtergrond zoekt de assistent een aanvulling, met maximaal twee zoekacties. Die verschijnt apart als "niet gecontroleerd", of verschijnt niet als er niets te melden is.</li>
+    <li>Vraag, antwoord, gebruikte feiten en websites, rol, tokengebruik en geschatte kosten gaan naar het logboek. Dat wordt 90 dagen bewaard, zonder IP-adres of naam.</li>
+  </ol>
+  <p>De wekelijkse controle en de documentimport gebruiken Claude met een vast antwoordformaat (structured output). Wat nieuw of anders is ten opzichte van de kennisbank, wordt een voorstel. Er gaat nooit direct iets naar de kennisbank.</p>
+
+  <h2>3.3 Gemaakte keuzes</h2>
+  <table>
+    <tr><th>Keuze</th><th>Waarom</th></tr>
+    <tr><td>Kennisbank in de database, niet in de code</td><td>De repository is openbaar: interne informatie uit Kiek hoort daar niet in. Beheerders kunnen bovendien zelf wijzigen, zonder ontwikkelaar.</td></tr>
+    <tr><td>Losse feiten met bron, controledatum, type en zichtbaarheid</td><td>Elk feit is apart te controleren, te laten verlopen en in te trekken, met historie.</td></tr>
+    <tr><td>Citaties van de API in plaats van zelfgeschreven bronnen</td><td>Het model kan geen bron verzinnen: de voetnoot wijst naar het echte feit in de database.</td></tr>
+    <tr><td>"Weet ik niet" boven gokken; algemene natuurkennis mag wel</td><td>Juistheid over het gebied gaat voor volledigheid. Algemene kennis over soorten en beheer houdt de antwoorden bruikbaar, maar wordt nooit als gebiedsfeit gebracht.</td></tr>
+    <tr><td>Webzoeken alleen op een beheerbare lijst, apart gelabeld</td><td>De bronnen zijn betrouwbaar, maar niet door een mens gecontroleerd. Daarom staat er zichtbaar "niet gecontroleerd" bij.</td></tr>
+    <tr><td>Niets live zonder goedkeuring</td><td>Eén beheerder is eindverantwoordelijk. Fouten van automatische verwerking komen zo niet ongezien in antwoorden.</td></tr>
+    <tr><td>Houdbaarheid per type; verlopen geeft een waarschuwing, afgelopen tijdelijke feiten verdwijnen</td><td>Oude informatie wordt niet stilzwijgend als actueel gebracht, en goede informatie verdwijnt niet zomaar.</td></tr>
+    <tr><td>De nieuwste gecontroleerde bron wint</td><td>Eenduidig bij tegenspraak. Via de historie terug te draaien.</td></tr>
+    <tr><td>Persoonlijke links in plaats van wachtwoorden</td><td>Eenvoudig voor vrijwilligers en per persoon in te trekken. Alleen een hash van de code wordt opgeslagen. De beheerder deelt de links zelf, dus er is geen mailservice nodig.</td></tr>
+    <tr><td>Logboek 90 dagen, zonder persoonsgegevens</td><td>Maakt steekproeven en foutanalyse mogelijk en is privacyvriendelijk.</td></tr>
+    <tr><td>Geen vaste testset; direct live met steekproeven</td><td>Keuze van het team: de kwaliteit wordt in de praktijk bewaakt met steekproeven en "Klopt niet".</td></tr>
+    <tr><td>Claude Opus 5 met automatische terugval</td><td>Hoogste kwaliteit bij minder dan 500 vragen per maand, en de assistent blijft werken bij een storing. Prompt caching drukt de kosten; een maandplafond in de Anthropic-console begrenst ze.</td></tr>
+    <tr><td>Controle van nm.nl op zaterdag 07:00</td><td>Het team is in het weekend actief. Eén keer per week is genoeg en scheelt kosten.</td></tr>
+    <tr><td>Wekelijkse back-up, 10 weken bewaard, plus download</td><td>Snel herstel na een fout in de kennisbank.</td></tr>
+  </table>
+
+  <h2>3.4 Belangrijkste bestanden</h2>
+  <table>
+    <tr><th>Bestand</th><th>Rol</th></tr>
+    <tr><td>index.html, sw.js, beheer.html</td><td>De app voor gebruikers (chat, voetnoten, bronnenlijst, "Klopt niet", inloggen met link) en het beheerpaneel</td></tr>
+    <tr><td>api/chat.js</td><td>Antwoorden in twee fasen, met citaties, toegestane websites en logboek</td></tr>
+    <tr><td>api/beheer.js, api/auth.js, api/feedback.js</td><td>Acties van het beheerpaneel, inloggen, meldingen en suggesties</td></tr>
+    <tr><td>api/cron.js, api/_lib/nmcheck.js</td><td>De wekelijkse taak en de controle van natuurmonumenten.nl</td></tr>
+    <tr><td>api/_lib/…</td><td>kennisbank.js (feiten en houdbaarheid), prompts.js (instructies voor het model), sites.js (standaardlijst websites), documentimport.js, auth.js (gebruikers en links), logboek.js, backup.js, kv.js (database)</td></tr>
+  </table>
+</section>
+
+</body>
+</html>
