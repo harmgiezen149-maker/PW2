@@ -1,15 +1,17 @@
-// Achtergrondfoto achter de chat: één staande foto (telefoon) en één liggende (tablet en
-// computer). De beheerder uploadt ze; de browser verkleint ze vooraf. Opslag in de database
-// in stukken, zodat elk verzoek klein blijft. Een nieuwe foto krijgt een nieuwe versie, zodat
-// browsers en de CDN de foto lang mogen bewaren.
+// Foto's in de app: de achtergrond achter de chat (één staande foto voor telefoons en één
+// liggende voor tablet en computer) en de avatar van de assistent. De beheerder uploadt ze;
+// de browser verkleint ze vooraf. Opslag in de database in stukken, zodat elk verzoek klein
+// blijft. Een nieuwe foto krijgt een nieuwe versie, zodat browsers en de CDN hem lang mogen
+// bewaren.
 const crypto = require('crypto');
 const kv = require('./kv');
 
 const K_META = 'cfg:achtergrond';
 const K_DEEL = 'cfg:achtergrond:'; // + soort:versie:nummer
-const SOORTEN = ['staand', 'liggend'];
+const SOORTEN = ['staand', 'liggend', 'avatar'];
 const POSITIES = { boven: 'center top', midden: 'center center', onder: 'center bottom' };
 const MAX_BYTES = 1500 * 1024;     // na verkleinen in de browser ruim voldoende
+const MAX_BYTES_AVATAR = 300 * 1024; // de avatar is hooguit een paar centimeter groot
 const STUK = 256 * 1024;           // tekens base64 per databaseverzoek
 
 // Soort afbeelding herkennen aan de eerste bytes (niet aan wat de browser zegt)
@@ -40,7 +42,7 @@ function tekst(v, max) { return typeof v === 'string' ? v.trim().slice(0, max) :
 
 // Nieuwe foto en/of andere uitsnede of maker. data = data-URL (optioneel als er al een foto is).
 async function opslaan({ soort, data, fotoBron, positie, breedte, hoogte, door }) {
-  if (!SOORTEN.includes(soort)) throw Object.assign(new Error('Onbekende soort (staand of liggend).'), { status: 400 });
+  if (!SOORTEN.includes(soort)) throw Object.assign(new Error('Onbekende soort (staand, liggend of avatar).'), { status: 400 });
   const bron = tekst(fotoBron, 120);
   if (bron.length < 2) throw Object.assign(new Error('Vermeld van wie de foto is (je moet hem mogen gebruiken).'), { status: 400 });
   if (!POSITIES[positie]) throw Object.assign(new Error('Kies een uitsnede: boven, midden of onder.'), { status: 400 });
@@ -53,6 +55,7 @@ async function opslaan({ soort, data, fotoBron, positie, breedte, hoogte, door }
     const buf = Buffer.from(m[1], 'base64');
     const type = soortBeeld(buf);
     if (!type) throw Object.assign(new Error('Alleen JPG, PNG of WebP.'), { status: 400 });
+    if (soort === 'avatar' && buf.length > MAX_BYTES_AVATAR) throw Object.assign(new Error('De avatar is te groot (hoogstens 300 kB na verkleinen).'), { status: 400 });
     if (buf.length > MAX_BYTES) throw Object.assign(new Error('De foto is te groot (hoogstens 1,5 MB na verkleinen).'), { status: 400 });
     const versie = crypto.createHash('sha256').update(buf).digest('hex').slice(0, 16);
     const b64 = buf.toString('base64');
@@ -101,4 +104,4 @@ async function beeld(soort) {
   return { type: m.type, buf: Buffer.from(delen.join(''), 'base64'), versie: m.versie };
 }
 
-module.exports = { K_META, SOORTEN, POSITIES, MAX_BYTES, soortBeeld, meta, publiek, opslaan, verwijderen, beeld };
+module.exports = { K_META, SOORTEN, POSITIES, MAX_BYTES, MAX_BYTES_AVATAR, soortBeeld, meta, publiek, opslaan, verwijderen, beeld };

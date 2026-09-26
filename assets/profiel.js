@@ -110,6 +110,7 @@ function toon() {
   var makers = ag ? [ag.staand, ag.liggend].filter(Boolean).map(function(x) { return x.fotoBron; }) : [];
   makers = makers.filter(function(m, i) { return makers.indexOf(m) === i; });
   if (makers.length) box.appendChild(PW.el('p', { class: 'versie', tekst: 'Achtergrondfoto: ' + makers.join(', ') }));
+  if (ag && ag.avatar) box.appendChild(PW.el('p', { class: 'versie', tekst: 'Avatar: ' + ag.avatar.fotoBron }));
 }
 
 document.getElementById('view-profiel').innerHTML = '<div class="view-scroll"><div class="view-inhoud" id="profielInhoud"></div></div>';

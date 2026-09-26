@@ -437,7 +437,7 @@ module.exports = async function handler(req, res) {
         return res.json({ ok: true, gebied: c });
       }
 
-      // ------------------------------------------------ achtergrondfoto
+      // ------------------------------------------------ foto's: achtergrond (staand, liggend) en avatar
       case 'achtergrond': {
         const m = await achtergrond.meta();
         return res.json({ achtergrond: m, posities: Object.keys(achtergrond.POSITIES) });
