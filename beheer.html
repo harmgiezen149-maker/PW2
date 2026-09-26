@@ -418,7 +418,7 @@ function feitFormulier(start, knoppen) {
 // ============================================================
 // Voorstellen
 // ============================================================
-var HERKOMST = { gebruiker: 'Suggestie gebruiker', 'nm.nl': 'Dagelijkse controle nm.nl', claude: 'Voorstel assistent', feedback: 'Melding "klopt niet"' };
+var HERKOMST = { gebruiker: 'Suggestie gebruiker', 'nm.nl': 'Dagelijkse controle nm.nl', claude: 'Voorstel assistent', feedback: 'Melding "klopt niet"', document: 'Uit document' };
 
 function tabVoorstellen(inhoud) {
   api('voorstellen').then(function(d) {
@@ -427,6 +427,7 @@ function tabVoorstellen(inhoud) {
       el('h2', { text: 'Voorstellen' }),
       el('p', { class: 'uitleg', text: 'Vul onderwerp, type en bron aan en keur goed: het voorstel wordt dan een actief kennisbankfeit (gecontroleerd door jou, vandaag). Bij een wijziging van een bestaand feit wint de nieuwste gecontroleerde bron; de oude tekst blijft in de historie.' })
     ]);
+    s.appendChild(documentImport());
     if (d.voorstellen.length === 0) s.appendChild(el('p', { class: 'leeg', text: 'Geen openstaande voorstellen.' }));
     d.voorstellen.forEach(function(v) {
       var card = el('div', { class: 'card' });
@@ -467,6 +468,66 @@ function tabVoorstellen(inhoud) {
     });
     inhoud.appendChild(s);
   }).catch(fout);
+}
+
+// Document (bijv. uit Kiek) omzetten in voorstellen: tekst plakken, wordt in delen verwerkt
+function documentImport() {
+  var wrap = el('div', { class: 'card', style: 'background:#fff' });
+  var open = el('button', { class: 'btn secundair klein', text: '📄 Tekst uit document omzetten in voorstellen' });
+  var vak = el('div', { style: 'display:none' });
+  open.onclick = function() { vak.style.display = vak.style.display === 'none' ? '' : 'none'; };
+  wrap.appendChild(open);
+  wrap.appendChild(vak);
+  var f = el('div', { class: 'form' });
+  var naam = el('input', { placeholder: 'Naam van het document, bijv. Kiek: "Natuurvisie Wolfheze 2017-2035"' });
+  var link = el('input', { placeholder: 'https://… (optioneel)' });
+  var datum = el('input', { type: 'date' });
+  var zicht = el('select');
+  [['intern', 'Intern (alleen ingelogd)'], ['openbaar', 'Openbaar (iedereen)']].forEach(function(o) { zicht.appendChild(el('option', { value: o[0], text: o[1] })); });
+  var tekst = el('textarea', { style: 'min-height:160px', placeholder: 'Plak hier de tekst van het document (uit Word of PDF kopiëren).' });
+  var status = el('div', { class: 'meta', style: 'margin-top:6px' });
+  var knop = el('button', { class: 'btn primair klein', text: 'Omzetten in voorstellen' });
+  f.appendChild(el('div', { class: 'uitleg', text: 'De assistent haalt de gebiedsspecifieke feiten uit de tekst en zet ze klaar als voorstel. Controleer elk voorstel voordat je het goedkeurt. Lange documenten worden in delen verwerkt (ongeveer een halve minuut per deel).' }));
+  f.appendChild(el('label', { text: 'Document (wordt de bron)' })); f.appendChild(naam);
+  f.appendChild(el('div', { class: 'rij' }, [el('div', null, [el('label', { text: 'Link (optioneel)' }), link]), el('div', null, [el('label', { text: 'Datum document (optioneel)' }), datum])]));
+  f.appendChild(el('label', { text: 'Zichtbaarheid van de voorstellen' })); f.appendChild(zicht);
+  f.appendChild(el('label', { text: 'Tekst' })); f.appendChild(tekst);
+  f.appendChild(el('div', { class: 'acties' }, [knop]));
+  f.appendChild(status);
+  vak.appendChild(f);
+
+  function delen(t) {
+    var stukken = [], huidig = '';
+    t.split(/\n\s*\n/).forEach(function(alinea) {
+      while (alinea.length > 15000) { stukken.push(alinea.slice(0, 15000)); alinea = alinea.slice(15000); }
+      if ((huidig + '\n\n' + alinea).length > 15000) { stukken.push(huidig); huidig = alinea; }
+      else huidig = huidig ? huidig + '\n\n' + alinea : alinea;
+    });
+    if (huidig.trim()) stukken.push(huidig);
+    return stukken.filter(function(x) { return x.trim().length >= 50; });
+  }
+
+  knop.onclick = function() {
+    var stukken = delen(tekst.value);
+    if (!naam.value.trim()) { melding('Vul de naam van het document in', true); return; }
+    if (stukken.length === 0) { melding('Plak eerst de tekst van het document', true); return; }
+    knop.disabled = true;
+    var totaal = 0, i = 0;
+    function volgende() {
+      if (i >= stukken.length) {
+        status.textContent = '✓ Klaar: ' + totaal + ' voorstel(len) aangemaakt uit ' + stukken.length + ' deel/delen.';
+        knop.disabled = false;
+        laadOverzicht().then(function() { setTimeout(function() { toonTab('voorstellen'); }, 1500); });
+        return;
+      }
+      status.textContent = 'Bezig met deel ' + (i + 1) + ' van ' + stukken.length + '… (' + totaal + ' voorstellen tot nu toe)';
+      api('document-importeren', { bronNaam: naam.value, bronUrl: link.value, bronDatum: datum.value, zichtbaarheid: zicht.value, tekst: stukken[i], deel: (i + 1) + '/' + stukken.length })
+        .then(function(r) { totaal += r.voorstellen; i++; volgende(); })
+        .catch(function(e) { knop.disabled = false; status.textContent = 'Gestopt bij deel ' + (i + 1) + ': ' + e.message; });
+    }
+    volgende();
+  };
+  return wrap;
 }
 
 // ============================================================

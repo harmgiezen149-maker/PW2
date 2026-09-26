@@ -91,4 +91,57 @@ const voorstellen = [
   maand(12, 'december', 'In december is het rustig in het gebied. De klapekster overwintert op de heide en na sneeuw zijn sporen van wolf en wild zwijn te vinden.')
 ];
 
-module.exports = { versie: 2, feiten, voorstellen, sectieOnderwerp };
+// Versie 3: voorstellen uit openbare documenten in de bronnenmap (Kiek). Interne
+// documenten staan bewust níet in deze openbare repository; die verwerkt de
+// beheerder via "Tekst uit document omzetten in voorstellen" in het beheerpaneel.
+const FOLDER = "Gebiedsfolder 'Planken Wambuis, Reijerscamp en Wolfheze' (Natuurmonumenten, 2021)";
+const LAAG = "Boekje 'Natuur in Laag-Wolfheze', hoofdstuk Gebiedsbeschrijving (D. van Dam)";
+const PORTAAL = 'NatureToday / Zoogdiervereniging, berichten van 20-12-2018 en 07-02-2019';
+function d(id, extra) {
+  return Object.assign({ id: 'seed3_' + id, sinds: 3, soort: 'nieuw', deelgebied: 'heel', type: 'vast',
+    zichtbaarheid: 'openbaar', herkomst: 'document' }, extra);
+}
+const FOLDER_TOEL = 'Uit de gebiedsfolder van 2021; controleer of dit nog actueel is.';
+voorstellen.push(
+  d('toegang', { onderwerp: 'bezoek', type: 'jaarlijks', bron: FOLDER, toelichting: FOLDER_TOEL,
+    tekst: 'Planken Wambuis is toegankelijk van zonsopkomst tot zonsondergang.' }),
+  d('bigfive', { onderwerp: 'soorten', bron: FOLDER, toelichting: 'Uit de gebiedsfolder van 2021.',
+    tekst: "De 'Veluwse Big Five' zijn het edelhert, het wild zwijn, de ree, het rund en de pony." }),
+  d('wild-spotten', { onderwerp: 'soorten', bron: FOLDER, toelichting: 'Tip van de boswachter uit de gebiedsfolder van 2021.',
+    tekst: 'Wilde zwijnen en edelherten zie je het best in de uren na zonsopgang en voor zonsondergang; een ree kun je ook overdag tegenkomen.' }),
+  d('observatieposten', { onderwerp: 'routes', type: 'jaarlijks', bron: FOLDER, bronUrl: 'https://www.natuurmonumenten.nl/wild-zien',
+    toelichting: FOLDER_TOEL + ' De folder zegt niet welke posten in Planken Wambuis zelf liggen; vul dat aan.',
+    tekst: 'In het gebied van Planken Wambuis, Reijerscamp en Wolfheze staan zes natuur- en wildobservatieposten, van waaruit je bij goed weer wild en grote grazers kunt spotten.' }),
+  d('routes-folder', { onderwerp: 'routes', type: 'jaarlijks', bron: FOLDER, toelichting: FOLDER_TOEL,
+    tekst: 'Wandelroutes van Natuurmonumenten in het gebied zijn onder andere de route Mosselse Zand (2,5 km), de route Oud Reemst (3,5 km) en de route Planken Wambuis (8 km). Alle routes staan op natuurmonumenten.nl en in de app Natuur Routes.' }),
+  d('mosselse-zand', { onderwerp: 'gebied', deelgebied: 'mossel', bron: FOLDER, toelichting: 'Uit de gebiedsfolder van 2021.',
+    tekst: 'Het Mosselse Zand is een uitgestrekte zandvlakte, een "megazandbak" waar je zandrillen en dierensporen kunt zien.' }),
+  d('vakantiewoning', { onderwerp: 'nm', type: 'jaarlijks', deelgebied: 'reemst', bron: FOLDER, toelichting: FOLDER_TOEL,
+    tekst: 'Vakantiewoning Nieuw Reemst ligt midden in Planken Wambuis, omringd door eeuwenoude eiken, met zicht op een weide waar regelmatig edelherten en wilde zwijnen komen eten en waar de schaapskudde overnacht. Boeken kan via buitenlevenvakanties.nl.' }),
+  d('contact-zv', { onderwerp: 'contact', type: 'jaarlijks', bron: FOLDER, toelichting: FOLDER_TOEL + ' Controleer vooral telefoonnummer en e-mailadres.',
+    tekst: 'Contact met Natuurmonumenten Zuid-Veluwe en IJsselvallei: telefoon (055) 312 55 00, e-mail secrzvij@natuurmonumenten.nl.' }),
+  d('horeca', { onderwerp: 'bezoek', type: 'jaarlijks', bron: FOLDER, toelichting: FOLDER_TOEL + ' Vul eventueel openingstijden aan.',
+    tekst: 'Horeca in en bij het gebied: Theeschenkerij Mossel en Restaurant Planken Wambuis; in Wolfheze het Fletcher Hotel-Restaurant Wolfheze.' }),
+  d('wodanseiken', { onderwerp: 'gebied', deelgebied: 'wolfheze', bron: FOLDER, toelichting: 'Uit de gebiedsfolder van 2021 ("ruim 450 jaar oud").',
+    tekst: 'De Wodanseiken in Laag Wolfheze waren in 2021 ruim 450 jaar oud en behoren tot de bekendste bomen van Nederland.' }),
+  d('heelsumse-beek', { onderwerp: 'gebied', deelgebied: 'wolfheze', bron: FOLDER,
+    toelichting: 'Uit de gebiedsfolder van 2021. Het boekje over Laag-Wolfheze noemt ongeveer 1650 als begin van de papierindustrie langs de beek; controleer het jaartal 1550.',
+    tekst: 'De Heelsumse Beek is een spreng uit 1550. Sprengen werden gegraven om papiermolens te laten draaien en van schoon water te voorzien.' }),
+  d('faunaportalen', { onderwerp: 'gebied', bron: PORTAAL, bronUrl: 'https://www.naturetoday.com',
+    toelichting: 'Uit twee berichten van de Zoogdiervereniging (2018/2019). Vult het bestaande feit over de marterbrug aan.',
+    tekst: 'Boven de A12 tussen Ede en knooppunt Grijsoord zijn bij de verbreding van de weg in 2016 twee wegportalen ingericht als faunaportaal, zodat boommarters en eekhoorns via touwen en een goot veilig kunnen oversteken. Een raster met gladde schermen leidt de dieren naar de faunaportalen, een ecoduct of onderdoorgangen. In juli 2018 werden de eerste eekhoorns op camera vastgelegd en op 14 december 2018 de eerste boommarter.' }),
+  d('laag-bron', { onderwerp: 'gebied', deelgebied: 'wolfheze', bron: LAAG, toelichting: 'Uit het boekje over Laag-Wolfheze.',
+    tekst: 'In Laag-Wolfheze komt kwelwater naar boven en ontspringt de Heelsumse beek. Het dal is een van de fraaiste sneeuwsmeltwaterdalen van Nederland, ontstaan aan het eind van de laatste ijstijd. In de beekbedding zijn soms zandvulkaantjes te zien, en regenboogkleurige vliesjes op het water verraden ijzerbacteriën.' }),
+  d('laag-grafheuvels', { onderwerp: 'naam', deelgebied: 'wolfheze', bron: LAAG, toelichting: 'Uit het boekje over Laag-Wolfheze.',
+    tekst: "In Laag-Wolfheze liggen acht prehistorische grafheuvels. In één ervan, de 'Koningsheuvel', zijn een klokbeker en een stenen polsbeschermer gevonden (gebruikt bij het boogschieten)." }),
+  d('laag-kerkje', { onderwerp: 'naam', deelgebied: 'wolfheze', bron: LAAG, toelichting: 'Uit het boekje over Laag-Wolfheze.',
+    tekst: 'In Laag-Wolfheze stond in de middeleeuwen een kerkje met een begraafplaats. Het raakte eind 16e eeuw in verval; de resten werden in 1627 verkocht voor 375 gulden. Een aarden verhoging geeft de plek nog aan.' }),
+  d('laag-papier', { onderwerp: 'naam', deelgebied: 'wolfheze', bron: LAAG, toelichting: 'Uit het boekje over Laag-Wolfheze. Zie ook het voorstel over de Heelsumse Beek (folder noemt 1550).',
+    tekst: 'Vanaf ongeveer 1650 bloeide langs de Heelsumse beek de papierindustrie. Daarvoor werden sprengen gegraven, sommige meer dan twee kilometer lang, zoals de Papiermolenbeek. Door grondwateronttrekking staat er nu nauwelijks water in deze gegraven beeklopen.' }),
+  d('laag-nat', { onderwerp: 'gebied', deelgebied: 'wolfheze', bron: LAAG, toelichting: 'Uit het boekje over Laag-Wolfheze.',
+    tekst: "Natte plekken in Laag-Wolfheze zijn de Veenmospoel (ontstaan in 1982 door het uitgraven van bosveen), het Ven (een natte laagte met kwelwater) en de Paddenpoel (een gegraven vijver achter de voormalige boerderij 'Het Kousenhuisje'). Er liggen ook twee landweren (wallen met greppels) haaks op een oude Hessenweg met karrensporen." }),
+  d('laag-schilders', { onderwerp: 'naam', deelgebied: 'wolfheze', bron: LAAG, toelichting: 'Uit het boekje over Laag-Wolfheze.',
+    tekst: "Midden 19e eeuw schilderden kunstenaars van de Oosterbeekse school, onder wie Anton Mauve, Johannes Bilders en Jacob en Willem Maris, 'en plein air' in Laag-Wolfheze. De naam 'Wodanseiken' gaat terug op Bilders." })
+);
+
+module.exports = { versie: 3, feiten, voorstellen, sectieOnderwerp };

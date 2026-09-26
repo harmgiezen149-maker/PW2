@@ -5,6 +5,7 @@ const auth = require('./_lib/auth');
 const logboek = require('./_lib/logboek');
 const backup = require('./_lib/backup');
 const nmcheck = require('./_lib/nmcheck');
+const documentimport = require('./_lib/documentimport');
 
 const K_MELDINGEN = 'kb:meldingen';
 const { setSecurityHeaders, vandaagISO } = require('./_lib/http');
@@ -264,6 +265,19 @@ module.exports = async function handler(req, res) {
         const vorig = (await kv.getJSON('cron:status', null)) || {};
         await kv.setJSON('cron:status', Object.assign(vorig, { tijd: new Date().toISOString(), nm, handmatig: door }));
         return res.json({ ok: true, nm });
+      }
+
+      case 'document-importeren': {
+        const bronNaam = tekstVeld(body.bronNaam, 200);
+        const tekst = typeof body.tekst === 'string' ? body.tekst.trim() : '';
+        if (bronNaam.length < 3) return res.status(400).json({ error: 'Vul de naam van het document in (wordt de bron).' });
+        if (tekst.length < 50) return res.status(400).json({ error: 'Plak de tekst van het document.' });
+        if (tekst.length > documentimport.MAX_TEKST) return res.status(400).json({ error: 'Tekst te lang voor één deel.' });
+        const bronUrl = tekstVeld(body.bronUrl, 500);
+        if (bronUrl && !/^https?:\/\/\S+$/.test(bronUrl)) return res.status(400).json({ error: 'De link moet met http:// of https:// beginnen.' });
+        const bronDatum = DATUM.test(body.bronDatum || '') ? body.bronDatum : '';
+        const r = await documentimport.importeer({ bronNaam, bronUrl, bronDatum, zichtbaarheid: body.zichtbaarheid, tekst, deel: tekstVeld(body.deel, 20) });
+        return res.json(Object.assign({ ok: true }, r));
       }
 
       case 'backups': {

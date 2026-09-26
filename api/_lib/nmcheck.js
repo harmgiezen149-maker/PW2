@@ -217,4 +217,4 @@ async function controleer() {
   return status;
 }
 
-module.exports = { controleer, getPaginas, STANDAARD_PAGINAS, K_PAGINAS, tekstUitHtml, berichtLinks };
+module.exports = { controleer, getPaginas, STANDAARD_PAGINAS, K_PAGINAS, tekstUitHtml, berichtLinks, schema, kennisbankTekst };
