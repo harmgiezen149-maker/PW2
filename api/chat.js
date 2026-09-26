@@ -3,6 +3,7 @@ const { setSecurityHeaders, checkRateLimit, sanitizeText } = require('./_lib/htt
 const prompts = require('./_lib/prompts');
 const kb = require('./_lib/kennisbank');
 const auth = require('./_lib/auth');
+const logboek = require('./_lib/logboek');
 
 const MODEL = 'claude-opus-5';
 
@@ -34,7 +35,9 @@ module.exports = async function handler(req, res) {
   const phase = req.body.phase === 2 ? 2 : 1;
   const mode = req.body.mode === 'storytelling' ? 'storytelling' : 'normaal';
   // Interne feiten alleen voor ingelogde boswachters en vrijwilligers
-  const ingelogd = !!(await auth.gebruiker(req));
+  const gebruiker = await auth.gebruiker(req);
+  const ingelogd = !!gebruiker;
+  const vraag = messages[0].content;
 
   let feiten, sites;
   try {
@@ -81,6 +84,41 @@ module.exports = async function handler(req, res) {
     }]
   });
 
+  // Vraag, antwoord, gebruikte feiten en webbronnen in het logboek (zonder persoonsgegevens)
+  async function schrijfLog(final) {
+    try {
+      const tekst = [];
+      const feitIds = new Set();
+      const web = new Set();
+      for (const b of final.content || []) {
+        if (b.type !== 'text') continue;
+        tekst.push(b.text);
+        for (const c of b.citations || []) {
+          if (c.type === 'content_block_location' && meta[c.document_index]) {
+            for (let i = c.start_block_index; i < c.end_block_index; i++) {
+              const f = meta[c.document_index].feiten[i];
+              if (f) feitIds.add(f.id);
+            }
+          } else if (c.url) web.add(c.url);
+        }
+      }
+      const antwoord = tekst.join('').replace(/\{\s*"soorten"[\s\S]*\}\s*$/, '').trim().slice(0, 8000);
+      const gebruik = {
+        stop: final.stop_reason, usage: final.usage || null, kosten: logboek.kosten(final.usage)
+      };
+      if (phase === 2) {
+        if (req.body.logId) await logboek.aanvullen(req.body.logId, { tekst: antwoord, web: [...web], ...gebruik });
+        return null;
+      }
+      return await logboek.schrijf({
+        vraag, antwoord, mode, rol: gebruiker ? gebruiker.rol : 'anoniem',
+        feiten: [...feitIds], web: [...web], ...gebruik
+      });
+    } catch (e) {
+      return null;
+    }
+  }
+
   let gestart = false;
   const stuur = (evt) => res.write(`data: ${JSON.stringify(evt)}\n\n`);
   try {
@@ -100,6 +138,8 @@ module.exports = async function handler(req, res) {
     if (final.stop_reason === 'refusal') {
       stuur({ type: 'pw_error', message: 'Deze vraag kan de assistent niet beantwoorden. Stel je vraag anders of vraag het de boswachter.' });
     }
+    const logId = await schrijfLog(final);
+    if (logId) stuur({ type: 'pw_log', id: logId });
   } catch (err) {
     const status = err instanceof Anthropic.APIError && err.status ? err.status : 502;
     if (!gestart) return res.status(status === 429 ? 429 : 502).json({ error: 'De assistent is even niet bereikbaar: ' + err.message });

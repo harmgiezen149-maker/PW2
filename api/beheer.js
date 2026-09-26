@@ -2,6 +2,11 @@
 const kv = require('./_lib/kv');
 const kb = require('./_lib/kennisbank');
 const auth = require('./_lib/auth');
+const logboek = require('./_lib/logboek');
+const backup = require('./_lib/backup');
+const nmcheck = require('./_lib/nmcheck');
+
+const K_MELDINGEN = 'kb:meldingen';
 const { setSecurityHeaders, vandaagISO } = require('./_lib/http');
 
 const DATUM = /^\d{4}-\d{2}-\d{2}$/;
@@ -64,7 +69,10 @@ module.exports = async function handler(req, res) {
   try {
     switch (body.actie) {
       case 'overzicht': {
-        const [feiten, voorstellen, sites] = await Promise.all([kb.alleFeiten(), kb.alleVoorstellen(), kb.getSites()]);
+        const [feiten, voorstellen, sites, meldingen, cronStatus, nmPaginas] = await Promise.all([
+          kb.alleFeiten(), kb.alleVoorstellen(), kb.getSites(), kv.cmd('HLEN', K_MELDINGEN),
+          kv.getJSON('cron:status', null), nmcheck.getPaginas()
+        ]);
         const lijst = Object.values(feiten);
         const actief = lijst.filter(f => f.status === 'actief');
         return res.json({
@@ -74,8 +82,10 @@ module.exports = async function handler(req, res) {
             actief: actief.length,
             verlopen: actief.filter(f => kb.beoordeel(f, vandaag).verlopen).length,
             afgelopen: actief.filter(f => kb.beoordeel(f, vandaag).afgelopen).length,
-            voorstellen: Object.keys(voorstellen).length
+            voorstellen: Object.keys(voorstellen).length,
+            meldingen: meldingen || 0
           },
+          cronStatus, nmPaginas,
           onderwerpen: kb.ONDERWERPEN, deelgebieden: kb.DEELGEBIEDEN,
           types: Object.entries(kb.TYPES).map(([slug, t]) => ({ slug, titel: t.titel, maanden: t.maanden })),
           sites
@@ -205,6 +215,73 @@ module.exports = async function handler(req, res) {
           return res.status(400).json({ error: 'Dit is de laatste beheerder. Maak eerst een andere beheerder aan.' });
         }
         return res.json({ ok: true, gebruiker: await auth.intrekken(doel.id, door) });
+      }
+
+      case 'meldingen': {
+        const m = Object.values(await kv.hgetallJSON(K_MELDINGEN)).sort((a, b) => (b.tijd || '').localeCompare(a.tijd || ''));
+        return res.json({ meldingen: m });
+      }
+
+      case 'melding-afhandelen': {
+        await kv.cmd('HDEL', K_MELDINGEN, String(body.id || ''));
+        return res.json({ ok: true });
+      }
+
+      case 'melding-naar-voorstel': {
+        const m = kv.parse(await kv.cmd('HGET', K_MELDINGEN, String(body.id || '')));
+        if (!m) return res.status(404).json({ error: 'Melding niet gevonden' });
+        const id = kb.nieuwId('fb');
+        await kv.pipeline([
+          ['HSET', kb.K_VOORSTELLEN, id, JSON.stringify({
+            id, soort: 'nieuw', tekst: m.toelichting || '', herkomst: 'feedback', deelgebied: 'heel', type: 'jaarlijks',
+            zichtbaarheid: 'openbaar', aangemaakt: new Date().toISOString(),
+            toelichting: `Melding "klopt niet" bij de vraag: "${(m.vraag || '').slice(0, 200)}". Schrijf het juiste feit en vul de bron in.`
+          })],
+          ['HDEL', K_MELDINGEN, m.id]
+        ]);
+        return res.json({ ok: true });
+      }
+
+      case 'logboek': {
+        const vanaf = Math.max(0, Number(body.vanaf) || 0);
+        const [items, totaal, recent] = await Promise.all([logboek.lijst(vanaf, 50), logboek.aantal(), logboek.lijst(0, 1000)]);
+        const grens = new Date(Date.now() - 30 * 86400000).toISOString();
+        const maand = recent.filter(e => e.tijd >= grens);
+        const kosten = maand.reduce((t, e) => t + (e.kosten || 0) + ((e.aanvulling && e.aanvulling.kosten) || 0), 0);
+        return res.json({ items, totaal, samenvatting: { vragen30: maand.length, kosten30: Math.round(kosten * 100) / 100 } });
+      }
+
+      case 'nm-paginas-opslaan': {
+        if (!Array.isArray(body.paginas)) return res.status(400).json({ error: 'Geen lijst ontvangen' });
+        const paginas = [...new Set(body.paginas.map(p => String(p).trim()).filter(p => /^https:\/\/www\.natuurmonumenten\.nl\/\S+$/.test(p)))];
+        if (paginas.length === 0 || paginas.length > 10) return res.status(400).json({ error: 'Geef 1 tot 10 pagina\'s op natuurmonumenten.nl (https://www.natuurmonumenten.nl/…).' });
+        await kv.setJSON(nmcheck.K_PAGINAS, paginas);
+        return res.json({ ok: true, paginas });
+      }
+
+      case 'nm-controleren': {
+        const nm = await nmcheck.controleer();
+        const vorig = (await kv.getJSON('cron:status', null)) || {};
+        await kv.setJSON('cron:status', Object.assign(vorig, { tijd: new Date().toISOString(), nm, handmatig: door }));
+        return res.json({ ok: true, nm });
+      }
+
+      case 'backups': {
+        return res.json({ backups: await backup.lijst(), laatste: await kv.cmd('GET', 'backup:laatste') });
+      }
+
+      case 'backup-maken': {
+        return res.json(Object.assign({ ok: true }, await backup.maak('handmatig')));
+      }
+
+      case 'backup-download': {
+        const inhoud = body.id === 'nu' ? await backup.maakInhoud() : await backup.get(body.id);
+        if (!inhoud) return res.status(404).json({ error: 'Back-up niet gevonden' });
+        return res.json({ inhoud });
+      }
+
+      case 'backup-terugzetten': {
+        return res.json(Object.assign({ ok: true }, await backup.terugzetten(body.id)));
       }
 
       default:

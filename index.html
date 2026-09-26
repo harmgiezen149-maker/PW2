@@ -77,6 +77,10 @@
   .bl::before { content:'●'; color:var(--lime); font-size:0.45rem; position:absolute; left:2px; top:8px; }
   .bl-sub { display:block; padding-left:14px; margin-bottom:3px; margin-left:14px; color:var(--tm); position:relative; }
   .bl-sub::before { content:'–'; color:var(--tl); font-size:0.8rem; position:absolute; left:0; top:0; }
+  .klopt-niet { margin-top:10px; }
+  .klopt-niet textarea { width:100%; min-height:60px; border:1.5px solid var(--b); border-radius:8px; padding:7px 9px; font-family:inherit; font-size:0.85rem; margin:6px 0; }
+  .klopt-knop { background:none; border:1px solid var(--b); border-radius:14px; padding:4px 11px; font-size:0.74rem; color:var(--tm); cursor:pointer; font-family:inherit; }
+  .klopt-ok { font-size:0.78rem; color:var(--g); }
   .fn { font-size:0.68em; font-weight:700; color:var(--g); margin-left:2px; vertical-align:super; line-height:0; }
   .bronnen { margin-top:12px; padding-top:10px; border-top:1px solid var(--b); font-size:0.76rem; color:var(--tm); }
   .bronnen-kop { font-weight:700; color:var(--g-dark); margin-bottom:4px; font-size:0.78rem; }
@@ -192,7 +196,7 @@
     </div>
     <div class="hdr-right">
       <span class="hdr-season" id="season"></span>
-      <span class="hdr-ver">v75</span>
+      <span class="hdr-ver">v76</span>
       <div class="story-toggle" id="storyToggle" onclick="toggleStorytelling()">
         <span class="st-label">Verhaal</span>
         <div class="st-switch"></div>
@@ -1061,7 +1065,7 @@ function addUser(text) {
     w.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, 100);
 }
-function addBot(text, bronnen) {
+function addBot(text, bronnen, logId) {
   var soorten = [];
   var mainText = text;
   var lines = text.trim().split('\n');
@@ -1089,6 +1093,7 @@ function addBot(text, bronnen) {
   b.appendChild(contentDiv);
   speakBtn.onclick = function() { speakText(zonderVoetnoten(mainText), speakBtn, contentDiv); };
   if (bronnen && bronnen.length > 0) b.appendChild(maakBronnenlijst(bronnen));
+  if (logId) b.appendChild(maakKloptNiet(logId));
   if (soorten.length > 0) loadPhotos(soorten, b);
   var scrollBtn = document.createElement('button');
   scrollBtn.className = 'scroll-top';
@@ -1247,6 +1252,7 @@ function runChat(payload, onDelta, onSearch) {
     var bronnen = [];       // genummerde bronnen
     var bronNrs = {};       // sleutel -> nummer
     var paginaDatum = {};   // url -> page_age van zoekresultaat
+    var logId = null;       // id in het logboek (voor "klopt niet")
 
     function bronNr(sleutel, maak) {
       if (!bronNrs[sleutel]) {
@@ -1288,6 +1294,7 @@ function runChat(payload, onDelta, onSearch) {
     function verwerk(evt) {
       if (evt.type === 'pw_error') { fout = evt.message; return; }
       if (evt.type === 'pw_meta') { meta = evt.docs || []; return; }
+      if (evt.type === 'pw_log') { logId = evt.id; return; }
       if (evt.type === 'content_block_start' && evt.content_block) {
         var cb = evt.content_block;
         blokken[evt.index] = { type: cb.type, cit: [] };
@@ -1334,7 +1341,7 @@ function runChat(payload, onDelta, onSearch) {
     var buffer = '';
     function read() {
       return reader.read().then(function(result) {
-        if (result.done) return { rawText: rawText, bronnen: bronnen, fout: fout };
+        if (result.done) return { rawText: rawText, bronnen: bronnen, fout: fout, logId: logId };
         buffer += decoder.decode(result.value, { stream: true });
         var lines = buffer.split('\n');
         buffer = lines.pop();
@@ -1349,6 +1356,35 @@ function runChat(payload, onDelta, onSearch) {
     }
     return read();
   });
+}
+
+// "Klopt niet?" onder een antwoord: melding gaat met vraag en antwoord naar de beheerder
+function maakKloptNiet(logId) {
+  var wrap = document.createElement('div');
+  wrap.className = 'klopt-niet';
+  var knop = document.createElement('button');
+  knop.className = 'klopt-knop';
+  knop.textContent = '⚠️ Klopt er iets niet?';
+  wrap.appendChild(knop);
+  knop.onclick = function() {
+    knop.style.display = 'none';
+    var ta = document.createElement('textarea');
+    ta.placeholder = 'Wat klopt er niet? Wat is het juiste feit (en waar staat het)?';
+    var stuur = document.createElement('button');
+    stuur.className = 'klopt-knop';
+    stuur.textContent = 'Versturen';
+    stuur.onclick = function() {
+      stuur.disabled = true;
+      fetch('/api/feedback', { method: 'POST', headers: apiHeaders(), body: JSON.stringify({ actie: 'klopt-niet', logId: logId, toelichting: ta.value }) })
+        .then(function(r) { return r.json().then(function(d) { if (!r.ok) throw new Error(d.error || 'Mislukt'); }); })
+        .then(function() { wrap.innerHTML = '<span class="klopt-ok">✓ Bedankt! De beheerder bekijkt je melding.</span>'; })
+        .catch(function(e) { stuur.disabled = false; alert('Fout: ' + e.message); });
+    };
+    wrap.appendChild(ta);
+    wrap.appendChild(stuur);
+    ta.focus();
+  };
+  return wrap;
 }
 
 function zonderVoetnoten(t) {
@@ -1422,7 +1458,8 @@ function ask(q) {
     var fase1Tekst = r1.rawText || '';
     if (!fase1Tekst.trim()) { hideTyping(); showErr(r1.fout || 'Er kwam geen antwoord. Probeer het opnieuw.'); return; }
     if (r1.fout) showErr(r1.fout);
-    var rendered = addBot(fase1Tekst, r1.bronnen);
+    var rendered = addBot(fase1Tekst, r1.bronnen, r1.logId);
+    rendered.logId = r1.logId;
     // FASE 2 — aanvulling op de achtergrond (max 2 zoekacties)
     startAanvulling(q, mode, fase1Tekst, rendered);
   })
@@ -1487,7 +1524,8 @@ function startAanvulling(q, mode, fase1Tekst, rendered) {
       { role: 'user', content: 'Vul dit antwoord aan volgens je instructies.' }
     ],
     mode: mode,
-    phase: 2
+    phase: 2,
+    logId: rendered.logId || null
   })
   .then(function(r2) {
     var tekst = (r2.rawText || '').trim();

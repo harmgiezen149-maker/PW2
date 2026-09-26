@@ -262,8 +262,11 @@ var TABS = [
   { id: 'overzicht', titel: 'Overzicht' },
   { id: 'voorstellen', titel: 'Voorstellen', tel: function() { return OV && OV.aantallen.voorstellen; } },
   { id: 'kennisbank', titel: 'Kennisbank', tel: function() { return OV && OV.aantallen.verlopen; } },
-  { id: 'websites', titel: 'Websites' },
-  { id: 'gebruikers', titel: 'Gebruikers' }
+  { id: 'meldingen', titel: 'Klopt niet', tel: function() { return OV && OV.aantallen.meldingen; } },
+  { id: 'logboek', titel: 'Logboek' },
+  { id: 'websites', titel: 'Websites & controle' },
+  { id: 'gebruikers', titel: 'Gebruikers' },
+  { id: 'backup', titel: 'Back-up' }
 ];
 var huidigeTab = 'overzicht';
 
@@ -283,7 +286,7 @@ function toonTab(id, opties) {
   tekenTabs();
   var inhoud = document.getElementById('inhoud');
   inhoud.innerHTML = '<p class="leeg">Laden…</p>';
-  var tab = { overzicht: tabOverzicht, voorstellen: tabVoorstellen, kennisbank: tabKennisbank, websites: tabWebsites, gebruikers: tabGebruikers }[id];
+  var tab = { overzicht: tabOverzicht, voorstellen: tabVoorstellen, kennisbank: tabKennisbank, meldingen: tabMeldingen, logboek: tabLogboek, websites: tabWebsites, gebruikers: tabGebruikers, backup: tabBackup }[id];
   tab(inhoud, opties || {});
 }
 
@@ -315,12 +318,33 @@ function tabOverzicht(inhoud) {
       ]));
     }
     stat(a.voorstellen, 'voorstellen wachten op beoordeling', true, function() { toonTab('voorstellen'); });
+    stat(a.meldingen, 'meldingen "klopt niet"', true, function() { toonTab('meldingen'); });
     stat(a.verlopen, 'feiten mogelijk verouderd (opnieuw controleren)', true, function() { toonTab('kennisbank', { status: 'verlopen' }); });
     stat(a.actief, 'actieve feiten', false, function() { toonTab('kennisbank', { status: 'actief' }); });
     stat(a.afgelopen, 'tijdelijke feiten afgelopen (worden niet meer gebruikt)', false, function() { toonTab('kennisbank', { status: 'afgelopen' }); });
     s.appendChild(stats);
     inhoud.appendChild(s);
+    inhoud.appendChild(cronKaart(d.cronStatus));
   }).catch(fout);
+}
+
+function cronKaart(cs) {
+  var s = el('div', { class: 'section' }, [el('h2', { text: 'Dagelijkse controle natuurmonumenten.nl' })]);
+  if (!cs || !cs.nm) {
+    s.appendChild(el('p', { class: 'leeg', text: 'Nog niet uitgevoerd. De controle draait elke ochtend automatisch (na livegang), of start hem via "Websites & controle".' }));
+    return s;
+  }
+  var nm = cs.nm;
+  var regels = [];
+  if (nm.fout) regels.push('❌ Mislukt: ' + nm.fout);
+  else {
+    regels.push('Laatst: ' + new Date(cs.tijd).toLocaleString('nl-NL') + (cs.handmatig ? ' (handmatig door ' + cs.handmatig + ')' : ''));
+    regels.push(nm.paginas + ' pagina(\'s) gelezen, ' + nm.gewijzigd + ' gewijzigd, ' + nm.nieuweBerichten + ' nieuwe bericht(en), ' + nm.voorstellen + ' nieuw(e) voorstel(len)' + (nm.terugval ? ' (via terugvalcontrole)' : ''));
+    (nm.fouten || []).forEach(function(f) { regels.push('⚠ ' + f); });
+  }
+  if (cs.backup && cs.backup.id) regels.push('Back-up gemaakt: ' + cs.backup.id);
+  regels.forEach(function(r) { s.appendChild(el('div', { class: 'meta', text: r })); });
+  return s;
 }
 
 // ============================================================
@@ -625,6 +649,31 @@ function tabWebsites(inhoud) {
       } })
     ]));
     inhoud.appendChild(s);
+
+    // Pagina's voor de dagelijkse controle
+    var s2 = el('div', { class: 'section' }, [
+      el('h2', { text: 'Dagelijkse controle natuurmonumenten.nl' }),
+      el('p', { class: 'uitleg', text: 'Elke ochtend worden deze pagina\'s gelezen. Is er iets gewijzigd of staat er een nieuw nieuws- of agendabericht, dan vergelijkt de assistent dat met de kennisbank en zet wat nieuw of anders is klaar als voorstel. Niets gaat live zonder jouw goedkeuring. Eén pagina per regel.' })
+    ]);
+    var ta = el('textarea', { style: 'width:100%;min-height:90px;border:1.5px solid var(--b);border-radius:6px;padding:8px;font-family:monospace;font-size:0.78rem;' });
+    ta.value = (d.nmPaginas || []).join('\n');
+    s2.appendChild(ta);
+    var nu = el('button', { class: 'btn secundair', text: '🔎 Nu controleren' });
+    nu.onclick = function() {
+      nu.disabled = true; nu.textContent = 'Bezig… (kan een minuut duren)';
+      api('nm-controleren').then(function(r) {
+        melding(r.nm.voorstellen + ' nieuw(e) voorstel(len)');
+        return laadOverzicht();
+      }).then(function() { toonTab('websites'); }).catch(function(e) { nu.disabled = false; nu.textContent = '🔎 Nu controleren'; fout(e); });
+    };
+    s2.appendChild(el('div', { class: 'acties', style: 'margin-top:10px' }, [
+      el('button', { class: 'btn primair', text: '💾 Pagina\'s opslaan', onclick: function() {
+        api('nm-paginas-opslaan', { paginas: ta.value.split('\n') }).then(function() { melding('Opgeslagen'); }).catch(fout);
+      } }),
+      nu
+    ]));
+    inhoud.appendChild(s2);
+    inhoud.appendChild(cronKaart(d.cronStatus));
   }).catch(fout);
 }
 // ============================================================
@@ -682,6 +731,131 @@ function tabGebruikers(inhoud) {
       }).catch(fout);
     }
     tekenLijst();
+  }).catch(fout);
+}
+// ============================================================
+// Meldingen "klopt niet"
+// ============================================================
+function tabMeldingen(inhoud) {
+  api('meldingen').then(function(d) {
+    inhoud.innerHTML = '';
+    var s = el('div', { class: 'section' }, [
+      el('h2', { text: 'Meldingen "klopt niet"' }),
+      el('p', { class: 'uitleg', text: 'Gebruikers kunnen bij elk antwoord melden dat iets niet klopt. Maak er een voorstel van om het juiste feit in de kennisbank te zetten, of handel de melding af. Controleer ook de gebruikte kennisbankfeiten: trek een fout feit in via het tabblad Kennisbank.' })
+    ]);
+    if (d.meldingen.length === 0) s.appendChild(el('p', { class: 'leeg', text: 'Geen openstaande meldingen.' }));
+    d.meldingen.forEach(function(m) {
+      var card = el('div', { class: 'card' });
+      card.appendChild(el('div', { class: 'meta', text: new Date(m.tijd).toLocaleString('nl-NL') }));
+      card.appendChild(el('div', { class: 'tegenspraak' }, [el('b', { text: 'Melding: ' }), m.toelichting || '(geen toelichting)']));
+      if (m.vraag) card.appendChild(el('div', { class: 'tekst' }, [el('b', { text: 'Vraag: ' }), m.vraag]));
+      if (m.antwoord) {
+        var ant = el('div', { class: 'tekst', style: 'display:none;font-size:0.8rem;background:#fff;border-radius:6px;padding:8px' , text: m.antwoord });
+        card.appendChild(el('button', { class: 'btn secundair klein', text: 'Antwoord tonen', onclick: function() { ant.style.display = ant.style.display === 'none' ? '' : 'none'; } }));
+        card.appendChild(ant);
+      }
+      if (m.feiten && m.feiten.length) card.appendChild(el('div', { class: 'meta', text: 'Gebruikte kennisbankfeiten: ' + m.feiten.join(', ') }));
+      if (m.web && m.web.length) card.appendChild(el('div', { class: 'meta', text: 'Gebruikte websites: ' + m.web.join(', ') }));
+      card.appendChild(el('div', { class: 'acties' }, [
+        el('button', { class: 'btn primair klein', text: '→ Maak voorstel', onclick: function() {
+          api('melding-naar-voorstel', { id: m.id }).then(function() { melding('Voorstel aangemaakt'); return laadOverzicht(); })
+            .then(function() { toonTab('voorstellen'); }).catch(fout);
+        } }),
+        el('button', { class: 'btn secundair klein', text: '✓ Afgehandeld', onclick: function() {
+          api('melding-afhandelen', { id: m.id }).then(function() { melding('Afgehandeld'); return laadOverzicht(); })
+            .then(function() { toonTab('meldingen'); }).catch(fout);
+        } })
+      ]));
+      s.appendChild(card);
+    });
+    inhoud.appendChild(s);
+  }).catch(fout);
+}
+
+// ============================================================
+// Logboek (steekproeven)
+// ============================================================
+function tabLogboek(inhoud, opties) {
+  var vanaf = opties.vanaf || 0;
+  api('logboek', { vanaf: vanaf }).then(function(d) {
+    inhoud.innerHTML = '';
+    var s = el('div', { class: 'section' }, [
+      el('h2', { text: 'Logboek' }),
+      el('p', { class: 'uitleg', text: 'Alle vragen en antwoorden van de afgelopen 90 dagen, zonder persoonsgegevens. Doe wekelijks een steekproef: klopt het antwoord, en zijn de gebruikte feiten juist?' }),
+      el('div', { class: 'meta', text: 'Laatste 30 dagen: ' + d.samenvatting.vragen30 + ' vragen · geschatte API-kosten $ ' + d.samenvatting.kosten30.toFixed(2).replace('.', ',') + ' (schatting; zie de Anthropic-console voor de werkelijke kosten)' })
+    ]);
+    if (d.items.length === 0) s.appendChild(el('p', { class: 'leeg', text: 'Nog geen vragen in het logboek.' }));
+    d.items.forEach(function(e) {
+      var card = el('div', { class: 'card' });
+      card.appendChild(el('div', { class: 'badges' }, [
+        el('span', { class: 'badge', text: new Date(e.tijd).toLocaleString('nl-NL') }),
+        el('span', { class: 'badge' + (e.rol === 'anoniem' ? '' : ' groen'), text: e.rol === 'anoniem' ? 'niet ingelogd' : e.rol }),
+        e.mode === 'storytelling' ? el('span', { class: 'badge', text: 'verhaal' }) : null,
+        el('span', { class: 'badge', text: (e.feiten || []).length + ' kennisbankfeit(en)' }),
+        (e.web || []).length ? el('span', { class: 'badge warn', text: e.web.length + ' website(s)' }) : null,
+        e.stop && e.stop !== 'end_turn' ? el('span', { class: 'badge rood', text: e.stop }) : null
+      ]));
+      card.appendChild(el('div', { class: 'tekst' }, [el('b', { text: 'Vraag: ' }), e.vraag || '']));
+      var ant = el('div', { class: 'tekst', style: 'display:none;font-size:0.8rem;background:#fff;border-radius:6px;padding:8px', text: e.antwoord + (e.aanvulling && e.aanvulling.tekst && !/^GEEN_AANVULLING/.test(e.aanvulling.tekst) ? '\n\n— Aanvulling (websites) —\n' + e.aanvulling.tekst : '') });
+      var bronnen = el('div', { class: 'meta', style: 'display:none', text: 'Feiten: ' + ((e.feiten || []).join(', ') || '—') + ' · Websites: ' + ((e.web || []).concat((e.aanvulling && e.aanvulling.web) || []).join(', ') || '—') });
+      card.appendChild(el('button', { class: 'btn secundair klein', text: 'Antwoord tonen', onclick: function() {
+        var zichtbaar = ant.style.display === 'none';
+        ant.style.display = zichtbaar ? '' : 'none'; bronnen.style.display = zichtbaar ? '' : 'none';
+      } }));
+      card.appendChild(ant);
+      card.appendChild(bronnen);
+      s.appendChild(card);
+    });
+    var nav = el('div', { class: 'acties' });
+    if (vanaf > 0) nav.appendChild(el('button', { class: 'btn secundair klein', text: '← Nieuwer', onclick: function() { toonTab('logboek', { vanaf: Math.max(0, vanaf - 50) }); } }));
+    if (vanaf + 50 < d.totaal) nav.appendChild(el('button', { class: 'btn secundair klein', text: 'Ouder →', onclick: function() { toonTab('logboek', { vanaf: vanaf + 50 }); } }));
+    s.appendChild(nav);
+    inhoud.appendChild(s);
+  }).catch(fout);
+}
+
+// ============================================================
+// Back-up
+// ============================================================
+function download(naam, inhoud) {
+  var blob = new Blob([JSON.stringify(inhoud, null, 2)], { type: 'application/json' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = naam;
+  document.body.appendChild(a); a.click(); a.remove();
+}
+
+function tabBackup(inhoud) {
+  api('backups').then(function(d) {
+    inhoud.innerHTML = '';
+    var s = el('div', { class: 'section' }, [
+      el('h2', { text: 'Back-up' }),
+      el('p', { class: 'uitleg', text: 'Elke week wordt automatisch een back-up gemaakt van de kennisbank, voorstellen, websites en gebruikers (zonder inlogcodes); ze worden 10 weken bewaard. Download ook af en toe een back-up naar je eigen computer. Terugzetten herstelt kennisbank, voorstellen en websites (niet de gebruikers); vooraf wordt automatisch een back-up van de huidige stand gemaakt.' }),
+      el('div', { class: 'meta', text: 'Laatste back-up: ' + (d.laatste ? datumNL(d.laatste) : 'nog geen') })
+    ]);
+    s.appendChild(el('div', { class: 'acties', style: 'margin:10px 0' }, [
+      el('button', { class: 'btn primair klein', text: '⬇ Download huidige stand', onclick: function() {
+        api('backup-download', { id: 'nu' }).then(function(r) { download('planken-wambuis-backup-' + new Date().toISOString().slice(0, 10) + '.json', r.inhoud); }).catch(fout);
+      } }),
+      el('button', { class: 'btn secundair klein', text: '+ Back-up maken', onclick: function() {
+        api('backup-maken').then(function() { melding('Back-up gemaakt'); toonTab('backup'); }).catch(fout);
+      } })
+    ]));
+    if (d.backups.length === 0) s.appendChild(el('p', { class: 'leeg', text: 'Nog geen back-ups in de database.' }));
+    d.backups.forEach(function(id) {
+      s.appendChild(el('div', { class: 'site-rij' }, [
+        el('span', { text: id }),
+        el('button', { class: 'btn secundair klein', text: '⬇ Download', onclick: function() {
+          api('backup-download', { id: id }).then(function(r) { download('planken-wambuis-backup-' + id + '.json', r.inhoud); }).catch(fout);
+        } }),
+        el('button', { class: 'btn gevaar klein', text: 'Terugzetten', onclick: function() {
+          if (!confirm('Kennisbank, voorstellen en websites terugzetten naar de stand van ' + id + '? De huidige stand wordt eerst als back-up bewaard.')) return;
+          api('backup-terugzetten', { id: id }).then(function(r) { melding(r.feiten + ' feiten teruggezet'); return laadOverzicht(); })
+            .then(function() { toonTab('backup'); }).catch(fout);
+        } })
+      ]));
+    });
+    inhoud.appendChild(s);
   }).catch(fout);
 }
 </script>
