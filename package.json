@@ -1,0 +1,10 @@
+{
+  "name": "planken-wambuis-assistent",
+  "private": true,
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.128.0"
+  }
+}

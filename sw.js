@@ -4,7 +4,7 @@
 //   offline opent de laatst bekende versie.
 // - /api/*: nooit cachen (antwoorden, weer, suggesties zijn per definitie actueel).
 // - Statische bestanden (manifest, iconen): cache-first.
-const CACHE = 'pw-v67';
+const CACHE = 'pw-v68';
 const STATIC_ASSETS = [
   '/',
   '/manifest.webmanifest',
