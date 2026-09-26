@@ -50,7 +50,9 @@ PW.icoon = function(naam, opties) {
 PW.LOGO = '<svg width="26" height="26" viewBox="0 0 40 40" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M8 32 L32 8"/><path d="M14 26 l-6 -2 M14 26 l2 6 M19 21 l-7 -3 M19 21 l3 7 M24 16 l-6 -4 M24 16 l4 6 M29 11 l-4 -4 M29 11 l4 3"/></svg>';
 
 // Getekende boswachter: een illustratie, geen foto van een echt persoon.
-PW.AVATAR = '<svg viewBox="0 0 64 64" aria-hidden="true" focusable="false"><rect width="64" height="64" fill="#DCE7F5"/><path d="M10 64c2-13 11-19 22-19s20 6 22 19z" fill="#2F4A3A"/><path d="M26 45l6 8 6-8z" fill="#E9E2D0"/><circle cx="32" cy="33" r="10.5" fill="#E7B792"/><path d="M16 26h32l-5-3H21z" fill="#6B4E2E"/><path d="M23 23.5c0-6.5 4-10 9-10s9 3.5 9 10z" fill="#7C5B37"/><circle cx="28" cy="33" r="1.4" fill="#3B2A20"/><circle cx="36" cy="33" r="1.4" fill="#3B2A20"/><path d="M28.5 38c2 1.6 5 1.6 7 0" stroke="#3B2A20" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg>';
+// Een beheerder kan hem vervangen (Beheer → Foto's); PW.AVATAR is dan een <img>.
+PW.AVATAR_SVG = '<svg viewBox="0 0 64 64" aria-hidden="true" focusable="false"><rect width="64" height="64" fill="#DCE7F5"/><path d="M10 64c2-13 11-19 22-19s20 6 22 19z" fill="#2F4A3A"/><path d="M26 45l6 8 6-8z" fill="#E9E2D0"/><circle cx="32" cy="33" r="10.5" fill="#E7B792"/><path d="M16 26h32l-5-3H21z" fill="#6B4E2E"/><path d="M23 23.5c0-6.5 4-10 9-10s9 3.5 9 10z" fill="#7C5B37"/><circle cx="28" cy="33" r="1.4" fill="#3B2A20"/><circle cx="36" cy="33" r="1.4" fill="#3B2A20"/><path d="M28.5 38c2 1.6 5 1.6 7 0" stroke="#3B2A20" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg>';
+PW.AVATAR = PW.AVATAR_SVG;
 
 // ============================================================
 // Hulpfuncties
@@ -276,13 +278,37 @@ function route() {
 }
 
 // ============================================================
-// Achtergrondfoto achter de chat (door de beheerder geüpload):
-// staand voor telefoons, liggend voor tablet en computer
+// Foto's van de beheerder: de achtergrond achter de chat (staand voor
+// telefoons, liggend voor tablet en computer) en de avatar van de assistent
 // ============================================================
 var POSITIE = { boven: 'center top', midden: 'center center', onder: 'center bottom' };
 PW.achtergrondInfo = null;
+
+// Avatar: eigen afbeelding of de getekende boswachter. Past ook de avatars aan die al op het scherm staan.
+function pasAvatarToe(av) {
+  var sleutel = av ? av.versie + ':' + av.positie : 'tekening';
+  PW.AVATAR = av
+    ? '<img src="/api/achtergrond?soort=avatar&amp;v=' + encodeURIComponent(av.versie) + '" alt="" style="object-position: ' + (POSITIE[av.positie] || 'center center') + '">'
+    : PW.AVATAR_SVG;
+  Array.prototype.forEach.call(document.querySelectorAll('.avatar'), function(el) {
+    if (el.getAttribute('data-av') === sleutel) return;
+    el.innerHTML = PW.AVATAR;
+    el.setAttribute('data-av', sleutel);
+  });
+}
+// Laadt de eigen avatar niet (bijv. offline zonder cache), dan terug naar de tekening
+document.addEventListener('error', function(e) {
+  var img = e.target;
+  if (!img || img.tagName !== 'IMG' || !img.parentNode || !img.parentNode.classList || !img.parentNode.classList.contains('avatar')) return;
+  var vak = img.parentNode;
+  PW.AVATAR = PW.AVATAR_SVG;
+  vak.removeAttribute('data-av');
+  vak.innerHTML = PW.AVATAR_SVG;
+}, true);
+
 function pasAchtergrondToe(info) {
   PW.achtergrondInfo = info || null;
+  pasAvatarToe(info && info.avatar);
   var vak = document.querySelector('.view-chat .landschap');
   if (!vak) return;
   var st = info && info.staand, lg = info && info.liggend;

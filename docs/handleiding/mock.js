@@ -270,12 +270,12 @@ async function installeer(context, opties) {
       const extra = opties.api(url.pathname, body, url);
       if (extra !== undefined) return json(extra);
     }
-    // Achtergrondfoto: in het geheugen van deze testsessie
+    // Achtergrondfoto's en avatar: in het geheugen van deze testsessie
     if (url.pathname === '/api/achtergrond') {
       const ag = opties.achtergrond || (opties.achtergrond = {});
       if (url.searchParams.has('info')) {
         const uit = {};
-        for (const k of ['staand', 'liggend']) uit[k] = ag[k] ? { versie: ag[k].versie, positie: ag[k].positie, fotoBron: ag[k].fotoBron } : null;
+        for (const k of ['staand', 'liggend', 'avatar']) uit[k] = ag[k] ? { versie: ag[k].versie, positie: ag[k].positie, fotoBron: ag[k].fotoBron } : null;
         return json(uit);
       }
       const a = ag[url.searchParams.get('soort')];

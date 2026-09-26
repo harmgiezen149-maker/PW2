@@ -1,6 +1,7 @@
-// Openbaar: de achtergrondfoto van de chat.
+// Openbaar: de achtergrondfoto van de chat en de avatar van de assistent.
 // - GET /api/achtergrond?info=1           versie, uitsnede en maker per soort (kort gecachet)
-// - GET /api/achtergrond?soort=staand&v=… de foto zelf (met versie: een jaar te cachen)
+// - GET /api/achtergrond?soort=staand&v=… de foto zelf (staand, liggend of avatar;
+//                                         met versie: een jaar te cachen)
 const achtergrond = require('./_lib/achtergrond');
 
 module.exports = async function handler(req, res) {

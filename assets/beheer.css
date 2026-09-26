@@ -157,7 +157,7 @@ html body .leaflet-container { font-family: 'Fira Sans', system-ui, sans-serif; 
 .coord > div { flex: 1; }
 .gebied-label-bk span { display: block; text-align: center; font-size: 0.8125rem; font-weight: 700; color: var(--navy); text-shadow: 0 0 3px #fff, 0 0 3px #fff; }
 
-/* ---------------------------------------------------------------- achtergrondfoto */
+/* ---------------------------------------------------------------- foto's: achtergrond en avatar */
 .ag-indeling { display: flex; gap: 22px; align-items: flex-start; flex-wrap: wrap; }
 .ag-velden { flex: 1; min-width: 260px; margin-top: 0; }
 .ag-voorbeeld { position: relative; flex-shrink: 0; border-radius: 14px; overflow: hidden; background: #BCCAD6 center bottom / cover no-repeat; border: 6px solid #1C1F24; box-shadow: 0 4px 16px rgba(20, 32, 56, 0.18); }
@@ -170,3 +170,14 @@ html body .leaflet-container { font-family: 'Fira Sans', system-ui, sans-serif; 
 .ag-invoer { position: absolute; left: 0; right: 0; bottom: 0; height: 26px; background: #fff; border-top: 1px solid #DDE2E8; }
 .ag-liggend .ag-kaart { left: 30%; width: 40%; }
 .ag-form label:first-child { margin-top: 0; }
+.av-voorbeeld { flex-shrink: 0; width: 240px; max-width: 100%; border-radius: 14px; padding: 16px 14px; background: #E9EEF3; display: flex; flex-direction: column; gap: 16px; }
+.av-rond { border-radius: 50%; border: 2px solid #fff; background: #DCE7F5 center / cover no-repeat; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.16); flex-shrink: 0; }
+.av-groot { width: 60px; height: 60px; border-width: 3px; }
+.av-klein { width: 40px; height: 40px; }
+.av-groet { display: flex; gap: 10px; align-items: center; }
+.av-groettekst { flex: 1; background: #fff; border-radius: 10px; padding: 8px 10px; display: flex; flex-direction: column; gap: 5px; }
+.av-groettekst b { font-size: 0.8125rem; }
+.av-antwoord { display: flex; gap: 8px; align-items: flex-end; }
+.av-bubbel { flex: 1; background: #fff; border-radius: 12px 12px 12px 4px; padding: 9px 10px; display: flex; flex-direction: column; gap: 5px; }
+.av-groettekst span, .av-bubbel span { height: 10px; border-radius: 5px; background: #E9F1FB; }
+.av-bubbel span:last-child { width: 60%; }

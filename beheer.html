@@ -82,6 +82,7 @@ function start() {
     document.getElementById('login').style.display = 'none';
     document.getElementById('app').style.display = 'block';
     var h = (location.hash || '').replace('#', '');
+    if (h === 'achtergrond') h = 'fotos';   // oude naam van het tabblad
     if (TABS.some(function(t) { return t.id === h; })) huidigeTab = h;
     toonTab(huidigeTab);
   }).catch(function(e) {
@@ -189,7 +190,7 @@ var TABS = [
   { id: 'logboek', titel: 'Logboek' },
   { id: 'websites', titel: 'Websites & controle' },
   { id: 'kaart', titel: 'Kaart en plekken' },
-  { id: 'achtergrond', titel: 'Achtergrondfoto' },
+  { id: 'fotos', titel: 'Foto\'s' },
   { id: 'gebruikers', titel: 'Gebruikers' },
   { id: 'backup', titel: 'Back-up' }
 ];
@@ -214,7 +215,7 @@ function toonTab(id, opties) {
   inhoud.innerHTML = '<p class="leeg">Laden…</p>';
   if (location.hash !== '#' + id) history.replaceState(null, '', '#' + id);
   window.scrollTo(0, 0);
-  var tab = { overzicht: tabOverzicht, voorstellen: tabVoorstellen, kennisbank: tabKennisbank, meldingen: tabMeldingen, logboek: tabLogboek, websites: tabWebsites, kaart: window.tabKaart, achtergrond: window.tabAchtergrond, gebruikers: tabGebruikers, backup: tabBackup }[id];
+  var tab = { overzicht: tabOverzicht, voorstellen: tabVoorstellen, kennisbank: tabKennisbank, meldingen: tabMeldingen, logboek: tabLogboek, websites: tabWebsites, kaart: window.tabKaart, fotos: window.tabFotos, gebruikers: tabGebruikers, backup: tabBackup }[id];
   tab(inhoud, opties || {});
 }
 
@@ -881,6 +882,6 @@ function tabBackup(inhoud) {
 }
 </script>
 <script src="/assets/beheer-kaart.js"></script>
-<script src="/assets/beheer-achtergrond.js"></script>
+<script src="/assets/beheer-fotos.js"></script>
 </body>
 </html>
