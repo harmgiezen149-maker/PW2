@@ -1,14 +1,14 @@
 {
-  "name": "Planken Wambuis · Boswachter Assistent",
+  "name": "Boswachter Assistent · Planken Wambuis",
   "short_name": "Planken Wambuis",
-  "description": "Boswachter-assistent voor Planken Wambuis (Natuurmonumenten, Zuidwest-Veluwe): natuurinfo, gesprekstips en actuele gebiedskennis.",
+  "description": "Boswachter Assistent voor Planken Wambuis (Natuurmonumenten, Zuidwest-Veluwe): gecontroleerde gebiedskennis, gesprekstips en wat er nu speelt.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
   "lang": "nl",
-  "theme_color": "#0b3d2a",
-  "background_color": "#eef4ef",
+  "theme_color": "#2256A0",
+  "background_color": "#F4F2EC",
   "icons": [
     {
       "src": "/icons/icon-192.png",
