@@ -15,6 +15,7 @@ zichtbaar: voetnoten, bronnenlijst, "niet gecontroleerd", "Dat weet ik niet" en
 | C · Gebieden | De vijf deelgebieden met korte beschrijving; per gebied de feiten en routes, en "Vraag de assistent over dit gebied". |
 | D · Kaart | Kaart met plekken, routes, labels en grenzen; lagen, zoeken, eigen locatie, luchtfoto; onderblad met de gekoppelde feiten; kaartje in antwoorden. Ondergrond: PDOK (Kadaster). |
 | E · Beheer en handleiding | Beheerpaneel in de nieuwe stijl met zijmenu, overzicht met weekendlijst en het nieuwe onderdeel "Kaart en plekken" (plekken aanklikken, routes uit GPX, grenzen uit GeoJSON, ook in RD). Feiten kunnen een plek en een foto krijgen. Handleiding en schermafbeeldingen bijgewerkt (15 pagina's). |
+| Aanvulling · Achtergrondfoto | Beheerpaneel → Achtergrondfoto: een staande foto (telefoon) en een liggende (tablet en computer). De foto wordt in de browser verkleind, in stukken in de database gezet en via `api/achtergrond` met een versie in de link uitgeleverd (een jaar te cachen, ook offline via de service worker). De foto staat stil achter de chat; de naam van de maker staat klein in de hoek. |
 
 ## Keuzes bij de open vragen uit het plan
 
@@ -45,7 +46,8 @@ zichtbaar: voetnoten, bronnenlijst, "niet gecontroleerd", "Dat weet ik niet" en
   in `assets/fonts/` (OFL).
 - Nieuw endpoint `api/gebied.js` (actueel, gebieden, gebied, kaart); nieuwe modules
   `api/_lib/kaart.js` en `api/_lib/meldstatus.js`. Nieuwe sleutels in de database:
-  `kb:plekken`, `kb:routes`, `cfg:gebieden`, `kaart:grens:<gebied>`, `kb:meldstatus`.
+  `kb:plekken`, `kb:routes`, `cfg:gebieden`, `kaart:grens:<gebied>`, `kb:meldstatus`,
+  `cfg:achtergrond` (+ de stukken van de foto's; die zitten niet in de back-up).
   De kaart zit in de wekelijkse back-up.
 - UI-tests en schermafbeeldingen draaien tegen een nagebootste API
   (`docs/handleiding/mock.js`), zonder database of API-sleutel.

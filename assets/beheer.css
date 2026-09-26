@@ -156,3 +156,17 @@ html body .leaflet-container { font-family: 'Fira Sans', system-ui, sans-serif; 
 .coord { display: flex; gap: 8px; align-items: flex-end; }
 .coord > div { flex: 1; }
 .gebied-label-bk span { display: block; text-align: center; font-size: 0.8125rem; font-weight: 700; color: var(--navy); text-shadow: 0 0 3px #fff, 0 0 3px #fff; }
+
+/* ---------------------------------------------------------------- achtergrondfoto */
+.ag-indeling { display: flex; gap: 22px; align-items: flex-start; flex-wrap: wrap; }
+.ag-velden { flex: 1; min-width: 260px; margin-top: 0; }
+.ag-voorbeeld { position: relative; flex-shrink: 0; border-radius: 14px; overflow: hidden; background: #BCCAD6 center bottom / cover no-repeat; border: 6px solid #1C1F24; box-shadow: 0 4px 16px rgba(20, 32, 56, 0.18); }
+.ag-staand { width: 200px; height: 356px; }
+.ag-liggend { width: 400px; height: 225px; max-width: 100%; }
+.ag-balk { position: absolute; left: 0; right: 0; top: 0; height: 30px; background: #2256A0; box-shadow: 0 16px 0 rgba(20, 32, 56, 0.62); }
+.ag-kaart { position: absolute; left: 12%; top: 64px; width: 64%; max-width: 230px; background: #fff; border-radius: 10px; padding: 8px 10px; display: flex; flex-direction: column; gap: 5px; box-shadow: 0 2px 8px rgba(20, 32, 56, 0.2); }
+.ag-kaart b { font-size: 0.8125rem; }
+.ag-kaart span { height: 14px; border-radius: 5px; background: #E9F1FB; }
+.ag-invoer { position: absolute; left: 0; right: 0; bottom: 0; height: 26px; background: #fff; border-top: 1px solid #DDE2E8; }
+.ag-liggend .ag-kaart { left: 30%; width: 40%; }
+.ag-form label:first-child { margin-top: 0; }

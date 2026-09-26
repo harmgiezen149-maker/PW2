@@ -8,6 +8,7 @@ const nmcheck = require('./_lib/nmcheck');
 const documentimport = require('./_lib/documentimport');
 const meldstatus = require('./_lib/meldstatus');
 const kaart = require('./_lib/kaart');
+const achtergrond = require('./_lib/achtergrond');
 
 const K_MELDINGEN = 'kb:meldingen';
 const { setSecurityHeaders, vandaagISO } = require('./_lib/http');
@@ -434,6 +435,27 @@ module.exports = async function handler(req, res) {
         }
         await kv.pipeline(cmds);
         return res.json({ ok: true, gebied: c });
+      }
+
+      // ------------------------------------------------ achtergrondfoto
+      case 'achtergrond': {
+        const m = await achtergrond.meta();
+        return res.json({ achtergrond: m, posities: Object.keys(achtergrond.POSITIES) });
+      }
+
+      case 'achtergrond-opslaan': {
+        try {
+          const a = await achtergrond.opslaan({ soort: body.soort, data: body.data, fotoBron: body.fotoBron, positie: body.positie,
+            breedte: body.breedte, hoogte: body.hoogte, door });
+          return res.json({ ok: true, achtergrond: a });
+        } catch (e) {
+          return res.status(e.status || 500).json({ error: e.message });
+        }
+      }
+
+      case 'achtergrond-verwijderen': {
+        await achtergrond.verwijderen(String(body.soort || ''));
+        return res.json({ ok: true });
       }
 
       case 'backups': {

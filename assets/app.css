@@ -126,6 +126,17 @@ body.typt .tabbalk { display: none; }
 
 /* ---------------------------------------------------------------- chat */
 .view-chat .landschap { position: absolute; inset: 0; background: #BCCAD6 url(/assets/landschap.svg) center bottom / cover no-repeat; }
+/* Foto van de beheerder: staat stil, de chat schuift eroverheen. De tekening blijft eronder
+   zichtbaar zolang de foto laadt. Staand scherm = staande foto, liggend scherm = liggende foto. */
+.view-chat .landschap.met-foto { background-image: var(--ag-staand), url(/assets/landschap.svg); background-position: var(--ag-staand-pos, center), center bottom; }
+/* net boven de invoerbalk (die ligt over de onderkant van de foto) */
+.foto-bron { position: absolute; right: 0.5rem; bottom: 4.75rem; font-size: 0.6875rem; color: var(--wit); background: rgba(20, 32, 56, 0.55); border-radius: 0.5rem; padding: 0.125rem 0.5rem; }
+.foto-bron .fb-liggend { display: none; }
+@media (orientation: landscape) {
+  .view-chat .landschap.met-foto { background-image: var(--ag-liggend), url(/assets/landschap.svg); background-position: var(--ag-liggend-pos, center), center bottom; }
+  .foto-bron .fb-staand { display: none; }
+  .foto-bron .fb-liggend { display: inline; }
+}
 .view-chat > :not(.landschap) { position: relative; }
 
 .weerbalk { width: 100%; border: none; background: rgba(20, 32, 56, 0.62); color: var(--wit); padding: 0.625rem 1rem; display: flex; align-items: center; gap: 0.75rem; text-align: left; flex-shrink: 0; min-height: 3.5rem; }

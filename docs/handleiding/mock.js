@@ -270,6 +270,33 @@ async function installeer(context, opties) {
       const extra = opties.api(url.pathname, body, url);
       if (extra !== undefined) return json(extra);
     }
+    // Achtergrondfoto: in het geheugen van deze testsessie
+    if (url.pathname === '/api/achtergrond') {
+      const ag = opties.achtergrond || (opties.achtergrond = {});
+      if (url.searchParams.has('info')) {
+        const uit = {};
+        for (const k of ['staand', 'liggend']) uit[k] = ag[k] ? { versie: ag[k].versie, positie: ag[k].positie, fotoBron: ag[k].fotoBron } : null;
+        return json(uit);
+      }
+      const a = ag[url.searchParams.get('soort')];
+      if (!a) return route.fulfill({ status: 404, body: '' });
+      return route.fulfill({ status: 200, contentType: 'image/jpeg', body: a.buf });
+    }
+    if (url.pathname === '/api/beheer' && /^achtergrond/.test(body.actie || '')) {
+      const ag = opties.achtergrond || (opties.achtergrond = {});
+      if (body.actie === 'achtergrond') {
+        const m = {};
+        for (const k of Object.keys(ag)) m[k] = Object.assign({}, ag[k], { buf: undefined, bytes: ag[k].buf.length, datum: NU, door: 'Beheerder (voorbeeld)' });
+        return json({ achtergrond: m, posities: ['boven', 'midden', 'onder'] });
+      }
+      if (body.actie === 'achtergrond-opslaan') {
+        const oud = ag[body.soort];
+        const buf = body.data ? Buffer.from(body.data.split(',')[1], 'base64') : oud.buf;
+        ag[body.soort] = { versie: body.data ? 'v' + Date.now() : oud.versie, buf, positie: body.positie, fotoBron: body.fotoBron, breedte: body.breedte || (oud && oud.breedte), hoogte: body.hoogte || (oud && oud.hoogte) };
+        return json({ ok: true });
+      }
+      if (body.actie === 'achtergrond-verwijderen') { delete ag[body.soort]; return json({ ok: true }); }
+    }
     const nieuw = herontwerpApi(url.pathname, body, opties);
     if (nieuw !== undefined) return json(nieuw);
     switch (url.pathname) {

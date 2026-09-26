@@ -5,7 +5,7 @@
 // - Lettertypen, iconen en afbeeldingen: cache-first (veranderen zelden).
 // - /api/*: nooit cachen (antwoorden, weer en meldingen zijn per definitie actueel;
 //   de app bewaart zelf de laatst geladen stand met datum).
-const CACHE = 'pw-v83';
+const CACHE = 'pw-v84';
 const STATIC_ASSETS = [
   '/',
   '/manifest.webmanifest',
@@ -57,7 +57,29 @@ self.addEventListener('fetch', function(event) {
   const url = new URL(event.request.url);
   if (event.request.method !== 'GET') return;
   if (url.origin !== self.location.origin) return;
-  // API-verkeer nooit cachen
+  // Achtergrondfoto met versie in de link: verandert nooit, dus cache-first (ook offline).
+  // Oudere versies van dezelfde soort worden opgeruimd.
+  if (url.pathname === '/api/achtergrond' && url.searchParams.get('v')) {
+    event.respondWith(caches.open(CACHE).then(function(cache) {
+      return cache.match(event.request).then(function(cached) {
+        if (cached) return cached;
+        return fetch(event.request).then(function(res) {
+          if (res.ok) {
+            cache.put(event.request, res.clone());
+            cache.keys().then(function(keys) {
+              keys.forEach(function(k) {
+                var u = new URL(k.url);
+                if (u.pathname === '/api/achtergrond' && u.searchParams.get('soort') === url.searchParams.get('soort') && u.searchParams.get('v') !== url.searchParams.get('v')) cache.delete(k);
+              });
+            });
+          }
+          return res;
+        });
+      });
+    }));
+    return;
+  }
+  // Overig API-verkeer nooit cachen
   if (url.pathname.startsWith('/api/')) return;
 
   // Navigaties: network-first met cache-fallback

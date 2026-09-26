@@ -275,12 +275,50 @@ function route() {
   if (view.toon) view.toon(param);
 }
 
+// ============================================================
+// Achtergrondfoto achter de chat (door de beheerder geüpload):
+// staand voor telefoons, liggend voor tablet en computer
+// ============================================================
+var POSITIE = { boven: 'center top', midden: 'center center', onder: 'center bottom' };
+PW.achtergrondInfo = null;
+function pasAchtergrondToe(info) {
+  PW.achtergrondInfo = info || null;
+  var vak = document.querySelector('.view-chat .landschap');
+  if (!vak) return;
+  var st = info && info.staand, lg = info && info.liggend;
+  var bron = vak.querySelector('.foto-bron');
+  if (!st && !lg) { vak.classList.remove('met-foto'); if (bron) bron.remove(); return; }
+  // Is er maar één foto, dan geldt die voor beide
+  var voorStaand = st ? ['staand', st] : ['liggend', lg];
+  var voorLiggend = lg ? ['liggend', lg] : ['staand', st];
+  var root = document.documentElement.style;
+  function url(x) { return 'url("/api/achtergrond?soort=' + x[0] + '&v=' + encodeURIComponent(x[1].versie) + '")'; }
+  root.setProperty('--ag-staand', url(voorStaand));
+  root.setProperty('--ag-staand-pos', POSITIE[voorStaand[1].positie] || 'center center');
+  root.setProperty('--ag-liggend', url(voorLiggend));
+  root.setProperty('--ag-liggend-pos', POSITIE[voorLiggend[1].positie] || 'center center');
+  vak.classList.add('met-foto');
+  if (!bron) { bron = PW.el('span', { class: 'foto-bron' }); vak.appendChild(bron); }
+  bron.innerHTML = '<span class="fb-staand"></span><span class="fb-liggend"></span>';
+  bron.firstChild.textContent = 'Foto: ' + voorStaand[1].fotoBron;
+  bron.lastChild.textContent = 'Foto: ' + voorLiggend[1].fotoBron;
+}
+function laadAchtergrond() {
+  pasAchtergrondToe(PW.opslag.leesJSON('pw_achtergrond', null));
+  fetch('/api/achtergrond?info=1').then(function(r) { return r.ok ? r.json() : null; }).then(function(info) {
+    if (!info) return;
+    PW.opslag.schrijfJSON('pw_achtergrond', info);
+    pasAchtergrondToe(info);
+  }).catch(function() {});
+}
+
 PW.start = function() {
   bouwTabbalk();
   document.getElementById('kopLogo').innerHTML = PW.LOGO;
   document.getElementById('kopTerug').innerHTML = PW.icoon('terug', { maat: 24, kleur: '#FFFFFF', dikte: 2.4 });
   window.addEventListener('hashchange', route);
   route();
+  laadAchtergrond();
   PW.controleerLogin();
 };
 

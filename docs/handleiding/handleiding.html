@@ -339,7 +339,10 @@
   </ul>
   <div class="kader warn"><b>Gevoelige plekken.</b> Wolven, nesten, burchten en rustgebieden horen niet op de kaart. Namen en toelichtingen met zulke woorden worden geweigerd, en feiten over de wolf krijgen nooit een plek.</div>
 
-  <h2>2.9 Gebruikers</h2>
+  <h2>2.9 Achtergrondfoto</h2>
+  <p>Achter de chat staat een foto die stil blijft staan; vragen en antwoorden schuiven eroverheen. Je kunt twee foto's uploaden: een <b>staande</b> voor telefoons en een <b>liggende</b> voor tablets en computers. De app kiest vanzelf de foto die bij de stand van het scherm past; is er maar één, dan geldt die overal. Kies een foto, geef aan welk deel het belangrijkst is (boven, midden of onder) en van wie de foto is; die naam staat klein in de hoek. De foto wordt vooraf verkleind; binnen een minuut is hij in de app te zien. Gebruik alleen foto's die je mag gebruiken. De foto's zitten niet in de back-up: bewaar de originelen zelf.</p>
+
+  <h2>2.10 Gebruikers</h2>
   <div class="naast">
     <div>
       <ul>
@@ -352,7 +355,7 @@
     <div class="fig" style="width:72mm"><img src="shots/beheer-gebruikers.png" style="width:72mm"></div>
   </div>
 
-  <h2>2.10 Back-up</h2>
+  <h2>2.11 Back-up</h2>
   <p>Elke zaterdag wordt automatisch een back-up gemaakt van de kennisbank, voorstellen, websites, de kaart (plekken, routes, gebieden) en gebruikers (zonder inlogcodes). Back-ups worden 10 weken bewaard. Met <i>Download huidige stand</i> bewaar je een kopie op je eigen computer; doe dat bijvoorbeeld maandelijks. Met <i>Terugzetten</i> zet je kennisbank, voorstellen, websites en kaart terug naar een eerdere stand; de huidige stand wordt dan eerst als back-up bewaard.</p>
 
   <div class="kader blok">
@@ -396,7 +399,7 @@
   <div class="stroom">
     <div class="stap"><b>Browser</b>index.html met assets/ (chat, kaart, gebieden, meldingen, profiel; installeerbaar als PWA) en beheer.html. Gewone HTML en JavaScript, zonder framework; Leaflet voor de kaart.</div>
     <div class="pijl">⇄</div>
-    <div class="stap" style="flex:1.3"><b>Vercel-functies (Node.js)</b>api/chat · api/gebied · api/feedback · api/beheer · api/auth · api/cron · api/weather</div>
+    <div class="stap" style="flex:1.3"><b>Vercel-functies (Node.js)</b>api/chat · api/gebied · api/feedback · api/beheer · api/auth · api/achtergrond · api/cron · api/weather</div>
     <div class="pijl">⇄</div>
     <div style="flex:1.3;display:flex;flex-direction:column;gap:1.5mm">
       <div class="stap"><b>Upstash Redis (Vercel KV)</b>Kennisbank, plekken, routes, voorstellen, gebruikers, meldingen, logboek, back-ups en instellingen</div>
@@ -443,8 +446,8 @@
   <table>
     <tr><th>Bestand</th><th>Rol</th></tr>
     <tr><td>index.html, assets/*.js, assets/app.css, sw.js</td><td>De app: core.js (inloggen, voorkeuren, tabbladen), chat.js, kaart.js, gebieden.js, meldingen.js, profiel.js, vogels.js</td></tr>
-    <tr><td>beheer.html, assets/beheer.css, assets/beheer-kaart.js</td><td>Het beheerpaneel, met Kaart en plekken (GPX, GeoJSON, RD-omrekening)</td></tr>
-    <tr><td>api/chat.js, api/gebied.js</td><td>Antwoorden in twee fasen met citaties; gegevens voor Kaart, Gebieden en Meldingen</td></tr>
+    <tr><td>beheer.html, assets/beheer*.css/js</td><td>Het beheerpaneel, met Kaart en plekken (GPX, GeoJSON, RD-omrekening) en Achtergrondfoto (verkleinen in de browser)</td></tr>
+    <tr><td>api/chat.js, api/gebied.js, api/achtergrond.js</td><td>Antwoorden in twee fasen met citaties; gegevens voor Kaart, Gebieden en Meldingen; de achtergrondfoto</td></tr>
     <tr><td>api/beheer.js, api/auth.js, api/feedback.js</td><td>Beheeracties, inloggen, meldingen, suggesties en hun status</td></tr>
     <tr><td>api/cron.js, api/_lib/…</td><td>Wekelijkse taak; kennisbank.js, kaart.js, meldstatus.js, nmcheck.js, prompts.js, documentimport.js, auth.js, logboek.js, backup.js, kv.js</td></tr>
     <tr><td>docs/handleiding/</td><td>Deze handleiding: schermafbeeldingen met een nagebootste API (mock.js, shots.js) en de pdf (pdf.js)</td></tr>

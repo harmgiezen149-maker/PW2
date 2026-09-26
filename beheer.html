@@ -189,6 +189,7 @@ var TABS = [
   { id: 'logboek', titel: 'Logboek' },
   { id: 'websites', titel: 'Websites & controle' },
   { id: 'kaart', titel: 'Kaart en plekken' },
+  { id: 'achtergrond', titel: 'Achtergrondfoto' },
   { id: 'gebruikers', titel: 'Gebruikers' },
   { id: 'backup', titel: 'Back-up' }
 ];
@@ -213,7 +214,7 @@ function toonTab(id, opties) {
   inhoud.innerHTML = '<p class="leeg">Laden…</p>';
   if (location.hash !== '#' + id) history.replaceState(null, '', '#' + id);
   window.scrollTo(0, 0);
-  var tab = { overzicht: tabOverzicht, voorstellen: tabVoorstellen, kennisbank: tabKennisbank, meldingen: tabMeldingen, logboek: tabLogboek, websites: tabWebsites, kaart: window.tabKaart, gebruikers: tabGebruikers, backup: tabBackup }[id];
+  var tab = { overzicht: tabOverzicht, voorstellen: tabVoorstellen, kennisbank: tabKennisbank, meldingen: tabMeldingen, logboek: tabLogboek, websites: tabWebsites, kaart: window.tabKaart, achtergrond: window.tabAchtergrond, gebruikers: tabGebruikers, backup: tabBackup }[id];
   tab(inhoud, opties || {});
 }
 
@@ -880,5 +881,6 @@ function tabBackup(inhoud) {
 }
 </script>
 <script src="/assets/beheer-kaart.js"></script>
+<script src="/assets/beheer-achtergrond.js"></script>
 </body>
 </html>
