@@ -4,8 +4,10 @@
 const crypto = require('crypto');
 const kv = require('./kv');
 
-const K_GEBRUIKERS = 'auth:gebruikers'; // id -> gebruiker
-const K_CODES = 'auth:codes';           // sha256(code) -> gebruiker-id
+// Eigen sleutelnamen: in de productiedatabase gaven de sleutels auth:* een
+// WRONGTYPE-fout (er stond al een ander soort waarde onder). Die blijven onaangeroerd.
+const K_GEBRUIKERS = 'pw:gebruikers'; // id -> gebruiker
+const K_CODES = 'pw:codes';           // sha256(code) -> gebruiker-id
 const ROLLEN = ['gebruiker', 'beheerder'];
 
 function hash(code) {
@@ -69,9 +71,11 @@ async function maakLink({ id, naam, rol, door }) {
       linkGemaakt: new Date().toISOString(), linkGemaaktDoor: door
     };
   }
-  cmds.push(['HSET', K_GEBRUIKERS, g.id, JSON.stringify(g)]);
+  // Eerst de code, dan de gebruiker: mislukt het halverwege, dan ontstaat er geen
+  // gebruiker (of beheerder) zonder werkende link.
   cmds.push(['HSET', K_CODES, g.codeHash, g.id]);
   await kv.pipeline(cmds);
+  await kv.cmd('HSET', K_GEBRUIKERS, g.id, JSON.stringify(g));
   return { gebruiker: zonderGeheim(g), code };
 }
 
@@ -93,4 +97,4 @@ function zonderGeheim(g) {
   return k;
 }
 
-module.exports = { ROLLEN, K_GEBRUIKERS, gebruiker, beheerder, heeftActieveBeheerder, maakLink, intrekken, alleGebruikers, zonderGeheim, gelijk };
+module.exports = { ROLLEN, K_GEBRUIKERS, K_CODES, gebruiker, beheerder, heeftActieveBeheerder, maakLink, intrekken, alleGebruikers, zonderGeheim, gelijk };

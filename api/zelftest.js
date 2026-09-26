@@ -22,8 +22,8 @@ module.exports = async function handler(req, res) {
   // ?taak=diag: soort en grootte van de sleutels voor gebruikers (alleen-lezen, geen inhoud)
   if (req.query.taak === 'diag') {
     const kv = require('./_lib/kv');
-    const uit = { dbsize: await kv.cmd('DBSIZE'), authSleutels: ((await kv.cmd('KEYS', 'auth:*')) || []).slice(0, 20), sleutels: {} };
-    for (const k of ['auth:gebruikers', 'auth:codes']) {
+    const uit = { dbsize: await kv.cmd('DBSIZE'), authSleutels: ((await kv.cmd('KEYS', 'auth:*')) || []).slice(0, 20), pwSleutels: ((await kv.cmd('KEYS', 'pw:*')) || []).slice(0, 20), sleutels: {} };
+    for (const k of ['auth:gebruikers', 'auth:codes', 'pw:gebruikers', 'pw:codes']) {
       const type = await kv.cmd('TYPE', k);
       const grootte = { hash: 'HLEN', string: 'STRLEN', list: 'LLEN', set: 'SCARD', zset: 'ZCARD' }[type];
       uit.sleutels[k] = { type, ttl: await kv.cmd('TTL', k), grootte: grootte ? await kv.cmd(grootte, k) : null };
