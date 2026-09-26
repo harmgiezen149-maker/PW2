@@ -14,7 +14,7 @@ const STANDAARD_PAGINAS = [BASIS, BASIS + '/nieuws', BASIS + '/agenda'];
 const K_PAGINAS = 'cfg:nmpaginas';
 const K_HASH = 'cron:hash';
 const K_GEZIEN = 'cron:gezien';
-const MAX_NIEUW = 6;
+const MAX_NIEUW = 4;
 
 async function getPaginas() {
   const p = await kv.getJSON(K_PAGINAS, null);
@@ -47,7 +47,7 @@ function berichtLinks(html) {
 async function haal(url) {
   const r = await fetch(url, {
     headers: { 'User-Agent': 'PlankenWambuisAssistent/1.0 (dagelijkse controle voor boswachters)', 'Accept': 'text/html' },
-    redirect: 'follow', signal: AbortSignal.timeout(12000)
+    redirect: 'follow', signal: AbortSignal.timeout(10000)
   });
   if (!r.ok) throw new Error(`${url}: HTTP ${r.status}`);
   const html = await r.text();
@@ -107,7 +107,7 @@ async function vraagClaude(feiten, voorstellen, paginas) {
   const r = await client.messages.create({
     model: MODEL,
     max_tokens: 16000,
-    output_config: { effort: 'medium', format: { type: 'json_schema', schema: schema() } },
+    output_config: { effort: 'low', format: { type: 'json_schema', schema: schema() } },
     system: instructie(),
     messages: [{ role: 'user', content: inhoud }]
   });
@@ -149,22 +149,23 @@ async function controleer() {
   const nieuweHashes = {};
   const links = new Set();
 
-  for (const url of paginaUrls) {
-    try {
-      const p = await haal(url);
-      status.paginas++;
-      berichtLinks(p.html).forEach(l => links.add(l));
-      const h = crypto.createHash('sha256').update(p.tekst).digest('hex');
-      if (hashes[url] !== h) { teAnalyseren.push({ url, tekst: p.tekst }); nieuweHashes[url] = h; status.gewijzigd++; }
-    } catch (e) { status.fouten.push(e.message); }
+  // Pagina's tegelijk ophalen
+  const overzicht = await Promise.all(paginaUrls.map(url => haal(url).then(p => ({ url, p }), e => ({ url, fout: e.message }))));
+  for (const { url, p, fout } of overzicht) {
+    if (fout) { status.fouten.push(fout); continue; }
+    status.paginas++;
+    berichtLinks(p.html).forEach(l => links.add(l));
+    const h = crypto.createHash('sha256').update(p.tekst).digest('hex');
+    if (hashes[url] !== h) { teAnalyseren.push({ url, tekst: p.tekst.slice(0, 10000) }); nieuweHashes[url] = h; status.gewijzigd++; }
   }
-  const nieuweLinks = [...links].filter(l => !gezien[l] && !paginaUrls.includes(l)).slice(0, MAX_NIEUW);
-  for (const url of nieuweLinks) {
-    try {
-      const p = await haal(url);
-      teAnalyseren.push({ url, tekst: p.tekst.slice(0, 8000) });
-      status.nieuweBerichten++;
-    } catch (e) { status.fouten.push(e.message); }
+  const alleNieuw = [...links].filter(l => !gezien[l] && !paginaUrls.includes(l));
+  const nieuweLinks = alleNieuw.slice(0, MAX_NIEUW);
+  if (alleNieuw.length > MAX_NIEUW) status.nogTeLezen = alleNieuw.length - MAX_NIEUW;
+  const berichten = await Promise.all(nieuweLinks.map(url => haal(url).then(p => ({ url, p }), e => ({ url, fout: e.message }))));
+  for (const { url, p, fout } of berichten) {
+    if (fout) { status.fouten.push(fout); continue; }
+    teAnalyseren.push({ url, tekst: p.tekst.slice(0, 6000) });
+    status.nieuweBerichten++;
   }
 
   // Alles geblokkeerd? Dan maximaal één keer per week via Claude zelf ophalen.

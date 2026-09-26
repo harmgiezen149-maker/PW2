@@ -8,6 +8,17 @@ module.exports = async function handler(req, res) {
   if (process.env.VERCEL_ENV !== 'preview') return res.status(404).end();
   if (!(await checkRateLimit(req, 'zelftest', 20, 3600))) return res.status(429).json({ error: 'te vaak' });
 
+  // ?taak=nm: de nm.nl-controle direct uitvoeren (zonder de dagelijkse vergrendeling)
+  if (req.query.taak === 'nm') {
+    const t0 = Date.now();
+    try {
+      const status = await require('./_lib/nmcheck').controleer();
+      return res.status(200).json({ duurMs: Date.now() - t0, status });
+    } catch (e) {
+      return res.status(200).json({ duurMs: Date.now() - t0, fout: e.message });
+    }
+  }
+
   const vraag = String(req.query.vraag || 'Hoeveel wolven leven er in Planken Wambuis?').slice(0, 300);
   const fase = req.query.fase === '2' ? 2 : 1;
   const messages = fase === 2
