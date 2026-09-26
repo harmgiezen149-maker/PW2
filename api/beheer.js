@@ -6,6 +6,7 @@ const logboek = require('./_lib/logboek');
 const backup = require('./_lib/backup');
 const nmcheck = require('./_lib/nmcheck');
 const documentimport = require('./_lib/documentimport');
+const meldstatus = require('./_lib/meldstatus');
 
 const K_MELDINGEN = 'kb:meldingen';
 const { setSecurityHeaders, vandaagISO } = require('./_lib/http');
@@ -47,6 +48,13 @@ function valideerFeit(inv) {
   if (f.type !== 'seizoen') delete f.maanden;
   if (!f.bronUrl) delete f.bronUrl;
   return { feit: f };
+}
+
+// Welk melder-id hoort bij een voorstel: de oorspronkelijke melding, of de suggestie zelf.
+function meldingVanVoorstel(v) {
+  if (v.meldingId && meldstatus.geldigId(v.meldingId)) return v.meldingId;
+  if (v.herkomst === 'gebruiker' && meldstatus.geldigId(v.id)) return v.id;
+  return null;
 }
 
 function metBeoordeling(f, vandaag) {
@@ -168,15 +176,23 @@ module.exports = async function handler(req, res) {
         }
         doel.gecontroleerdOp = vandaag;
         doel.gecontroleerdDoor = door;
-        await kv.pipeline([
+        const cmds = [
           ['HSET', kb.K_FEITEN, doel.id, JSON.stringify(doel)],
           ['HDEL', kb.K_VOORSTELLEN, v.id]
-        ]);
+        ];
+        // Melder kan onder "Mijn meldingen" zien dat het verwerkt is
+        const statusId = meldingVanVoorstel(v);
+        if (statusId) cmds.push(meldstatus.cmd(statusId, 'verwerkt'));
+        await kv.pipeline(cmds);
         return res.json({ ok: true, feit: metBeoordeling(doel, vandaag) });
       }
 
       case 'voorstel-afwijzen': {
-        await kv.cmd('HDEL', kb.K_VOORSTELLEN, String(body.id || ''));
+        const v = kv.parse(await kv.cmd('HGET', kb.K_VOORSTELLEN, String(body.id || '')));
+        const cmds = [['HDEL', kb.K_VOORSTELLEN, String(body.id || '')]];
+        const statusId = v && meldingVanVoorstel(v);
+        if (statusId) cmds.push(meldstatus.cmd(statusId, v.meldingId ? 'afgehandeld' : 'afgewezen'));
+        await kv.pipeline(cmds);
         return res.json({ ok: true });
       }
 
@@ -224,7 +240,10 @@ module.exports = async function handler(req, res) {
       }
 
       case 'melding-afhandelen': {
-        await kv.cmd('HDEL', K_MELDINGEN, String(body.id || ''));
+        const id = String(body.id || '');
+        const cmds = [['HDEL', K_MELDINGEN, id]];
+        if (meldstatus.geldigId(id)) cmds.push(meldstatus.cmd(id, 'afgehandeld'));
+        await kv.pipeline(cmds);
         return res.json({ ok: true });
       }
 
@@ -235,10 +254,13 @@ module.exports = async function handler(req, res) {
         await kv.pipeline([
           ['HSET', kb.K_VOORSTELLEN, id, JSON.stringify({
             id, soort: 'nieuw', tekst: m.toelichting || '', herkomst: 'feedback', deelgebied: 'heel', type: 'jaarlijks',
-            zichtbaarheid: 'openbaar', aangemaakt: new Date().toISOString(),
-            toelichting: `Melding "klopt niet" bij de vraag: "${(m.vraag || '').slice(0, 200)}". Schrijf het juiste feit en vul de bron in.`
+            zichtbaarheid: 'openbaar', aangemaakt: new Date().toISOString(), meldingId: m.id,
+            toelichting: m.vraag
+              ? `Melding "klopt niet" bij de vraag: "${m.vraag.slice(0, 200)}". Schrijf het juiste feit en vul de bron in.`
+              : 'Melding vanuit het tabblad Meldingen. Schrijf het juiste feit en vul de bron in.'
           })],
-          ['HDEL', K_MELDINGEN, m.id]
+          ['HDEL', K_MELDINGEN, m.id],
+          meldstatus.cmd(m.id, 'in-behandeling')
         ]);
         return res.json({ ok: true });
       }

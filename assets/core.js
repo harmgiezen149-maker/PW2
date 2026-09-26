@@ -196,23 +196,46 @@ PW.openBlad = function(bouw) {
 // ============================================================
 // Tabbladen en schermen
 // ============================================================
-// Alleen tabbladen die af zijn, staan in de tabbalk.
-PW.TABS = [
-  { id: 'chat', titel: 'Chat', icoon: 'chat' }
-];
+// Elk scherm registreert zichzelf. Schermen met een `tabblad` staan in de tabbalk;
+// alleen tabbladen die af zijn, worden geregistreerd.
 var views = {};
 
-// view: { kop: 'titel' of functie(param), toon: functie(param), terug: '#hash' of null, verhaalKnop: bool }
+// view: { kop: 'titel' of functie(param), toon: functie(param), terug: '#hash' of functie(param),
+//         verhaalKnop: bool, tab: id van het tabblad dat oplicht, tabblad: { titel, icoon, volgorde } }
 PW.registreerView = function(id, view) { views[id] = view; };
 
 function bouwTabbalk() {
   var nav = document.getElementById('tabbalk');
   nav.innerHTML = '';
-  PW.TABS.forEach(function(t) {
-    var a = PW.el('a', { href: '#' + t.id, 'data-tab': t.id, html: PW.icoon(t.icoon, { maat: 26 }) + '<span>' + t.titel + '</span>' });
-    nav.appendChild(a);
-  });
+  Object.keys(views).filter(function(id) { return views[id].tabblad; })
+    .sort(function(a, b) { return views[a].tabblad.volgorde - views[b].tabblad.volgorde; })
+    .forEach(function(id) {
+      var t = views[id].tabblad;
+      nav.appendChild(PW.el('a', { href: '#' + id, 'data-tab': id, html: PW.icoon(t.icoon, { maat: 26 }) + '<span>' + t.titel + '</span>' }));
+    });
 }
+
+// Tellertje op een tabblad (bijv. nieuwe meldingen); 0 = weg
+PW.zetTeller = function(tabId, n) {
+  var a = document.querySelector('#tabbalk a[data-tab="' + tabId + '"]');
+  if (!a) return;
+  var t = a.querySelector('.teller');
+  if (!n) { if (t) t.remove(); a.removeAttribute('aria-description'); return; }
+  if (!t) { t = PW.el('span', { class: 'teller', 'aria-hidden': 'true' }); a.appendChild(t); }
+  t.textContent = n > 9 ? '9+' : String(n);
+  a.setAttribute('aria-description', n + ' nieuw');
+};
+
+// Aan/uit-schakelaar (role=switch)
+PW.schakelaar = function(label, aan, bijWissel) {
+  var knop = PW.el('button', { type: 'button', role: 'switch', class: 'switch', 'aria-checked': aan ? 'true' : 'false', 'aria-label': label });
+  knop.onclick = function() {
+    var nieuw = knop.getAttribute('aria-checked') !== 'true';
+    knop.setAttribute('aria-checked', nieuw ? 'true' : 'false');
+    bijWissel(nieuw);
+  };
+  return knop;
+};
 
 PW.huidigeView = null;
 PW.ga = function(hash) { if (location.hash === hash) route(); else location.hash = hash; };
@@ -227,6 +250,8 @@ function route() {
     var el = document.getElementById('view-' + k);
     if (el) el.hidden = k !== id;
   });
+  var scherm = document.getElementById('view-' + id);
+  if (scherm && PW.huidigeView !== id) { var sc = scherm.querySelector('.view-scroll'); if (sc) sc.scrollTop = 0; }
   var tabId = view.tab || id;
   document.querySelectorAll('#tabbalk a').forEach(function(a) {
     if (a.getAttribute('data-tab') === tabId) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');

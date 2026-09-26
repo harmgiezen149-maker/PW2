@@ -46,8 +46,9 @@ const K_VOORSTELLEN = 'kb:voorstellen';
 const K_SITES = 'cfg:sites';
 const K_SEEDVERSIE = 'kb:seedversie';
 
-function nieuwId(prefix) {
-  return prefix + '_' + Date.now().toString(36) + crypto.randomBytes(3).toString('hex');
+// sterk: langer willekeurig deel, voor id's die de melder zelf bewaart (niet te raden)
+function nieuwId(prefix, sterk) {
+  return prefix + '_' + Date.now().toString(36) + crypto.randomBytes(sterk ? 8 : 3).toString('hex');
 }
 
 function plusMaanden(iso, n) {
@@ -77,7 +78,8 @@ function beoordeel(f, vandaag) {
 
 // Feiten die de assistent vandaag mag gebruiken (vraag 12: verlopen feiten blijven
 // in gebruik met een waarschuwing; afgelopen tijdelijke feiten niet).
-function bruikbareFeiten(feiten, { ingelogd, maand, vandaag } = {}) {
+// alleMaanden: seizoensfeiten van het hele jaar (voor het overzicht per gebied).
+function bruikbareFeiten(feiten, { ingelogd, maand, vandaag, alleMaanden } = {}) {
   maand = maand || nlMaand();
   vandaag = vandaag || vandaagISO();
   return Object.values(feiten).filter(f => {
@@ -86,7 +88,7 @@ function bruikbareFeiten(feiten, { ingelogd, maand, vandaag } = {}) {
     const b = beoordeel(f, vandaag);
     if (b.afgelopen || b.nogNiet) return false;
     // Seizoensfeiten alleen in de maanden waarvoor ze gelden (plus de maand erna, om vooruit te kunnen kijken)
-    if (f.type === 'seizoen' && Array.isArray(f.maanden) && f.maanden.length > 0) {
+    if (!alleMaanden && f.type === 'seizoen' && Array.isArray(f.maanden) && f.maanden.length > 0) {
       const volgende = maand === 12 ? 1 : maand + 1;
       if (!f.maanden.includes(maand) && !f.maanden.includes(volgende)) return false;
     }

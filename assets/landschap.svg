@@ -11,6 +11,12 @@
   <path fill="#3F5A4B" d="M-10 332 L18 214 L46 332Z M30 332 L64 176 L98 332Z M84 332 L108 232 L132 332Z M170 332 L192 246 L214 332Z M250 332 L282 190 L314 332Z M300 332 L330 224 L360 332Z M344 332 L372 170 L400 332Z M470 332 L494 236 L518 332Z M520 332 L552 184 L584 332Z M600 332 L626 222 L652 332Z M690 332 L720 196 L750 332Z M740 332 L768 230 L796 332Z"/>
   <path d="M0 318 Q160 292 330 314 T640 306 T800 310 V600 H0Z" fill="#8F7189"/>
   <path d="M0 452 Q170 420 360 452 T700 444 T800 448 V600 H0Z" fill="#735A73"/>
-  <path d="M300 404 q10 -18 34 -18 q22 0 30 14 l0 20 h-6 v-10 h-44 v10 h-6z" fill="#8A5A36"/>
-  <path d="M560 392 q7 -12 23 -12 q15 0 20 9 l0 14 h-4 v-7 h-30 v7 h-4z" fill="#7A4E30"/>
+  <!-- twee grazers (schotse hooglanders, gestileerd) -->
+  <g fill="#6E452B">
+    <ellipse cx="318" cy="402" rx="22" ry="10"/><ellipse cx="343" cy="398" rx="7" ry="6"/>
+    <rect x="302" y="406" width="4" height="13" rx="2"/><rect x="312" y="407" width="4" height="12" rx="2"/><rect x="324" y="407" width="4" height="12" rx="2"/><rect x="333" y="405" width="4" height="13" rx="2"/>
+    <ellipse cx="578" cy="392" rx="15" ry="7"/><ellipse cx="595" cy="389" rx="5" ry="4"/>
+    <rect x="567" y="395" width="3" height="9" rx="1.5"/><rect x="575" y="396" width="3" height="8" rx="1.5"/><rect x="583" y="396" width="3" height="8" rx="1.5"/><rect x="589" y="394" width="3" height="9" rx="1.5"/>
+  </g>
+  <path d="M338 393 q-4 -6 -9 -5 M348 393 q4 -6 9 -5" stroke="#E9E2D0" stroke-width="2" fill="none" stroke-linecap="round"/>
 </svg>

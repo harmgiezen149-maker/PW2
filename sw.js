@@ -5,7 +5,7 @@
 // - Lettertypen, iconen en afbeeldingen: cache-first (veranderen zelden).
 // - /api/*: nooit cachen (antwoorden, weer en meldingen zijn per definitie actueel;
 //   de app bewaart zelf de laatst geladen stand met datum).
-const CACHE = 'pw-v80';
+const CACHE = 'pw-v81';
 const STATIC_ASSETS = [
   '/',
   '/manifest.webmanifest',
@@ -13,6 +13,8 @@ const STATIC_ASSETS = [
   '/assets/core.js',
   '/assets/vogels.js',
   '/assets/chat.js',
+  '/assets/meldingen.js',
+  '/assets/profiel.js',
   '/assets/landschap.svg',
   '/assets/fonts/fira-sans-latin-400-normal.woff2',
   '/assets/fonts/fira-sans-latin-500-normal.woff2',

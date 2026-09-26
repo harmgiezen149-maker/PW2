@@ -773,6 +773,6 @@ function init() {
   laadWeer();
 }
 
-PW.registreerView('chat', { kop: 'Boswachter Assistent', verhaalKnop: true });
+PW.registreerView('chat', { kop: 'Boswachter Assistent', verhaalKnop: true, tabblad: { titel: 'Chat', icoon: 'chat', volgorde: 1 } });
 init();
 })();
