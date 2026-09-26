@@ -77,6 +77,13 @@
   .bl::before { content:'●'; color:var(--lime); font-size:0.45rem; position:absolute; left:2px; top:8px; }
   .bl-sub { display:block; padding-left:14px; margin-bottom:3px; margin-left:14px; color:var(--tm); position:relative; }
   .bl-sub::before { content:'–'; color:var(--tl); font-size:0.8rem; position:absolute; left:0; top:0; }
+  .fn { font-size:0.68em; font-weight:700; color:var(--g); margin-left:2px; vertical-align:super; line-height:0; }
+  .bronnen { margin-top:12px; padding-top:10px; border-top:1px solid var(--b); font-size:0.76rem; color:var(--tm); }
+  .bronnen-kop { font-weight:700; color:var(--g-dark); margin-bottom:4px; font-size:0.78rem; }
+  .bron { display:flex; gap:6px; margin:3px 0; line-height:1.4; }
+  .bron-nr { font-weight:700; color:var(--g); min-width:16px; }
+  .bron a { color:var(--g); }
+  .bron .oud { color:#b5651d; font-weight:600; }
   .photos { display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; padding-top:10px; border-top:1px solid var(--b); }
   .scroll-top { display:block; margin-top:10px; padding:7px 12px; background:var(--gl); border:1.5px solid transparent; color:var(--g); border-radius:20px; font-size:0.72rem; font-weight:600; cursor:pointer; font-family:'Source Sans 3',sans-serif; text-align:center; transition:all 0.2s; }
   .speak-btn { display:inline-flex; align-items:center; gap:5px; margin-bottom:10px; padding:6px 13px; background:var(--gl); border:1.5px solid transparent; color:var(--g); border-radius:20px; font-size:0.72rem; font-weight:600; cursor:pointer; font-family:'Source Sans 3',sans-serif; transition:all 0.2s; }
@@ -185,7 +192,7 @@
     </div>
     <div class="hdr-right">
       <span class="hdr-season" id="season"></span>
-      <span class="hdr-ver">v73</span>
+      <span class="hdr-ver">v74</span>
       <div class="story-toggle" id="storyToggle" onclick="toggleStorytelling()">
         <span class="st-label">Verhaal</span>
         <div class="st-switch"></div>
@@ -297,10 +304,10 @@ function addSuggestion() {
   var input = document.getElementById('corrInput');
   var text = input.value.trim();
   if (!text) return;
-  fetch('/api/corrections-set', {
+  fetch('/api/feedback', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'add-pending', text: text })
+    body: JSON.stringify({ actie: 'suggestie', tekst: text })
   })
   .then(function(r) { return r.json(); })
   .then(function(data) {
@@ -990,7 +997,7 @@ function addUser(text) {
     w.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }, 100);
 }
-function addBot(text) {
+function addBot(text, bronnen) {
   var soorten = [];
   var mainText = text;
   var lines = text.trim().split('\n');
@@ -1016,7 +1023,8 @@ function addBot(text) {
   var contentDiv = document.createElement('div');
   contentDiv.innerHTML = render(mainText);
   b.appendChild(contentDiv);
-  speakBtn.onclick = function() { speakText(mainText, speakBtn, contentDiv); };
+  speakBtn.onclick = function() { speakText(zonderVoetnoten(mainText), speakBtn, contentDiv); };
+  if (bronnen && bronnen.length > 0) b.appendChild(maakBronnenlijst(bronnen));
   if (soorten.length > 0) loadPhotos(soorten, b);
   var scrollBtn = document.createElement('button');
   scrollBtn.className = 'scroll-top';
@@ -1073,6 +1081,10 @@ function hideTyping() {
   var t = document.getElementById('typ'); if (t) t.remove();
 }
 function fmt(line) {
+  // Nooit HTML uit het antwoord uitvoeren
+  line = line.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  // Voetnootmarkeringen ⟦1,2⟧ -> superscript
+  line = line.replace(/\s?⟦([^⟧]+)⟧/g, '<sup class="fn">$1</sup>');
   // Verwijder Latijnse namen die model toevoegt: *(Lullula arborea)*
   line = line.replace(/\s*\*\([^)]+\)\*/g, '');
   // Vervang **bold** inline
@@ -1152,7 +1164,8 @@ function loadPhotos(soorten, container) {
 }
 
 // Eén chat-call streamen. onDelta(streamText) wordt aangeroepen bij elke tekst,
-// onSearch() wanneer het model gaat zoeken. Geeft { rawText, bronnen } terug.
+// onSearch() wanneer het model gaat zoeken. Geeft { rawText, bronnen, fout } terug.
+// Citaties worden omgezet in voetnootmarkeringen ⟦n⟧ en een genummerde bronnenlijst.
 function runChat(payload, onDelta, onSearch) {
   return fetch('/api/chat?' + Date.now(), {
     method: 'POST',
@@ -1164,18 +1177,87 @@ function runChat(payload, onDelta, onSearch) {
       return res.json().then(function(d) { throw new Error(d.error || 'Server fout'); });
     }
     var rawText = '';
-    var bronnen = [];
-    var bronUrls = {};
     var fout = null;
-    if (!res.body || !res.body.getReader) {
-      // Fallback voor oude browsers
-      return res.json().then(function(data) {
-        for (var i = 0; i < data.content.length; i++) {
-          if (data.content[i].type === 'text') rawText += data.content[i].text;
-        }
-        return { rawText: rawText, bronnen: bronnen, fout: fout };
-      });
+    var meta = [];          // kennisbankdocumenten met hun feiten (pw_meta)
+    var blokken = {};       // index -> { type, cit: [] }
+    var bronnen = [];       // genummerde bronnen
+    var bronNrs = {};       // sleutel -> nummer
+    var paginaDatum = {};   // url -> page_age van zoekresultaat
+
+    function bronNr(sleutel, maak) {
+      if (!bronNrs[sleutel]) {
+        var b = maak();
+        b.nr = bronnen.length + 1;
+        bronnen.push(b);
+        bronNrs[sleutel] = b.nr;
+      }
+      return bronNrs[sleutel];
     }
+
+    function nummersVoor(c) {
+      if (c.type === 'content_block_location' && meta[c.document_index]) {
+        var doc = meta[c.document_index];
+        var nrs = [];
+        for (var i = c.start_block_index; i < c.end_block_index; i++) {
+          var f = doc.feiten[i];
+          if (!f) continue;
+          nrs.push(bronNr('kb:' + f.id, function() {
+            return { soort: 'kb', titel: doc.titel + (f.deelgebied && f.deelgebied !== 'Hele gebied' ? ' · ' + f.deelgebied : ''),
+                     datum: f.gecontroleerdOp, verouderd: f.verouderd, bron: f.bron, url: f.bronUrl };
+          }));
+        }
+        return nrs;
+      }
+      if (c.url) {
+        return [bronNr('web:' + c.url, function() {
+          return { soort: 'web', titel: c.title || c.url, url: c.url, datum: paginaDatum[c.url] || '' };
+        })];
+      }
+      if (typeof c.document_index === 'number') {
+        return [bronNr('doc:' + c.document_index, function() {
+          return { soort: 'kb', titel: (c.document_title || 'Kennisbank').replace(/^Kennisbank: /, '') };
+        })];
+      }
+      return [];
+    }
+
+    function verwerk(evt) {
+      if (evt.type === 'pw_error') { fout = evt.message; return; }
+      if (evt.type === 'pw_meta') { meta = evt.docs || []; return; }
+      if (evt.type === 'content_block_start' && evt.content_block) {
+        var cb = evt.content_block;
+        blokken[evt.index] = { type: cb.type, cit: [] };
+        if (cb.type === 'server_tool_use' && onSearch) onSearch();
+        if (cb.type === 'web_search_tool_result' && Array.isArray(cb.content)) {
+          cb.content.forEach(function(r) { if (r.url) paginaDatum[r.url] = r.page_age || ''; });
+        }
+        return;
+      }
+      if (evt.type === 'content_block_delta' && evt.delta) {
+        if (evt.delta.type === 'text_delta') {
+          rawText += evt.delta.text;
+          if (onDelta) onDelta(rawText);
+        } else if (evt.delta.type === 'citations_delta' && evt.delta.citation && blokken[evt.index]) {
+          blokken[evt.index].cit.push(evt.delta.citation);
+        }
+        return;
+      }
+      if (evt.type === 'content_block_stop' && blokken[evt.index]) {
+        var bl = blokken[evt.index];
+        if (bl.type === 'text' && bl.cit.length > 0) {
+          var nrs = [];
+          bl.cit.forEach(function(c) { nummersVoor(c).forEach(function(n) { if (nrs.indexOf(n) < 0) nrs.push(n); }); });
+          nrs.sort(function(x, y) { return x - y; });
+          if (nrs.length > 0) {
+            var m = rawText.match(/\s*$/);
+            var eind = rawText.length - m[0].length;
+            rawText = rawText.slice(0, eind) + '⟦' + nrs.join(',') + '⟧' + rawText.slice(eind);
+            if (onDelta) onDelta(rawText);
+          }
+        }
+      }
+    }
+
     var reader = res.body.getReader();
     var decoder = new TextDecoder();
     var buffer = '';
@@ -1189,23 +1271,7 @@ function runChat(payload, onDelta, onSearch) {
           if (!line.startsWith('data: ')) return;
           var data = line.slice(6).trim();
           if (!data || data === '[DONE]') return;
-          try {
-            var evt = JSON.parse(data);
-            if (evt.type === 'pw_error') {
-              fout = evt.message;
-            } else if (evt.type === 'content_block_delta' && evt.delta && evt.delta.type === 'text_delta') {
-              rawText += evt.delta.text;
-              if (onDelta) onDelta(rawText);
-            } else if (evt.type === 'content_block_start' && evt.content_block && evt.content_block.type === 'server_tool_use') {
-              if (onSearch) onSearch();
-            } else if (evt.type === 'content_block_delta' && evt.delta && evt.delta.type === 'citations_delta' && evt.delta.citation && evt.delta.citation.url) {
-              var c = evt.delta.citation;
-              if (!bronUrls[c.url]) {
-                bronUrls[c.url] = true;
-                bronnen.push({ url: c.url, title: c.title || '' });
-              }
-            }
-          } catch(e) {}
+          try { verwerk(JSON.parse(data)); } catch(e) {}
         });
         return read();
       });
@@ -1214,15 +1280,52 @@ function runChat(payload, onDelta, onSearch) {
   });
 }
 
-// Bronnenlijst als markdown, ingevoegd vóór de soorten-JSON-regel
-function metBronnen(text, bronnen) {
-  if (!bronnen || bronnen.length === 0) return text;
-  var bronBlok = '\n\n## Bronnen\n' + bronnen.map(function(b) {
-    return '- [' + (b.title || b.url) + '](' + b.url + ')';
-  }).join('\n');
-  var m = text.match(/\{\s*"soorten"[\s\S]*\}\s*$/);
-  if (m) return text.slice(0, m.index) + bronBlok + '\n\n' + m[0];
-  return text + bronBlok;
+function zonderVoetnoten(t) {
+  return (t || '').replace(/\s?⟦[^⟧]*⟧/g, '');
+}
+
+function nlDatumKort(iso) {
+  if (!iso) return '';
+  var p = iso.split('-');
+  return p.length === 3 ? p[2] + '-' + p[1] + '-' + p[0] : (p.length === 2 ? p[1] + '-' + p[0] : iso);
+}
+
+// Genummerde bronnenlijst onder een antwoord
+function maakBronnenlijst(bronnen) {
+  var el = document.createElement('div');
+  el.className = 'bronnen';
+  var kop = document.createElement('div'); kop.className = 'bronnen-kop'; kop.textContent = 'Bronnen';
+  el.appendChild(kop);
+  bronnen.forEach(function(b) {
+    var rij = document.createElement('div'); rij.className = 'bron';
+    var nr = document.createElement('span'); nr.className = 'bron-nr'; nr.textContent = b.nr;
+    var tekst = document.createElement('span');
+    if (b.soort === 'kb') {
+      tekst.appendChild(document.createTextNode('📚 Kennisbank · ' + b.titel + (b.datum ? ' · gecontroleerd ' + nlDatumKort(b.datum) : '')));
+      if (b.verouderd) {
+        var oud = document.createElement('span'); oud.className = 'oud'; oud.textContent = ' · mogelijk verouderd';
+        tekst.appendChild(oud);
+      }
+      if (b.bron) {
+        tekst.appendChild(document.createTextNode(' · bron: '));
+        if (b.url) {
+          var a = document.createElement('a'); a.href = b.url; a.target = '_blank'; a.rel = 'noopener'; a.textContent = b.bron;
+          tekst.appendChild(a);
+        } else {
+          tekst.appendChild(document.createTextNode(b.bron));
+        }
+      }
+    } else {
+      tekst.appendChild(document.createTextNode('🔎 '));
+      var link = document.createElement('a'); link.href = b.url; link.target = '_blank'; link.rel = 'noopener';
+      link.textContent = b.titel || b.url;
+      tekst.appendChild(link);
+      tekst.appendChild(document.createTextNode((b.datum ? ' · ' + b.datum : '') + ' · niet gecontroleerd door een boswachter'));
+    }
+    rij.appendChild(nr); rij.appendChild(tekst);
+    el.appendChild(rij);
+  });
+  return el;
 }
 
 function ask(q) {
@@ -1248,7 +1351,7 @@ function ask(q) {
     var fase1Tekst = r1.rawText || '';
     if (!fase1Tekst.trim()) { hideTyping(); showErr(r1.fout || 'Er kwam geen antwoord. Probeer het opnieuw.'); return; }
     if (r1.fout) showErr(r1.fout);
-    var rendered = addBot(metBronnen(fase1Tekst, r1.bronnen));
+    var rendered = addBot(fase1Tekst, r1.bronnen);
     // FASE 2 — aanvulling op de achtergrond (max 2 zoekacties)
     startAanvulling(q, mode, fase1Tekst, rendered);
   })
@@ -1309,7 +1412,7 @@ function startAanvulling(q, mode, fase1Tekst, rendered) {
   runChat({
     messages: [
       { role: 'user', content: q },
-      { role: 'assistant', content: fase1Tekst },
+      { role: 'assistant', content: zonderVoetnoten(fase1Tekst) },
       { role: 'user', content: 'Vul dit antwoord aan volgens je instructies.' }
     ],
     mode: mode,
