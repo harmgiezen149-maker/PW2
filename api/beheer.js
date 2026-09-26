@@ -2,7 +2,7 @@
 const kv = require('./_lib/kv');
 const kb = require('./_lib/kennisbank');
 const auth = require('./_lib/auth');
-const { setSecurityHeaders, checkRateLimit, vandaagISO } = require('./_lib/http');
+const { setSecurityHeaders, vandaagISO } = require('./_lib/http');
 
 const DATUM = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -54,9 +54,7 @@ module.exports = async function handler(req, res) {
 
   const gebruiker = await auth.beheerder(req);
   if (!gebruiker) {
-    // Mislukte pogingen beperken tegen raden
-    const ok = await checkRateLimit(req, 'beheer-fout', 10, 600);
-    return res.status(ok ? 401 : 429).json({ error: ok ? 'Geen toegang' : 'Te veel pogingen, wacht 10 minuten.' });
+    return res.status(401).json({ error: 'Geen toegang. Open je persoonlijke beheerderslink.' });
   }
 
   const body = req.body || {};
@@ -178,6 +176,35 @@ module.exports = async function handler(req, res) {
         if (sites.length > 60) return res.status(400).json({ error: 'Maximaal 60 websites.' });
         await kv.setJSON(kb.K_SITES, sites);
         return res.json({ ok: true, sites });
+      }
+
+      case 'gebruikers': {
+        const alle = await auth.alleGebruikers();
+        const lijst = Object.values(alle).map(auth.zonderGeheim)
+          .sort((a, b) => (a.ingetrokken - b.ingetrokken) || a.naam.localeCompare(b.naam));
+        return res.json({ gebruikers: lijst });
+      }
+
+      case 'gebruiker-maken': {
+        const naam = tekstVeld(body.naam, 60);
+        if (naam.length < 2) return res.status(400).json({ error: 'Vul een naam in.' });
+        if (!auth.ROLLEN.includes(body.rol)) return res.status(400).json({ error: 'Kies een rol.' });
+        return res.json(await auth.maakLink({ naam, rol: body.rol, door }));
+      }
+
+      case 'gebruiker-nieuwe-link': {
+        return res.json(await auth.maakLink({ id: String(body.id || ''), door }));
+      }
+
+      case 'gebruiker-intrekken': {
+        const alle = await auth.alleGebruikers();
+        const doel = alle[body.id];
+        if (!doel) return res.status(404).json({ error: 'Gebruiker niet gevonden' });
+        const actieveBeheerders = Object.values(alle).filter(g => g.rol === 'beheerder' && !g.ingetrokken);
+        if (doel.rol === 'beheerder' && !doel.ingetrokken && actieveBeheerders.length === 1) {
+          return res.status(400).json({ error: 'Dit is de laatste beheerder. Maak eerst een andere beheerder aan.' });
+        }
+        return res.json({ ok: true, gebruiker: await auth.intrekken(doel.id, door) });
       }
 
       default:

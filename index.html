@@ -192,7 +192,7 @@
     </div>
     <div class="hdr-right">
       <span class="hdr-season" id="season"></span>
-      <span class="hdr-ver">v74</span>
+      <span class="hdr-ver">v75</span>
       <div class="story-toggle" id="storyToggle" onclick="toggleStorytelling()">
         <span class="st-label">Verhaal</span>
         <div class="st-switch"></div>
@@ -259,6 +259,7 @@
 </div>
 <div class="beheer" id="beheer" onclick="if(event.target===this)toggleBeheer()">
   <div class="beheer-panel">
+    <div id="loginStatus" style="font-size:0.8rem;color:var(--tm);background:var(--gp);border:1px solid var(--b);border-radius:8px;padding:8px 10px;margin-bottom:12px;line-height:1.5;"></div>
     <h3>💡 Suggestie indienen</h3>
     <p>Dien een suggestie of correctie in. De beheerder controleert je suggestie eerst; pas na goedkeuring gebruikt de assistent hem in antwoorden.</p>
     <div id="corrList"></div>
@@ -286,9 +287,72 @@ function toggleBeheer() {
     el.classList.remove('open');
   } else {
     loadCorrections();
+    toonLoginStatus();
     el.classList.add('open');
   }
 }
+
+// ============================================================
+// Inloggen met een persoonlijke link (…/?login=<code>)
+// ============================================================
+var huidigeGebruiker = null;
+
+function pwToken() {
+  try { return localStorage.getItem('pw_token'); } catch (e) { return null; }
+}
+
+function apiHeaders() {
+  var h = { 'Content-Type': 'application/json' };
+  var t = pwToken();
+  if (t) h['X-PW-Token'] = t;
+  return h;
+}
+
+(function leesLoginLink() {
+  var m = location.search.match(/[?&]login=([A-Za-z0-9_-]{20,100})/);
+  if (!m) return;
+  try { localStorage.setItem('pw_token', m[1]); } catch (e) {}
+  history.replaceState(null, '', location.pathname);
+})();
+
+function controleerLogin() {
+  if (!pwToken()) { huidigeGebruiker = null; return Promise.resolve(null); }
+  return fetch('/api/auth', { method: 'POST', headers: apiHeaders(), body: JSON.stringify({ actie: 'wie' }) })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      huidigeGebruiker = d.gebruiker || null;
+      // Ingetrokken of ongeldige link: code vergeten
+      if (!huidigeGebruiker) { try { localStorage.removeItem('pw_token'); } catch (e) {} }
+      return huidigeGebruiker;
+    })
+    .catch(function() { return null; });
+}
+
+function toonLoginStatus() {
+  var el = document.getElementById('loginStatus');
+  el.innerHTML = '';
+  if (huidigeGebruiker) {
+    el.appendChild(document.createTextNode('👤 Ingelogd als ' + huidigeGebruiker.naam + (huidigeGebruiker.rol === 'beheerder' ? ' (beheerder)' : '') + '. Je krijgt ook interne informatie. '));
+    if (huidigeGebruiker.rol === 'beheerder') {
+      var a = document.createElement('a'); a.href = '/beheer.html'; a.textContent = 'Beheerpaneel openen'; a.style.color = 'var(--g)';
+      el.appendChild(a);
+      el.appendChild(document.createTextNode(' · '));
+    }
+    var uit = document.createElement('a'); uit.href = '#'; uit.textContent = 'Uitloggen'; uit.style.color = 'var(--g)';
+    uit.onclick = function(e) {
+      e.preventDefault();
+      if (!confirm('Uitloggen? Je hebt je persoonlijke link nodig om weer in te loggen.')) return;
+      try { localStorage.removeItem('pw_token'); } catch (x) {}
+      huidigeGebruiker = null;
+      toonLoginStatus();
+    };
+    el.appendChild(uit);
+  } else {
+    el.textContent = 'Niet ingelogd. Boswachters en vrijwilligers loggen in met hun persoonlijke link van de beheerder en krijgen dan ook interne informatie.';
+  }
+}
+
+controleerLogin();
 
 function loadCorrections(melding) {
   var list = document.getElementById('corrList');
@@ -1169,7 +1233,7 @@ function loadPhotos(soorten, container) {
 function runChat(payload, onDelta, onSearch) {
   return fetch('/api/chat?' + Date.now(), {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: apiHeaders(),
     body: JSON.stringify(payload)
   })
   .then(function(res) {
@@ -1235,7 +1299,14 @@ function runChat(payload, onDelta, onSearch) {
       }
       if (evt.type === 'content_block_delta' && evt.delta) {
         if (evt.delta.type === 'text_delta') {
-          rawText += evt.delta.text;
+          var t = evt.delta.text;
+          var bk = blokken[evt.index];
+          // Bij de overgang naar een (geciteerd) tekstblok valt soms de spatie weg: "**Aantal**Er leeft"
+          if (bk && !bk.gestart) {
+            bk.gestart = true;
+            if (/[0-9A-Za-zÀ-ÿ.,:;!?)*⟧]$/.test(rawText) && /^[0-9A-Za-zÀ-ÿ]/.test(t)) t = ' ' + t;
+          }
+          rawText += t;
           if (onDelta) onDelta(rawText);
         } else if (evt.delta.type === 'citations_delta' && evt.delta.citation && blokken[evt.index]) {
           blokken[evt.index].cit.push(evt.delta.citation);

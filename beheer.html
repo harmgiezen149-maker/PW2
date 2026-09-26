@@ -93,9 +93,14 @@
 <div id="login">
   <div class="icon">🌲</div>
   <h1>Beheer Planken Wambuis</h1>
-  <p id="loginUitleg">Voer het beheerwachtwoord in om door te gaan.</p>
-  <input type="password" id="pwInput" placeholder="Wachtwoord" autocomplete="current-password" onkeydown="if(event.key==='Enter')login()" />
-  <button class="btn primair" onclick="login()">Inloggen</button>
+  <p id="loginUitleg">Laden…</p>
+  <div id="startVak" style="display:none;width:100%;max-width:320px">
+    <p>Er is nog geen beheerder. Maak de eerste beheerder aan met het beheerwachtwoord (dit kan maar één keer; daarna log je in met je persoonlijke link).</p>
+    <input id="startNaam" placeholder="Je naam" />
+    <input type="password" id="pwInput" placeholder="Beheerwachtwoord" autocomplete="current-password" onkeydown="if(event.key==='Enter')startBeheer()" />
+    <button class="btn primair" onclick="startBeheer()">Eerste beheerder aanmaken</button>
+  </div>
+  <div id="linkVak" style="display:none;width:100%;max-width:420px"></div>
   <p class="err" id="loginErr"></p>
 </div>
 
@@ -115,12 +120,21 @@
 
 <script>
 // ============================================================
-// Toegang
+// Toegang: persoonlijke link (code in localStorage, gedeeld met de app)
 // ============================================================
-var wachtwoord = '';
+(function leesLoginLink() {
+  var m = location.search.match(/[?&]login=([A-Za-z0-9_-]{20,100})/);
+  if (!m) return;
+  try { localStorage.setItem('pw_token', m[1]); } catch (e) {}
+  history.replaceState(null, '', location.pathname);
+})();
+
+function pwToken() {
+  try { return localStorage.getItem('pw_token'); } catch (e) { return null; }
+}
 
 function authHeaders() {
-  return { 'Content-Type': 'application/json', 'X-Beheer-Wachtwoord': wachtwoord };
+  return { 'Content-Type': 'application/json', 'X-PW-Token': pwToken() || '' };
 }
 
 function api(actie, data) {
@@ -138,21 +152,72 @@ function api(actie, data) {
     });
 }
 
-function login() {
-  wachtwoord = document.getElementById('pwInput').value;
+function loginLink(code) {
+  return location.origin + '/?login=' + code;
+}
+
+function start() {
   laadOverzicht().then(function() {
     document.getElementById('login').style.display = 'none';
     document.getElementById('app').style.display = 'block';
     toonTab(huidigeTab);
   }).catch(function(e) {
-    document.getElementById('loginErr').textContent = e.status === 401 ? 'Ongeldig wachtwoord' : e.message;
+    if (e.status !== 401) { document.getElementById('loginUitleg').textContent = e.message; return; }
+    fetch('/api/auth', { method: 'POST', headers: authHeaders(), body: JSON.stringify({ actie: 'status' }) })
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        var uitleg = document.getElementById('loginUitleg');
+        if (d.beheerderAanwezig) {
+          uitleg.textContent = 'Open je persoonlijke beheerderslink om in te loggen. Heb je die niet (meer)? Vraag een andere beheerder om een nieuwe link.';
+        } else {
+          uitleg.textContent = '';
+          document.getElementById('startVak').style.display = 'block';
+        }
+      });
   });
 }
+
+function startBeheer() {
+  var naam = document.getElementById('startNaam').value;
+  var wachtwoord = document.getElementById('pwInput').value;
+  fetch('/api/auth', { method: 'POST', headers: authHeaders(), body: JSON.stringify({ actie: 'start', naam: naam, wachtwoord: wachtwoord }) })
+    .then(function(r) { return r.json().then(function(d) { if (!r.ok) throw new Error(d.error || 'Mislukt'); return d; }); })
+    .then(function(d) {
+      try { localStorage.setItem('pw_token', d.code); } catch (e) {}
+      document.getElementById('startVak').style.display = 'none';
+      var vak = document.getElementById('linkVak');
+      vak.style.display = 'block';
+      vak.innerHTML = '';
+      vak.appendChild(toonLink(d.code, 'Je bent de eerste beheerder. Bewaar deze persoonlijke link goed (bijv. als bladwijzer of in je wachtwoordkluis): je hebt hem nodig om op andere apparaten in te loggen. Deel hem met niemand.'));
+      var verder = el('button', { class: 'btn primair', text: 'Verder naar het beheerpaneel', style: 'margin-top:10px', onclick: function() { vak.style.display = 'none'; start(); } });
+      vak.appendChild(verder);
+    })
+    .catch(function(e) { document.getElementById('loginErr').textContent = e.message; });
+}
+
+// Blok met een eenmalig getoonde link + kopieerknop
+function toonLink(code, uitleg) {
+  var link = loginLink(code);
+  var box = el('div', { class: 'tegenspraak', style: 'text-align:left' }, [
+    el('div', { text: uitleg }),
+    el('div', { style: 'word-break:break-all;font-family:monospace;margin:8px 0;background:#fff;padding:6px;border-radius:6px', text: link })
+  ]);
+  box.appendChild(el('button', { class: 'btn secundair klein', text: '📋 Kopiëren', onclick: function(ev) {
+    var knop = ev.target;
+    (navigator.clipboard ? navigator.clipboard.writeText(link) : Promise.reject())
+      .then(function() { knop.textContent = '✓ Gekopieerd'; })
+      .catch(function() { knop.textContent = 'Selecteer en kopieer de link hierboven'; });
+  } }));
+  return box;
+}
+
+window.addEventListener('load', start);
 
 // ============================================================
 // Hulpfuncties
 // ============================================================
 var OV = null; // overzicht: onderwerpen, deelgebieden, types, sites, aantallen
+var mijnId = null;
 var MAANDEN = ['jan', 'feb', 'mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'];
 
 function el(tag, attrs, kinderen) {
@@ -197,7 +262,8 @@ var TABS = [
   { id: 'overzicht', titel: 'Overzicht' },
   { id: 'voorstellen', titel: 'Voorstellen', tel: function() { return OV && OV.aantallen.voorstellen; } },
   { id: 'kennisbank', titel: 'Kennisbank', tel: function() { return OV && OV.aantallen.verlopen; } },
-  { id: 'websites', titel: 'Websites' }
+  { id: 'websites', titel: 'Websites' },
+  { id: 'gebruikers', titel: 'Gebruikers' }
 ];
 var huidigeTab = 'overzicht';
 
@@ -217,7 +283,7 @@ function toonTab(id, opties) {
   tekenTabs();
   var inhoud = document.getElementById('inhoud');
   inhoud.innerHTML = '<p class="leeg">Laden…</p>';
-  var tab = { overzicht: tabOverzicht, voorstellen: tabVoorstellen, kennisbank: tabKennisbank, websites: tabWebsites }[id];
+  var tab = { overzicht: tabOverzicht, voorstellen: tabVoorstellen, kennisbank: tabKennisbank, websites: tabWebsites, gebruikers: tabGebruikers }[id];
   tab(inhoud, opties || {});
 }
 
@@ -225,6 +291,7 @@ function laadOverzicht() {
   return api('overzicht').then(function(d) {
     OV = d;
     document.getElementById('wie').textContent = 'Ingelogd als ' + d.gebruiker.naam;
+    mijnId = d.gebruiker.id;
     tekenTabs();
     return d;
   });
@@ -558,6 +625,63 @@ function tabWebsites(inhoud) {
       } })
     ]));
     inhoud.appendChild(s);
+  }).catch(fout);
+}
+// ============================================================
+// Gebruikers
+// ============================================================
+function tabGebruikers(inhoud) {
+  api('gebruikers').then(function(d) {
+    inhoud.innerHTML = '';
+    var s = el('div', { class: 'section' }, [
+      el('h2', { text: 'Gebruikers' }),
+      el('p', { class: 'uitleg', text: 'Boswachters en vrijwilligers loggen in met een persoonlijke link. Ingelogde gebruikers krijgen ook interne feiten; beheerders kunnen daarnaast dit beheerpaneel gebruiken. Een link wordt maar één keer getoond: kopieer hem en stuur hem zelf door (mail of WhatsApp). Intrekken werkt direct.' })
+    ]);
+    var naam = el('input', { placeholder: 'Naam', style: 'flex:1;min-width:140px;border:1.5px solid var(--b);border-radius:6px;padding:7px 9px;' });
+    var rol = el('select', { style: 'border:1.5px solid var(--b);border-radius:6px;padding:7px 9px;' });
+    [['gebruiker', 'Boswachter / vrijwilliger'], ['beheerder', 'Beheerder']].forEach(function(r) { rol.appendChild(el('option', { value: r[0], text: r[1] })); });
+    var nieuwVak = el('div');
+    var maak = el('button', { class: 'btn primair klein', text: '+ Link maken', onclick: function() {
+      api('gebruiker-maken', { naam: naam.value, rol: rol.value }).then(function(r) {
+        naam.value = '';
+        tekenLijst(r.gebruiker.id, r.code);
+      }).catch(fout);
+    } });
+    s.appendChild(el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px' }, [naam, rol, maak]));
+    s.appendChild(nieuwVak);
+    var lijst = el('div');
+    s.appendChild(lijst);
+    inhoud.appendChild(s);
+
+    function tekenLijst(nieuwId, code) {
+      api('gebruikers').then(function(d2) {
+        lijst.innerHTML = '';
+        if (d2.gebruikers.length === 0) lijst.appendChild(el('p', { class: 'leeg', text: 'Nog geen gebruikers.' }));
+        d2.gebruikers.forEach(function(g) {
+          var card = el('div', { class: 'card' + (g.ingetrokken ? ' ingetrokken' : '') });
+          card.appendChild(el('div', { class: 'badges' }, [
+            el('span', { class: 'badge groen', text: g.rol === 'beheerder' ? 'Beheerder' : 'Boswachter / vrijwilliger' }),
+            g.ingetrokken ? el('span', { class: 'badge rood', text: 'Ingetrokken' }) : null,
+            g.id === mijnId ? el('span', { class: 'badge', text: 'Jij' }) : null
+          ]));
+          card.appendChild(el('div', { class: 'tekst', text: g.naam }));
+          card.appendChild(el('div', { class: 'meta', text: 'Link gemaakt ' + datumNL(g.linkGemaakt) + (g.linkGemaaktDoor ? ' door ' + g.linkGemaaktDoor : '') + (g.ingetrokken ? ' · ingetrokken ' + datumNL(g.ingetrokkenOp) : '') }));
+          if (g.id === nieuwId && code) card.appendChild(toonLink(code, 'Nieuwe persoonlijke link voor ' + g.naam + '. Deze wordt maar één keer getoond.'));
+          var acties = el('div', { class: 'acties' });
+          acties.appendChild(el('button', { class: 'btn secundair klein', text: g.ingetrokken ? 'Nieuwe link (heractiveren)' : 'Nieuwe link', onclick: function() {
+            if (!g.ingetrokken && !confirm('Een nieuwe link maken? De oude link van ' + g.naam + ' werkt dan niet meer.')) return;
+            api('gebruiker-nieuwe-link', { id: g.id }).then(function(r) { tekenLijst(g.id, r.code); }).catch(fout);
+          } }));
+          if (!g.ingetrokken) acties.appendChild(el('button', { class: 'btn gevaar klein', text: 'Intrekken', onclick: function() {
+            if (!confirm('Toegang van ' + g.naam + ' intrekken? De link werkt direct niet meer.')) return;
+            api('gebruiker-intrekken', { id: g.id }).then(function() { melding('Ingetrokken'); tekenLijst(); }).catch(fout);
+          } }));
+          card.appendChild(acties);
+          lijst.appendChild(card);
+        });
+      }).catch(fout);
+    }
+    tekenLijst();
   }).catch(fout);
 }
 </script>

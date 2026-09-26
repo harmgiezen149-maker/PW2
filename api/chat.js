@@ -2,6 +2,7 @@ const Anthropic = require('@anthropic-ai/sdk');
 const { setSecurityHeaders, checkRateLimit, sanitizeText } = require('./_lib/http');
 const prompts = require('./_lib/prompts');
 const kb = require('./_lib/kennisbank');
+const auth = require('./_lib/auth');
 
 const MODEL = 'claude-opus-5';
 
@@ -32,7 +33,8 @@ module.exports = async function handler(req, res) {
 
   const phase = req.body.phase === 2 ? 2 : 1;
   const mode = req.body.mode === 'storytelling' ? 'storytelling' : 'normaal';
-  const ingelogd = false;
+  // Interne feiten alleen voor ingelogde boswachters en vrijwilligers
+  const ingelogd = !!(await auth.gebruiker(req));
 
   let feiten, sites;
   try {
