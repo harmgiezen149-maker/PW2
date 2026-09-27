@@ -3,7 +3,7 @@
 // Alles komt uit de gecontroleerde kennisbank; de beheerder vult de kalender in het beheerpaneel.
 (function() {
 var K_KALENDER = 'pw_kalender';
-var KLEUR = { natuur: '#3F7A4E', activiteit: '#2256A0', beheer: '#8A5A2E', overig: '#6B7280' };
+var KLEUR = { natuur: '#3F7A4E', activiteit: '#2256A0', beheer: '#8A5A2E', overig: '#6B7280', algemeen: '#6E5E9C' };
 var KORT = ['jan', 'feb', 'mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'];
 var data = PW.opslag.leesJSON(K_KALENDER, null);
 var laadFout = false;
@@ -58,6 +58,9 @@ function itemKaart(it) {
   if (it.titel) inhoud.push(PW.el('h3', { class: 'kal-titel', tekst: it.titel }));
   var foto = PW.feitFoto(it); if (foto) inhoud.push(foto);
   inhoud.push(PW.el('p', { class: 'melding-tekst', tekst: it.tekst }));
+  if (it.categorie === 'algemeen') {
+    inhoud.push(PW.el('p', { class: 'kal-algemeen-noot', tekst: 'Algemene natuurkennis, niet specifiek voor dit gebied.' }));
+  }
   var voet = PW.el('div', { class: 'feit-voet' });
   if (it.deelgebiedTitel && it.deelgebied !== 'heel') voet.appendChild(PW.el('span', { class: 'melding-plek', tekst: it.deelgebiedTitel + ' ·' }));
   voet.appendChild(PW.el('span', { class: it.verouderd ? 'gecontroleerd verouderd' : 'gecontroleerd',
@@ -129,7 +132,15 @@ function teken(box) {
   if (!items.length) {
     box.appendChild(PW.el('p', { class: 'leeg', tekst: 'Voor ' + m.naam + ' staat nog niets in de kalender.' }));
   }
-  zicht.forEach(function(it) { box.appendChild(itemKaart(it)); });
+  // Eerst wat in het gebied speelt, daarna de algemene natuurweetjes voor deze maand
+  var gebied = zicht.filter(function(x) { return x.categorie !== 'algemeen'; });
+  var algemeen = zicht.filter(function(x) { return x.categorie === 'algemeen'; });
+  gebied.forEach(function(it) { box.appendChild(itemKaart(it)); });
+  if (algemeen.length) {
+    box.appendChild(PW.el('h2', { class: 'sectie-kop kal-algemeen-kop', tekst: 'In de natuur in ' + m.naam }));
+    box.appendChild(PW.el('p', { class: 'stand', tekst: 'Algemene weetjes voor deze tijd van het jaar, om aan bezoekers te vertellen. Ze gelden in heel Nederland of op de Veluwe, niet specifiek voor dit gebied.' }));
+    algemeen.forEach(function(it) { box.appendChild(itemKaart(it)); });
+  }
   box.appendChild(PW.el('button', { type: 'button', class: 'knop vraag-gebied', html: PW.icoon('chat', { maat: 22 }) + 'Vraag de assistent over ' + m.naam,
     onclick: function() { PW.vulVraag('Wat is er in ' + m.naam + ' in het gebied te zien en te doen? '); } }));
 }

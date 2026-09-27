@@ -4,19 +4,22 @@
 // - tijdelijke feiten (type "tijdelijk", met datums): activiteiten, werkzaamheden, afsluitingen.
 // Een feit kan een eigen kalendercategorie en korte titel hebben (Beheer → Jaarkalender);
 // zonder categorie volgt die uit het onderwerp. Met categorie "geen" staat het niet in de kalender.
+// Categorie "algemeen": algemene natuurkennis per maand of seizoen (niet specifiek voor dit gebied),
+// altijd elk jaar terugkerend; de app en de assistent zeggen er dat bij.
 const { vandaagISO } = require('./http');
 
 const CATEGORIEEN = [
   { slug: 'natuur', titel: 'Flora & fauna' },
   { slug: 'activiteit', titel: 'Activiteiten' },
   { slug: 'beheer', titel: 'Beheer & onderhoud' },
-  { slug: 'overig', titel: 'Overig' }
+  { slug: 'overig', titel: 'Overig' },
+  { slug: 'algemeen', titel: 'Algemeen in de natuur' }
 ];
 const KEUZES = ['', 'geen'].concat(CATEGORIEEN.map(c => c.slug));
 // Categorie als de beheerder er geen koos
 const PER_ONDERWERP = { soorten: 'natuur', wolf: 'natuur', seizoen: 'natuur', vee: 'beheer', beheer: 'beheer', nm: 'activiteit' };
 // Onderwerp voor een nieuw kalenderitem uit het beheerpaneel
-const ONDERWERP_VOOR = { natuur: 'soorten', activiteit: 'nm', beheer: 'beheer', overig: 'seizoen' };
+const ONDERWERP_VOOR = { natuur: 'soorten', activiteit: 'nm', beheer: 'beheer', overig: 'seizoen', algemeen: 'seizoen' };
 const MAANDNAMEN = ['januari', 'februari', 'maart', 'april', 'mei', 'juni', 'juli', 'augustus', 'september', 'oktober', 'november', 'december'];
 
 function categorie(f) {
@@ -86,6 +89,7 @@ function controleer(f) {
   if (f.kalender && f.kalender !== 'geen' && !['seizoen', 'tijdelijk'].includes(f.type)) {
     return 'Een item in de jaarkalender komt elk jaar terug (type seizoen, met maanden) of heeft een datum (type tijdelijk).';
   }
+  if (f.kalender === 'algemeen' && f.type !== 'seizoen') return 'Algemene natuurkennis komt elk jaar terug: kies het type seizoen, met de maanden.';
   if (f.kalender && f.kalender !== 'geen' && f.type === 'seizoen' && !(Array.isArray(f.maanden) && f.maanden.length)) {
     return 'Kies in welke maanden dit elk jaar speelt.';
   }
