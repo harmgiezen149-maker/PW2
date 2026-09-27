@@ -6,6 +6,7 @@ const { setSecurityHeaders, checkRateLimit, vandaagISO, nlMaand } = require('./_
 
 const kaart = require('./_lib/kaart');
 const beeld = require('./_lib/achtergrond');
+const kalender = require('./_lib/kalender');
 const MAANDNAMEN = ['januari', 'februari', 'maart', 'april', 'mei', 'juni', 'juli', 'augustus', 'september', 'oktober', 'november', 'december'];
 const NIEUWS_DAGEN = 60;
 
@@ -169,6 +170,9 @@ module.exports = async function handler(req, res) {
     switch (body.actie) {
       case 'actueel':
         return res.json(Object.assign(basis, actueel(bruikbaar, vandaag, beelden)));
+      case 'kalender':
+        // Ook wat nog moet beginnen: de kalender kijkt twaalf maanden vooruit
+        return res.json(Object.assign(basis, kalender.bouw(alleFeiten, { vandaag, ingelogd: !!gebruiker, publiek: f => publiek(f, vandaag, beelden) })));
       case 'gebieden':
         return res.json(Object.assign(basis, gebieden(bruikbaar, await gebiedInstellingen(), beelden)));
       case 'kaart': {

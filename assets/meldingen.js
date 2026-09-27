@@ -156,6 +156,7 @@ function toonActueel(box) {
     box.appendChild(PW.el('h2', { class: 'sectie-kop', tekst: 'Nu te zien · ' + d.maand }));
     seizoen.forEach(function(x) { box.appendChild(kaartje(x, 'Seizoen · ' + d.maand, 'label-seizoen')); });
   }
+  box.appendChild(PW.el('a', { class: 'knop knop-rand kal-link', href: '#kalender', html: PW.icoon('kalender', { maat: 20 }) + 'Wat speelt er per maand? Naar de kalender' }));
   if (nieuws.length) {
     box.appendChild(PW.el('h2', { class: 'sectie-kop', tekst: 'Nieuws van natuurmonumenten.nl' }));
     nieuws.forEach(function(x) {

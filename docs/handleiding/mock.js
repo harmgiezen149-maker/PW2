@@ -237,6 +237,26 @@ OVERZICHT.plekkenKort = KAART.plekken.map(p => ({ id: p.id, naam: p.naam, soort:
 OVERZICHT.aantallen.plekken = KAART.plekken.length;
 OVERZICHT.aantallen.routes = KAART.routes.length;
 OVERZICHT.kaartMidden = KAART.midden;
+// Jaarkalender: voorbeelditems (verzonnen, alleen voor schermafbeeldingen en tests)
+const kalenderLib = require('../../api/_lib/kalender');
+const DG = Object.fromEntries(DEELGEBIEDEN.map(d => [d.slug, d.titel]));
+const KALENDER_FEITEN = [
+  { id: 'k1', titel: 'Heide in bloei (voorbeeld)', tekst: 'Voorbeeld: in augustus en september kleurt de heide paars; mooi te zien op het Mosselse Zand.', type: 'seizoen', maanden: [8, 9], kalender: 'natuur', deelgebied: 'mossel', onderwerp: 'soorten' },
+  { id: 'k2', titel: 'Edelherten in de bronst (voorbeeld)', tekst: 'Voorbeeld: van half september tot half oktober burlen de edelherten; vraag bezoekers afstand te houden.', type: 'seizoen', maanden: [9, 10], kalender: 'natuur', deelgebied: 'heel', onderwerp: 'soorten' },
+  { id: 'k3', titel: 'Paddenstoelen (voorbeeld)', tekst: 'Voorbeeld: in de herfst staan er veel paddenstoelen in het Oude Hout.', type: 'seizoen', maanden: [9, 10, 11], kalender: 'natuur', deelgebied: 'oude-hout', onderwerp: 'soorten' },
+  { id: 'k4', titel: 'Schaapskudde op de heide (voorbeeld)', tekst: 'Voorbeeld: van mei tot oktober graast de schaapskudde op de heide van Oud Reemst; honden aan de lijn.', type: 'seizoen', maanden: [5, 6, 7, 8, 9, 10], kalender: 'beheer', deelgebied: 'reemst', onderwerp: 'vee' },
+  { id: 'k5', titel: 'Blessen voor de houtoogst (voorbeeld)', tekst: 'Voorbeeld: boswachters markeren (blessen) de bomen die deze winter worden gekapt.', type: 'tijdelijk', startdatum: '2026-10-05', einddatum: '2026-10-30', kalender: 'beheer', deelgebied: 'buunderkamp', onderwerp: 'beheer' },
+  { id: 'k6', titel: 'Excursie Herfst op de Veluwe (voorbeeld)', tekst: 'Voorbeeld: wandeling met een boswachter, start bij de parkeerplaats Oud Reemst om 10.00 uur. Aanmelden via natuurmonumenten.nl.', type: 'tijdelijk', startdatum: '2026-10-11', einddatum: '2026-10-11', kalender: 'activiteit', deelgebied: 'reemst', onderwerp: 'nm', plekId: 'p1' },
+  { id: 'k7', titel: 'Vogeltrek (voorbeeld)', tekst: 'Voorbeeld: in oktober trekken kraanvogels en ganzen over het gebied.', type: 'seizoen', maanden: [10], kalender: 'natuur', deelgebied: 'heel', onderwerp: 'soorten' }
+].map(f => Object.assign({ status: 'actief', zichtbaarheid: 'openbaar', gecontroleerdOp: '2026-09-20', bron: 'Voorbeeldbron' }, f));
+function kalenderVoorbeeld(opties, beheer) {
+  const feiten = (opties.kalenderFeiten || KALENDER_FEITEN);
+  return Object.assign({ bijgewerkt: '2026-09-26T12:03:00Z' }, kalenderLib.bouw(feiten, { vandaag: NU, ingelogd: true, publiek: f => beheer
+    ? Object.assign({}, f, { beoordeling: { verlopen: false } })
+    : { id: f.id, tekst: f.tekst, deelgebied: f.deelgebied, deelgebiedTitel: DG[f.deelgebied] || 'Hele gebied', gecontroleerdOp: f.gecontroleerdOp, verouderd: false, bron: f.bron, intern: f.zichtbaarheid === 'intern', plekId: f.plekId } }),
+    beheer ? { onderwerpVoor: kalenderLib.ONDERWERP_VOOR } : {});
+}
+
 let meldTeller = 0;
 // Standaardantwoorden voor de nieuwe endpoints (opties.api kan ze overschrijven)
 function herontwerpApi(pad, body, opties) {
@@ -246,7 +266,9 @@ function herontwerpApi(pad, body, opties) {
     if (body.actie === 'gebied') return body.slug === 'wolfheze' ? GEBIED_WOLFHEZE
       : Object.assign({}, GEBIED_WOLFHEZE, { slug: body.slug, titel: (GEBIEDEN.gebieden.find(g => g.slug === body.slug) || { titel: 'Gebied' }).titel, feiten: [] });
     if (body.actie === 'kaart') return opties.legeKaart ? Object.assign({}, KAART, { plekken: [], routes: [] }) : KAART;
+    if (body.actie === 'kalender') return kalenderVoorbeeld(opties, false);
   }
+  if (pad === '/api/beheer' && body.actie === 'kalender') return kalenderVoorbeeld(opties, true);
   if (pad === '/api/feedback') {
     if (body.actie === 'status') {
       const s = {};

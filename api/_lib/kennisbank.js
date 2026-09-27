@@ -80,14 +80,17 @@ function beoordeel(f, vandaag) {
 // Feiten die de assistent vandaag mag gebruiken (vraag 12: verlopen feiten blijven
 // in gebruik met een waarschuwing; afgelopen tijdelijke feiten niet).
 // alleMaanden: seizoensfeiten van het hele jaar (voor het overzicht per gebied).
-function bruikbareFeiten(feiten, { ingelogd, maand, vandaag, alleMaanden } = {}) {
+function bruikbareFeiten(feiten, { ingelogd, maand, vandaag, alleMaanden, vooruitDagen } = {}) {
   maand = maand || nlMaand();
   vandaag = vandaag || vandaagISO();
+  // Met vooruitDagen ook tijdelijke feiten die binnenkort beginnen (activiteiten en werkzaamheden)
+  const tot = vooruitDagen ? new Date(Date.parse(vandaag) + vooruitDagen * 86400000).toISOString().slice(0, 10) : vandaag;
   return Object.values(feiten).filter(f => {
     if (f.status !== 'actief') return false;
     if (f.zichtbaarheid === 'intern' && !ingelogd) return false;
     const b = beoordeel(f, vandaag);
-    if (b.afgelopen || b.nogNiet) return false;
+    if (b.afgelopen) return false;
+    if (b.nogNiet && !(f.startdatum <= tot)) return false;
     // Seizoensfeiten alleen in de maanden waarvoor ze gelden (plus de maand erna, om vooruit te kunnen kijken)
     if (!alleMaanden && f.type === 'seizoen' && Array.isArray(f.maanden) && f.maanden.length > 0) {
       const volgende = maand === 12 ? 1 : maand + 1;
@@ -125,6 +128,7 @@ function bouwDocumenten(feiten, vandaag) {
     for (const f of lijst) {
       const b = beoordeel(f, vandaag);
       const labels = [`Deelgebied: ${dgTitel(f.deelgebied)}`, `gecontroleerd ${nlKort(f.gecontroleerdOp)}`];
+      if (f.type === 'tijdelijk' && f.startdatum && f.startdatum > vandaag) labels.push(`begint ${nlKort(f.startdatum)}, nu nog niet`);
       if (f.type === 'tijdelijk' && f.einddatum) labels.push(`geldt t/m ${nlKort(f.einddatum)}`);
       if (f.type === 'seizoen' && Array.isArray(f.maanden) && f.maanden.length) labels.push(`maanden: ${f.maanden.map(m => MAANDNAMEN[m - 1]).join(', ')}`);
       if (b.verlopen) labels.push('MOGELIJK VEROUDERD');

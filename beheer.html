@@ -199,6 +199,7 @@ var TABS = [
   { id: 'overzicht', titel: 'Overzicht' },
   { id: 'voorstellen', titel: 'Voorstellen', tel: function() { return OV && OV.aantallen.voorstellen; } },
   { id: 'kennisbank', titel: 'Kennisbank', tel: function() { return OV && OV.aantallen.verlopen; } },
+  { id: 'kalender', titel: 'Jaarkalender' },
   { id: 'meldingen', titel: 'Klopt niet', tel: function() { return OV && OV.aantallen.meldingen; } },
   { id: 'logboek', titel: 'Logboek' },
   { id: 'websites', titel: 'Websites & controle' },
@@ -228,7 +229,7 @@ function toonTab(id, opties) {
   inhoud.innerHTML = '<p class="leeg">Laden…</p>';
   if (location.hash !== '#' + id) history.replaceState(null, '', '#' + id);
   window.scrollTo(0, 0);
-  var tab = { overzicht: tabOverzicht, voorstellen: tabVoorstellen, kennisbank: tabKennisbank, meldingen: tabMeldingen, logboek: tabLogboek, websites: tabWebsites, kaart: window.tabKaart, fotos: window.tabFotos, gebruikers: tabGebruikers, backup: tabBackup }[id];
+  var tab = { overzicht: tabOverzicht, voorstellen: tabVoorstellen, kennisbank: tabKennisbank, meldingen: tabMeldingen, logboek: tabLogboek, websites: tabWebsites, kaart: window.tabKaart, kalender: window.tabKalender, fotos: window.tabFotos, gebruikers: tabGebruikers, backup: tabBackup }[id];
   tab(inhoud, opties || {});
 }
 
@@ -347,6 +348,11 @@ function feitFormulier(start, knoppen, bestaand) {
         el('span', { text: start.fotoGeupload ? 'Er staat een foto bij (' + start.fotoGeupload.fotoBron + ').' : start.foto ? 'Er staat een foto bij via een link (' + (start.fotoBron || '') + ').' : 'Nog geen foto.' }),
         el('button', { class: 'btn secundair klein', type: 'button', text: start.fotoGeupload || start.foto ? 'Foto wijzigen in Foto\'s' : 'Foto toevoegen in Foto\'s', onclick: function() { toonTab('fotos', { feit: start.id }); } })])])
     : el('div', { class: 'hint', text: 'Een foto bij dit feit voeg je toe in Foto\'s, nadat het feit is opgeslagen.' });
+  // Jaarkalender: categorie (automatisch volgens onderwerp, of zelf gekozen) en korte titel
+  var kalenderKeuze = select([{ slug: '', titel: 'Automatisch (seizoens- en tijdelijke feiten)' }, { slug: 'natuur', titel: 'Flora & fauna' },
+    { slug: 'activiteit', titel: 'Activiteiten' }, { slug: 'beheer', titel: 'Beheer & onderhoud' }, { slug: 'overig', titel: 'Overig' },
+    { slug: 'geen', titel: 'Niet in de kalender' }], start.kalender || '');
+  var kalenderTitel = el('input', { maxlength: '80', placeholder: 'Bijv. Heide in bloei (alleen voor de kalender)' }); kalenderTitel.value = start.titel || '';
   var maanden = el('div', { class: 'maanden' });
   var gekozen = start.maanden || [];
   MAANDEN.forEach(function(m, i) {
@@ -373,6 +379,7 @@ function feitFormulier(start, knoppen, bestaand) {
   f.appendChild(veld('Handmatige vervaldatum (optioneel)', vervaltOp, 'Leeg = automatisch volgens het type.'));
   f.appendChild(veld('Plek op de kaart (optioneel)', plek, 'Het feit verschijnt dan bij die plek op de kaart en in antwoorden met een kaartje. Nieuwe plekken maak je onder "Kaart en plekken". Feiten over de wolf krijgen nooit een plek.'));
   f.appendChild(fotoVak);
+  f.appendChild(el('div', { class: 'rij' }, [veld('Jaarkalender', kalenderKeuze, 'Seizoens- en tijdelijke feiten staan vanzelf in de kalender.'), veld('Korte titel in de kalender (optioneel)', kalenderTitel)]));
   typeWissel();
 
   f.waarde = function() {
@@ -382,7 +389,7 @@ function feitFormulier(start, knoppen, bestaand) {
       tekst: tekst.value, onderwerp: onderwerp.value, deelgebied: deelgebied.value, type: type.value,
       zichtbaarheid: zicht.value, bron: bron.value, bronUrl: bronUrl.value, bronDatum: bronDatum.value,
       startdatum: startdatum.value, einddatum: einddatum.value, vervaltOp: vervaltOp.value, maanden: ms,
-      plekId: plek.value, foto: start.foto || '', fotoBron: start.fotoBron || ''
+      plekId: plek.value, foto: start.foto || '', fotoBron: start.fotoBron || '', kalender: kalenderKeuze.value, titel: kalenderTitel.value
     };
   };
   var acties = el('div', { class: 'acties' });
@@ -394,7 +401,8 @@ function feitFormulier(start, knoppen, bestaand) {
 // ============================================================
 // Voorstellen
 // ============================================================
-var HERKOMST = { gebruiker: 'Suggestie gebruiker', 'nm.nl': 'Wekelijkse controle nm.nl', claude: 'Voorstel assistent', feedback: 'Melding "klopt niet"', document: 'Uit document' };
+var HERKOMST = { gebruiker: 'Suggestie gebruiker', 'nm.nl': 'Wekelijkse controle nm.nl', claude: 'Voorstel assistent', feedback: 'Melding "klopt niet"', document: 'Uit document', 'kalender (websites)': 'Zoektocht jaarkalender (websites)' };
+var KALENDER_CAT = { natuur: 'Flora & fauna', activiteit: 'Activiteiten', beheer: 'Beheer & onderhoud', overig: 'Overig' };
 
 function tabVoorstellen(inhoud) {
   api('voorstellen').then(function(d) {
@@ -410,6 +418,7 @@ function tabVoorstellen(inhoud) {
       var badges = el('div', { class: 'badges' }, [
         el('span', { class: 'badge groen', text: HERKOMST[v.herkomst] || v.herkomst || 'voorstel' }),
         el('span', { class: 'badge', text: v.soort === 'wijziging' ? 'Wijziging bestaand feit' : 'Nieuw feit' }),
+        v.kalender && KALENDER_CAT[v.kalender] ? el('span', { class: 'badge kal-badge', text: 'Jaarkalender: ' + KALENDER_CAT[v.kalender] }) : null,
         v.aangemaakt ? el('span', { class: 'badge', text: datumNL(v.aangemaakt) }) : null
       ]);
       card.appendChild(badges);
@@ -592,6 +601,7 @@ function feitKaart(f) {
     f.zichtbaarheid === 'intern' ? el('span', { class: 'badge intern', text: 'Intern' }) : null,
     f.plekId ? el('span', { class: 'badge', text: 'Op de kaart: ' + ((OV.plekkenKort || []).filter(function(p) { return p.id === f.plekId; })[0] || { naam: 'plek' }).naam }) : null,
     f.foto || f.fotoGeupload ? el('span', { class: 'badge', text: 'Met foto' }) : null,
+    f.kalender && KALENDER_CAT[f.kalender] ? el('span', { class: 'badge kal-badge', text: 'Kalender: ' + KALENDER_CAT[f.kalender] }) : null,
     f.status === 'ingetrokken' ? el('span', { class: 'badge rood', text: 'Ingetrokken' }) : null,
     f.status === 'actief' && b.verlopen ? el('span', { class: 'badge warn', text: 'Mogelijk verouderd' }) : null,
     f.status === 'actief' && b.afgelopen ? el('span', { class: 'badge rood', text: 'Afgelopen' }) : null
@@ -899,6 +909,7 @@ function tabBackup(inhoud) {
 }
 </script>
 <script src="/assets/beheer-kaart.js"></script>
+<script src="/assets/beheer-kalender.js"></script>
 <script src="/assets/beheer-fotos.js"></script>
 </body>
 </html>

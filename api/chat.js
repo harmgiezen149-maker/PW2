@@ -47,7 +47,8 @@ module.exports = async function handler(req, res) {
   } catch (e) {
     return res.status(503).json({ error: 'De kennisbank is even niet bereikbaar. Probeer het zo opnieuw.' });
   }
-  const bruikbaar = kb.bruikbareFeiten(Object.assign({}, feiten, kaart.routeFeiten(routes)), { ingelogd });
+  // Ook activiteiten en werkzaamheden die binnen 90 dagen beginnen (gemarkeerd met "begint …")
+  const bruikbaar = kb.bruikbareFeiten(Object.assign({}, feiten, kaart.routeFeiten(routes)), { ingelogd, vooruitDagen: 90 });
 
   const instructie = phase === 2 ? prompts.systeemAanvulling()
     : mode === 'storytelling' ? prompts.systeemVerhaal() : prompts.systeemNormaal();
