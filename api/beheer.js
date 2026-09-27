@@ -129,8 +129,11 @@ module.exports = async function handler(req, res) {
       }
 
       case 'feiten': {
-        const feiten = await kb.alleFeiten();
-        return res.json({ feiten: Object.values(feiten).map(f => metBeoordeling(f, vandaag)) });
+        const [feiten, beelden] = await Promise.all([kb.alleFeiten(), achtergrond.meta()]);
+        return res.json({ feiten: Object.values(feiten).map(f => {
+          const b = beelden['feit-' + f.id];
+          return Object.assign(metBeoordeling(f, vandaag), b ? { fotoGeupload: { versie: b.versie, fotoBron: b.fotoBron } } : {});
+        }) });
       }
 
       case 'feit-opslaan': {
@@ -437,25 +440,49 @@ module.exports = async function handler(req, res) {
         return res.json({ ok: true, gebied: c });
       }
 
-      // ------------------------------------------------ foto's: achtergrond (staand, liggend) en avatar
+      // ------------------------------------------------ foto's: achtergrond, avatar, logo, app-icoon, deelgebieden en feiten
       case 'achtergrond': {
         const m = await achtergrond.meta();
-        return res.json({ achtergrond: m, posities: Object.keys(achtergrond.POSITIES) });
+        return res.json({ achtergrond: m, posities: Object.keys(achtergrond.POSITIES), vlakken: achtergrond.VLAKKEN });
       }
 
-      case 'achtergrond-opslaan': {
-        try {
-          const a = await achtergrond.opslaan({ soort: body.soort, data: body.data, fotoBron: body.fotoBron, positie: body.positie,
-            breedte: body.breedte, hoogte: body.hoogte, door });
-          return res.json({ ok: true, achtergrond: a });
-        } catch (e) {
-          return res.status(e.status || 500).json({ error: e.message });
-        }
-      }
-
+      case 'achtergrond-opslaan':
       case 'achtergrond-verwijderen': {
-        await achtergrond.verwijderen(String(body.soort || ''));
-        return res.json({ ok: true });
+        const soort = String(body.soort || '');
+        try {
+          if (!achtergrond.geldigeSoort(soort)) return res.status(400).json({ error: 'Onbekende soort afbeelding.' });
+          const feitId = soort.startsWith('feit-') ? soort.slice(5) : null;
+          let feit = null;
+          if (feitId) {
+            feit = (await kb.alleFeiten())[feitId];
+            if (!feit && body.actie === 'achtergrond-opslaan') return res.status(404).json({ error: 'Feit niet gevonden.' });
+          }
+          const bestond = !!(await achtergrond.meta())[soort];
+          let a = null;
+          if (body.actie === 'achtergrond-opslaan') {
+            a = await achtergrond.opslaan({ soort, data: body.data, fotoBron: body.fotoBron, positie: body.positie, vlak: body.vlak,
+              breedte: body.breedte, hoogte: body.hoogte, door });
+          } else {
+            await achtergrond.verwijderen(soort);
+          }
+          // Een eerder ingevulde foto-link (van vóór het uploaden) vervalt: de geüploade foto of niets
+          if (soort.startsWith('gebied-')) {
+            const slug = soort.slice(7);
+            const alle = await kaart.gebiedInstellingen();
+            if (alle[slug] && (alle[slug].foto || alle[slug].fotoBron)) {
+              delete alle[slug].foto; delete alle[slug].fotoBron;
+              await kv.setJSON(kaart.K_GEBIEDEN, alle);
+            }
+          }
+          if (feit && (a || bestond || feit.foto)) {
+            delete feit.foto; delete feit.fotoBron;
+            kb.metHistorie(feit, door, a ? 'foto geüpload' : 'foto weggehaald');
+            await kv.hsetJSON(kb.K_FEITEN, feit.id, feit);
+          }
+          return res.json(a ? { ok: true, achtergrond: a } : { ok: true });
+        } catch (e) {
+          return res.status(e.status || 500).json({ error: e.status ? e.message : 'Opslaan mislukt.' });
+        }
       }
 
       case 'backups': {

@@ -278,23 +278,31 @@ async function installeer(context, opties) {
       if (url.searchParams.has('info')) {
         const uit = {};
         for (const k of ['staand', 'liggend', 'avatar']) uit[k] = ag[k] ? { versie: ag[k].versie, positie: ag[k].positie, fotoBron: ag[k].fotoBron } : null;
+        uit.logo = ag.logo ? { versie: ag.logo.versie, vlak: ag.logo.vlak || 'blauw', fotoBron: ag.logo.fotoBron } : null;
+        const [a, b, c] = ['icoon-192', 'icoon-512', 'icoon-maskable'].map(k => ag[k]);
+        uit.icoon = a && b && c ? { v192: a.versie, v512: b.versie, vMaskable: c.versie, type192: 'image/png', type512: 'image/png', typeMaskable: 'image/png', fotoBron: b.fotoBron } : null;
         return json(uit);
+      }
+      if (url.searchParams.has('manifest')) {
+        const eigen = ag['icoon-512'] ? '/api/achtergrond?soort=icoon-512&v=' + ag['icoon-512'].versie : '/icons/icon-512.png';
+        return route.fulfill({ status: 200, contentType: 'application/manifest+json', body: JSON.stringify({ name: 'Boswachter Assistent · Planken Wambuis', short_name: 'Planken Wambuis', start_url: '/', display: 'standalone', icons: [{ src: eigen, sizes: '512x512', type: 'image/png' }] }) });
       }
       const a = ag[url.searchParams.get('soort')];
       if (!a) return route.fulfill({ status: 404, body: '' });
-      return route.fulfill({ status: 200, contentType: 'image/jpeg', body: a.buf });
+      return route.fulfill({ status: 200, contentType: a.type || 'image/jpeg', body: a.buf });
     }
     if (url.pathname === '/api/beheer' && /^achtergrond/.test(body.actie || '')) {
       const ag = opties.achtergrond || (opties.achtergrond = {});
       if (body.actie === 'achtergrond') {
         const m = {};
         for (const k of Object.keys(ag)) m[k] = Object.assign({}, ag[k], { buf: undefined, bytes: ag[k].buf.length, datum: NU, door: 'Beheerder (voorbeeld)' });
-        return json({ achtergrond: m, posities: ['boven', 'midden', 'onder'] });
+        return json({ achtergrond: m, posities: ['boven', 'midden', 'onder'], vlakken: ['blauw', 'wit', 'geen'] });
       }
       if (body.actie === 'achtergrond-opslaan') {
         const oud = ag[body.soort];
         const buf = body.data ? Buffer.from(body.data.split(',')[1], 'base64') : oud.buf;
-        ag[body.soort] = { versie: body.data ? 'v' + Date.now() : oud.versie, buf, positie: body.positie, fotoBron: body.fotoBron, breedte: body.breedte || (oud && oud.breedte), hoogte: body.hoogte || (oud && oud.hoogte) };
+        ag[body.soort] = { versie: body.data ? 'v' + Date.now() + Math.round(Math.random() * 1000) : oud.versie, buf, type: body.data ? body.data.slice(5, body.data.indexOf(';')) : oud.type,
+          positie: body.positie, vlak: body.vlak, fotoBron: body.fotoBron, breedte: body.breedte || (oud && oud.breedte), hoogte: body.hoogte || (oud && oud.hoogte) };
         return json({ ok: true });
       }
       if (body.actie === 'achtergrond-verwijderen') { delete ag[body.soort]; return json({ ok: true }); }

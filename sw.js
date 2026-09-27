@@ -5,10 +5,9 @@
 // - Lettertypen, iconen en afbeeldingen: cache-first (veranderen zelden).
 // - /api/*: nooit cachen (antwoorden, weer en meldingen zijn per definitie actueel;
 //   de app bewaart zelf de laatst geladen stand met datum).
-const CACHE = 'pw-v86';
+const CACHE = 'pw-v87';
 const STATIC_ASSETS = [
   '/',
-  '/manifest.webmanifest',
   '/assets/app.css',
   '/assets/core.js',
   '/assets/vogels.js',
@@ -57,7 +56,7 @@ self.addEventListener('fetch', function(event) {
   const url = new URL(event.request.url);
   if (event.request.method !== 'GET') return;
   if (url.origin !== self.location.origin) return;
-  // Achtergrondfoto en avatar met versie in de link: verandert nooit, dus cache-first (ook offline).
+  // Afbeeldingen uit Beheer → Foto's met versie in de link: veranderen nooit, dus cache-first (ook offline).
   // Oudere versies van dezelfde soort worden opgeruimd.
   if (url.pathname === '/api/achtergrond' && url.searchParams.get('v')) {
     event.respondWith(caches.open(CACHE).then(function(cache) {

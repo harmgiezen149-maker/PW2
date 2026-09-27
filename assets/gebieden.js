@@ -16,9 +16,12 @@ function miniatuur(slug) {
   return '<svg width="56" height="56" viewBox="0 0 56 56" aria-hidden="true">' + (MINIATUUR[slug] || MINIATUUR.wolfheze) + '</svg>';
 }
 
+// Uitsnede van een geüploade foto (boven, midden of onder)
+function pos(g) { return g.fotoPositie ? ' style="object-position: ' + PW.esc(g.fotoPositie) + '"' : ''; }
+
 function kopbeeld(g) {
   if (g.foto) {
-    return '<img src="' + PW.esc(g.foto) + '" alt="' + PW.esc(g.titel) + '" loading="lazy">' +
+    return '<img src="' + PW.esc(g.foto) + '" alt="' + PW.esc(g.titel) + '" loading="lazy"' + pos(g) + '>' +
       (g.fotoBron ? '<span class="beeld-bron">Foto: ' + PW.esc(g.fotoBron) + '</span>' : '');
   }
   var grond = KLEUR[g.slug] || '#8F7189';
@@ -60,7 +63,7 @@ function toonOverzicht() {
     d.gebieden.forEach(function(g) {
       var sub = g.beschrijving || (g.aantal ? g.aantal + (g.aantal === 1 ? ' gecontroleerd feit' : ' gecontroleerde feiten') : 'Nog geen feiten in de kennisbank');
       lijst.appendChild(PW.el('a', { class: 'kaart gebied-rij', href: '#gebied/' + g.slug, html:
-        '<span class="gebied-mini">' + (g.foto ? '<img src="' + PW.esc(g.foto) + '" alt="">' : miniatuur(g.slug)) + '</span>' +
+        '<span class="gebied-mini">' + (g.foto ? '<img src="' + PW.esc(g.foto) + '" alt=""' + pos(g) + '>' : miniatuur(g.slug)) + '</span>' +
         '<span class="gebied-tekst"><span class="gebied-titel">' + PW.esc(g.titel) + '</span><span class="gebied-sub">' + PW.esc(sub) + '</span></span>' +
         PW.icoon('rechts', { maat: 20, kleur: '#8A9199', dikte: 2.2 }) }));
     });

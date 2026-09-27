@@ -57,6 +57,11 @@ svg { flex-shrink: 0; }
 
 .kop { height: calc(var(--kop-hoogte) + env(safe-area-inset-top)); padding: env(safe-area-inset-top) 0.875rem 0 0.75rem; flex-shrink: 0; background: var(--blauw); display: flex; align-items: center; gap: 0.75rem; position: relative; z-index: 5; }
 .kop-logo { width: 2.5rem; height: 2.5rem; border-radius: 0.5625rem; background: var(--navy); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.kop-logo.logo-eigen { overflow: hidden; }
+.kop-logo.logo-eigen img { display: block; max-width: 82%; max-height: 82%; object-fit: contain; }
+.kop-logo.logo-wit { background: var(--wit); }
+.kop-logo.logo-geen { background: none; width: auto; max-width: 6.5rem; border-radius: 0; }
+.kop-logo.logo-geen img { max-width: 6.5rem; max-height: 2.5rem; height: 2.5rem; width: auto; }
 .kop-terug { width: 2.75rem; height: 2.75rem; margin-left: -0.5rem; border: none; background: none; display: flex; align-items: center; justify-content: center; border-radius: 0.75rem; }
 .kop-titel { flex: 1; min-width: 0; color: var(--wit); font-size: 1.25rem; font-weight: 600; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .kop-rechts { display: flex; align-items: center; gap: 0.5rem; }
