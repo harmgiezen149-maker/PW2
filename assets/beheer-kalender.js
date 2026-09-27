@@ -4,7 +4,7 @@
 // assistent het, en geldt dezelfde controle als voor alle feiten.
 // Gebruikt de hulpfuncties uit beheer.html (el, api, melding, fout, datumNL, toonTab, OV, MAANDEN).
 (function() {
-var KLEUR = { natuur: '#3F7A4E', activiteit: '#2256A0', beheer: '#8A5A2E', overig: '#6B7280' };
+var KLEUR = { natuur: '#3F7A4E', activiteit: '#2256A0', beheer: '#8A5A2E', overig: '#6B7280', algemeen: '#6E5E9C' };
 var KORT = ['jan', 'feb', 'mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'];
 var huidigeMaand = null;
 
@@ -66,7 +66,13 @@ function formulier(d, f, klaar) {
     datumVak.style.display = soort === 'datum' ? '' : 'none';
   }
   knopJaar.onclick = function() { soort = 'jaarlijks'; wissel(); };
-  knopDatum.onclick = function() { soort = 'datum'; wissel(); };
+  knopDatum.onclick = function() { if (cat.value === 'algemeen') return; soort = 'datum'; wissel(); };
+  var algemeenHint = el('div', { class: 'hint', text: 'Algemeen: natuurkennis voor deze tijd van het jaar (bijv. bladverkleuring of vogeltrek), niet specifiek voor dit gebied. Komt elk jaar terug; schrijf "op de Veluwe" of "in Nederland".' });
+  cat.onchange = function() {
+    algemeenHint.style.display = cat.value === 'algemeen' ? '' : 'none';
+    knopDatum.disabled = cat.value === 'algemeen';
+    if (cat.value === 'algemeen') { soort = 'jaarlijks'; dg.value = 'heel'; wissel(); }
+  };
   var tekst = el('textarea', { placeholder: 'Wat vertel je bezoekers? Bijv.: Van mei tot oktober graast de schaapskudde op de heide van Oud Reemst. Honden aan de lijn.' }); tekst.value = f.tekst || '';
   var dg = keuze(OV.deelgebieden.map(function(x) { return [x.slug, x.titel]; }), f.deelgebied || 'heel');
   var plek = keuze([['', '— geen plek —']].concat((OV.plekkenKort || []).map(function(p) { return [p.id, p.naam]; })), f.plekId || '');
@@ -75,6 +81,7 @@ function formulier(d, f, klaar) {
   var bronUrl = el('input', { placeholder: 'https://…' }); bronUrl.value = f.bronUrl || '';
 
   form.appendChild(el('div', { class: 'rij' }, [veld('Korte titel', titel), veld('Soort', cat)]));
+  form.appendChild(algemeenHint);
   form.appendChild(el('label', { text: 'Wanneer' }));
   form.appendChild(el('div', { class: 'bk-segment kal-soort' }, [knopJaar, knopDatum]));
   form.appendChild(jaarVak);
@@ -104,6 +111,7 @@ function formulier(d, f, klaar) {
   form.appendChild(el('div', { class: 'acties' }, [opslaan, el('button', { class: 'btn secundair', type: 'button', text: 'Annuleren', onclick: function() { s.remove(); } })]));
   s.appendChild(form);
   wissel();
+  cat.onchange();
   return s;
 }
 
@@ -137,9 +145,23 @@ window.tabKalender = function(inhoud, opties) {
       }).catch(function(e) { zoek.disabled = false; zoekStatus.textContent = ''; fout(e); });
     };
     acties.appendChild(zoek);
+    var algemeen = el('button', { class: 'btn secundair', text: 'Algemene weetjes voorstellen' });
+    var voorMaand = el('select', { class: 'kal-voor', 'aria-label': 'Voor welke maanden' }, [el('option', { value: 'maand', text: 'voor de gekozen maand' }), el('option', { value: 'jaar', text: 'voor het hele jaar' })]);
+    algemeen.onclick = function() {
+      algemeen.disabled = true;
+      zoekStatus.textContent = 'De assistent stelt algemene natuurweetjes voor… dit duurt even.';
+      var m = voorMaand.value === 'maand' ? Number(String(huidigeMaand).slice(5, 7)) : null;
+      api('kalender-algemeen', { maand: m }).then(function(r) {
+        algemeen.disabled = false;
+        zoekStatus.textContent = r.voorstellen ? r.voorstellen + ' weetje(s) voorgesteld. Lees ze na bij Voorstellen; daar keur je ze in één keer goed.' : 'Geen nieuwe weetjes gevonden.';
+        if (r.voorstellen) laadOverzicht();
+      }).catch(function(e) { algemeen.disabled = false; zoekStatus.textContent = ''; fout(e); });
+    };
+    acties.appendChild(algemeen);
+    acties.appendChild(voorMaand);
     acties.appendChild(zoekStatus);
     inhoud.appendChild(acties);
-    inhoud.appendChild(el('p', { class: 'hint', style: 'margin:-8px 0 16px', text: '"Zoek op de websites" doorzoekt de agenda en het nieuws van natuurmonumenten.nl en de andere toegestane websites naar activiteiten, werkzaamheden en seizoensmomenten. Wat gevonden wordt, komt eerst bij Voorstellen.' }));
+    inhoud.appendChild(el('p', { class: 'hint', style: 'margin:-8px 0 16px', text: '"Zoek op de websites" doorzoekt de agenda en het nieuws van natuurmonumenten.nl en de andere toegestane websites naar activiteiten, werkzaamheden en seizoensmomenten. "Algemene weetjes voorstellen" laat de assistent algemene natuurkennis per maand voorstellen (bladverkleuring, vogeltrek, bronst). Alles komt eerst bij Voorstellen.' }));
     inhoud.appendChild(plekForm);
 
     // Maanden

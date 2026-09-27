@@ -132,6 +132,7 @@ function bouwDocumenten(feiten, vandaag) {
       if (f.type === 'tijdelijk' && f.einddatum) labels.push(`geldt t/m ${nlKort(f.einddatum)}`);
       if (f.type === 'seizoen' && Array.isArray(f.maanden) && f.maanden.length) labels.push(`maanden: ${f.maanden.map(m => MAANDNAMEN[m - 1]).join(', ')}`);
       if (b.verlopen) labels.push('MOGELIJK VEROUDERD');
+      if (f.kalender === 'algemeen') labels.push('algemene natuurkennis, niet specifiek voor dit gebied');
       blokken.push({ type: 'text', text: `[${labels.join(' · ')}] ${f.tekst}` });
       fm.push({
         id: f.id, onderwerp: o.titel, deelgebied: dgTitel(f.deelgebied),

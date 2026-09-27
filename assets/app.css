@@ -430,6 +430,9 @@ html body .leaflet-control-attribution { font-size: 0.6875rem; }
 .kal-item[data-cat="activiteit"] { border-left-color: #2256A0; }
 .kal-item[data-cat="beheer"] { border-left-color: #8A5A2E; }
 .kal-item[data-cat="overig"] { border-left-color: #9AA1A9; }
+.kal-item[data-cat="algemeen"] { border-left-color: #6E5E9C; }
+.kal-algemeen-kop { margin-top: 0.75rem; }
+.kal-algemeen-noot { font-size: 0.8125rem; font-style: italic; color: var(--tekst-3); margin-top: -0.25rem; }
 .kal-link { align-self: stretch; }
 
 /* ---------------------------------------------------------------- updatemelding en versie */

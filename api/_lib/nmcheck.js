@@ -88,7 +88,7 @@ const JSON_VOORBEELD = '{"voorstellen":[{"soort":"nieuw","feitId":"","onderwerp"
 // Kalendervelden uit een voorstel van het model, gecontroleerd
 function kalenderVelden(v) {
   const uit = {};
-  if (['natuur', 'activiteit', 'beheer', 'overig'].includes(v.kalender)) uit.kalender = v.kalender;
+  if (['natuur', 'activiteit', 'beheer', 'overig', 'algemeen'].includes(v.kalender)) uit.kalender = v.kalender;
   const titel = String(v.titel || '').trim().slice(0, 80);
   if (titel && uit.kalender) uit.titel = titel;
   if (v.type === 'seizoen' && Array.isArray(v.maanden)) {
@@ -319,4 +319,66 @@ async function zoekKalender() {
   return { voorstellen: cmds.length, kalender: kalenderItems, kosten: require('./logboek').kosten(r.usage) };
 }
 
-module.exports = { controleer, zoekKalender, getPaginas, STANDAARD_PAGINAS, K_PAGINAS, KALENDERREGELS, kalenderVelden, tekstUitHtml, berichtLinks, schema, kennisbankTekst };
+// Algemene natuurweetjes per maand of seizoen voor de jaarkalender (Beheer → Jaarkalender).
+// Geen gebiedsfeiten: algemene natuurkennis, voorzichtig geformuleerd. Alles komt als voorstel binnen.
+function instructieAlgemeen(perMaand) {
+  return `Je helpt de beheerder van de jaarkalender van de Boswachter Assistent voor Planken Wambuis (Natuurmonumenten, Zuidwest-Veluwe). Vandaag is het ${nlDatum()}.
+
+Taak: stel algemene natuurweetjes per maand of seizoen voor. Wat is er in die maanden in de Nederlandse natuur, en vooral op heide en in bossen zoals op de Veluwe, meestal te zien, te horen of te beleven? Denk aan bloei, bladverkleuring, bessen en paddenstoelen, vogeltrek en overwinteraars, zang en broedseizoen, bronst en jongen, winterslaap, paddentrek, insecten, sterrenhemel, weer en daglicht. Publieksboswachters vertellen dit aan bezoekers.
+Regels:
+- Alleen algemeen bekende natuurkennis die in de meeste jaren klopt. Formuleer voorzichtig ("meestal", "vaak", "vanaf ongeveer") en noem geen precieze aantallen of datums waarover je twijfelt.
+- Beweer nooit dat iets specifiek in Planken Wambuis te zien is of dat een soort daar voorkomt; schrijf "op de Veluwe", "op de heide" of "in Nederland".
+- Niets over plekken van wolven, nesten of burchten, en niets wat bezoekers aanzet dieren te benaderen of te verstoren.
+- Per voorstel één weetje in één of twee gewone Nederlandse zinnen, met een korte titel (hoogstens 50 tekens) en de maanden (1 tot 12) waarin het speelt.
+- Ongeveer ${perMaand} weetjes per gevraagde maand, gevarieerd (planten, dieren, landschap en weer). Stel niets voor wat al in de kennisbank of in de openstaande voorstellen staat.
+- In de toelichting: waarop het berust en wat de beheerder moet nakijken.`;
+}
+
+function schemaAlgemeen() {
+  const s = { type: 'string' };
+  return {
+    type: 'object', additionalProperties: false, required: ['voorstellen'],
+    properties: { voorstellen: { type: 'array', items: {
+      type: 'object', additionalProperties: false, required: ['maanden', 'titel', 'tekst', 'toelichting'],
+      properties: { maanden: { type: 'array', items: { type: 'integer' } }, titel: s, tekst: s, toelichting: s }
+    } } }
+  };
+}
+
+// maand: 1-12 voor één maand, leeg voor het hele jaar
+async function algemeenVoorstellen({ maand } = {}) {
+  const [feiten, voorstellen] = await Promise.all([kb.alleFeiten(), kb.alleVoorstellen()]);
+  const maanden = maand >= 1 && maand <= 12 ? [Number(maand)] : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+  const namen = ['januari', 'februari', 'maart', 'april', 'mei', 'juni', 'juli', 'augustus', 'september', 'oktober', 'november', 'december'];
+  const client = new Anthropic();
+  const r = await client.messages.create({
+    model: MODEL,
+    max_tokens: 16000,
+    output_config: { effort: 'low', format: { type: 'json_schema', schema: schemaAlgemeen() } },
+    system: instructieAlgemeen(maanden.length === 1 ? 5 : 3),
+    messages: [{ role: 'user', content: `<kennisbank>\n${kennisbankTekst(feiten)}\n</kennisbank>\n\n<openstaande_voorstellen>\n${Object.values(voorstellen).map(v => '- ' + v.tekst).join('\n') || '(geen)'}\n</openstaande_voorstellen>\n\nGevraagde maanden: ${maanden.map(m => namen[m - 1]).join(', ')}.` }]
+  });
+  if (r.stop_reason === 'refusal') throw new Error('Het model weigerde de voorstellen te maken');
+  let lijst;
+  try { lijst = JSON.parse(r.content.filter(b => b.type === 'text').map(b => b.text).join('')).voorstellen || []; }
+  catch (e) { throw new Error('Er kwamen geen bruikbare voorstellen terug. Probeer het later opnieuw.'); }
+  const bestaand = new Set(Object.values(voorstellen).map(v => v.tekst).concat(Object.values(feiten).map(f => f.tekst)));
+  const cmds = [];
+  for (const v of lijst) {
+    const tekst = String(v.tekst || '').trim();
+    const ms = [...new Set((Array.isArray(v.maanden) ? v.maanden : []).map(Number).filter(x => x >= 1 && x <= 12))].sort((a, b) => a - b);
+    if (tekst.length < 10 || bestaand.has(tekst) || !ms.length) continue;
+    const id = kb.nieuwId('alg');
+    cmds.push(['HSET', kb.K_VOORSTELLEN, id, JSON.stringify({
+      id, soort: 'nieuw', onderwerp: 'seizoen', deelgebied: 'heel', type: 'seizoen', maanden: ms, tekst,
+      kalender: 'algemeen', titel: String(v.titel || '').trim().slice(0, 80) || undefined,
+      bron: 'Algemene natuurkennis (voorstel assistent)', zichtbaarheid: 'openbaar', herkomst: 'kalender (algemeen)',
+      toelichting: String(v.toelichting || '').slice(0, 500), aangemaakt: new Date().toISOString()
+    })]);
+    bestaand.add(tekst);
+  }
+  if (cmds.length) await kv.pipeline(cmds);
+  return { voorstellen: cmds.length, kosten: require('./logboek').kosten(r.usage) };
+}
+
+module.exports = { controleer, zoekKalender, algemeenVoorstellen, getPaginas, STANDAARD_PAGINAS, K_PAGINAS, KALENDERREGELS, kalenderVelden, tekstUitHtml, berichtLinks, schema, kennisbankTekst };

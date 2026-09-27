@@ -203,6 +203,44 @@ module.exports = async function handler(req, res) {
         }
       }
 
+      case 'kalender-algemeen': {
+        try {
+          return res.json(Object.assign({ ok: true }, await nmcheck.algemeenVoorstellen({ maand: Number(body.maand) || null })));
+        } catch (e) {
+          return res.status(502).json({ error: e.message || 'Voorstellen maken is mislukt.' });
+        }
+      }
+
+      // Meerdere nieuwe voorstellen in één keer goedkeuren (na nalezen), bijv. algemene seizoensfeiten
+      case 'voorstellen-goedkeuren': {
+        const ids = Array.isArray(body.ids) ? body.ids.map(String).slice(0, 100) : [];
+        const voorstellen = await kb.alleVoorstellen();
+        const cmds = [];
+        const overgeslagen = [];
+        const goedgekeurd = [];
+        for (const id of ids) {
+          const v = voorstellen[id];
+          if (!v) { overgeslagen.push({ id, fout: 'Voorstel niet gevonden' }); continue; }
+          if (v.soort === 'wijziging') { overgeslagen.push({ id, fout: 'Wijzigingen één voor één beoordelen' }); continue; }
+          const velden = {};
+          for (const k of ['tekst', 'onderwerp', 'deelgebied', 'type', 'bron', 'bronUrl', 'bronDatum', 'zichtbaarheid', 'plekId', 'startdatum', 'einddatum', 'maanden', 'kalender', 'titel']) {
+            if (v[k] !== undefined) velden[k] = v[k];
+          }
+          const { feit, fout } = valideerFeit(velden);
+          if (fout) { overgeslagen.push({ id, fout }); continue; }
+          if (await controleerPlek(feit)) { overgeslagen.push({ id, fout: 'Plek bestaat niet (meer)' }); continue; }
+          const doel = Object.assign({ id: kb.nieuwId('feit'), status: 'actief', aangemaakt: new Date().toISOString() }, feit,
+            { gecontroleerdOp: vandaag, gecontroleerdDoor: door });
+          kb.metHistorie(doel, door, 'aangemaakt via voorstel (in één keer goedgekeurd)', { herkomst: v.herkomst });
+          cmds.push(['HSET', kb.K_FEITEN, doel.id, JSON.stringify(doel)], ['HDEL', kb.K_VOORSTELLEN, v.id]);
+          const statusId = meldingVanVoorstel(v);
+          if (statusId) cmds.push(meldstatus.cmd(statusId, 'verwerkt'));
+          goedgekeurd.push(doel.id);
+        }
+        if (cmds.length) await kv.pipeline(cmds);
+        return res.json({ ok: true, goedgekeurd: goedgekeurd.length, overgeslagen });
+      }
+
       case 'voorstellen': {
         const [voorstellen, feiten] = await Promise.all([kb.alleVoorstellen(), kb.alleFeiten()]);
         const lijst = Object.values(voorstellen)

@@ -375,7 +375,7 @@ function feitFormulier(start, knoppen, bestaand) {
   // Jaarkalender: categorie (automatisch volgens onderwerp, of zelf gekozen) en korte titel
   var kalenderKeuze = select([{ slug: '', titel: 'Automatisch (seizoens- en tijdelijke feiten)' }, { slug: 'natuur', titel: 'Flora & fauna' },
     { slug: 'activiteit', titel: 'Activiteiten' }, { slug: 'beheer', titel: 'Beheer & onderhoud' }, { slug: 'overig', titel: 'Overig' },
-    { slug: 'geen', titel: 'Niet in de kalender' }], start.kalender || '');
+    { slug: 'algemeen', titel: 'Algemeen in de natuur (niet specifiek voor het gebied)' }, { slug: 'geen', titel: 'Niet in de kalender' }], start.kalender || '');
   var kalenderTitel = el('input', { maxlength: '80', placeholder: 'Bijv. Heide in bloei (alleen voor de kalender)' }); kalenderTitel.value = start.titel || '';
   var maanden = el('div', { class: 'maanden' });
   var gekozen = start.maanden || [];
@@ -425,8 +425,8 @@ function feitFormulier(start, knoppen, bestaand) {
 // ============================================================
 // Voorstellen
 // ============================================================
-var HERKOMST = { gebruiker: 'Suggestie gebruiker', 'nm.nl': 'Wekelijkse controle nm.nl', claude: 'Voorstel assistent', feedback: 'Melding "klopt niet"', document: 'Uit document', 'kalender (websites)': 'Zoektocht jaarkalender (websites)' };
-var KALENDER_CAT = { natuur: 'Flora & fauna', activiteit: 'Activiteiten', beheer: 'Beheer & onderhoud', overig: 'Overig' };
+var HERKOMST = { gebruiker: 'Suggestie gebruiker', 'nm.nl': 'Wekelijkse controle nm.nl', claude: 'Voorstel assistent', feedback: 'Melding "klopt niet"', document: 'Uit document', 'kalender (websites)': 'Zoektocht jaarkalender (websites)', 'kalender (algemeen)': 'Algemene weetjes (assistent)' };
+var KALENDER_CAT = { natuur: 'Flora & fauna', activiteit: 'Activiteiten', beheer: 'Beheer & onderhoud', overig: 'Overig', algemeen: 'Algemeen in de natuur' };
 
 function tabVoorstellen(inhoud) {
   api('voorstellen').then(function(d) {
@@ -436,6 +436,24 @@ function tabVoorstellen(inhoud) {
       el('p', { class: 'uitleg', text: 'Vul onderwerp, type en bron aan en keur goed: het voorstel wordt dan een actief kennisbankfeit (gecontroleerd door jou, vandaag). Bij een wijziging van een bestaand feit wint de nieuwste gecontroleerde bron; de oude tekst blijft in de historie.' })
     ]);
     s.appendChild(documentImport());
+    // Algemene natuurweetjes voor de kalender: na nalezen in één keer goedkeuren
+    var algemeen = d.voorstellen.filter(function(v) { return v.kalender === 'algemeen' && v.soort !== 'wijziging'; });
+    if (algemeen.length) {
+      var alles = el('button', { class: 'btn primair', text: 'Alle ' + algemeen.length + ' algemene weetjes goedkeuren' });
+      alles.onclick = function() {
+        if (!confirm('Alle ' + algemeen.length + ' algemene natuurweetjes goedkeuren? Lees ze eerst na; wat niet klopt, wijs je hieronder eerst af.')) return;
+        alles.disabled = true;
+        api('voorstellen-goedkeuren', { ids: algemeen.map(function(v) { return v.id; }) }).then(function(r) {
+          melding(r.goedgekeurd + ' goedgekeurd' + (r.overgeslagen.length ? ', ' + r.overgeslagen.length + ' overgeslagen' : '') + '. Ze staan nu in de jaarkalender.');
+          laadOverzicht(); toonTab('voorstellen');
+        }).catch(function(e) { alles.disabled = false; fout(e); });
+      };
+      s.appendChild(el('div', { class: 'tegenspraak kal-bulk' }, [
+        el('b', { text: algemeen.length + ' algemene natuurweetjes voor de jaarkalender' }),
+        el('div', { text: 'Voorgesteld door de assistent. Het is algemene natuurkennis, niet specifiek voor dit gebied; de app en de assistent zeggen dat er ook bij. Lees ze hieronder na. Wijs af wat niet klopt; wil je er een aanpassen, keur die dan los goed met je aanpassing. Keur daarna de rest in één keer goed.' }),
+        el('div', { class: 'acties' }, [alles])
+      ]));
+    }
     if (d.voorstellen.length === 0) s.appendChild(el('p', { class: 'leeg', text: 'Geen openstaande voorstellen.' }));
     d.voorstellen.forEach(function(v) {
       var card = el('div', { class: 'card' });
