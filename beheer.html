@@ -77,7 +77,20 @@ function loginLink(code) {
   return location.origin + '/?login=' + code;
 }
 
+// Logo in de kop van het beheerpaneel: hetzelfde als in de app (Beheer → Foto's)
+var TAKJE = null;
+function takjeSvg() { return TAKJE !== null ? TAKJE : document.querySelector('.bh-logo').innerHTML; }
+function pasBeheerLogo(logo) {
+  var vak = document.querySelector('.bh-logo');
+  if (!vak) return;
+  if (TAKJE === null) TAKJE = vak.innerHTML;
+  vak.className = 'bh-logo' + (logo ? ' logo-eigen logo-' + (logo.vlak || 'blauw') : '');
+  vak.innerHTML = logo ? '<img src="/api/achtergrond?soort=logo&amp;v=' + encodeURIComponent(logo.versie) + '" alt="">' : TAKJE;
+}
+
 function start() {
+  fetch('/api/achtergrond?info=1').then(function(r) { return r.ok ? r.json() : null; })
+    .then(function(i) { if (i) pasBeheerLogo(i.logo); }).catch(function() {});
   laadOverzicht().then(function() {
     document.getElementById('login').style.display = 'none';
     document.getElementById('app').style.display = 'block';
@@ -303,7 +316,7 @@ function cronKaart(cs) {
 // ============================================================
 // Feitformulier (voor bewerken, nieuw en voorstellen)
 // ============================================================
-function feitFormulier(start, knoppen) {
+function feitFormulier(start, knoppen, bestaand) {
   start = start || {};
   var f = el('div', { class: 'form' });
   function veld(label, input, hint) {
@@ -328,8 +341,12 @@ function feitFormulier(start, knoppen) {
   var einddatum = el('input', { type: 'date' }); einddatum.value = start.einddatum || '';
   var vervaltOp = el('input', { type: 'date' }); vervaltOp.value = start.vervaltOp || '';
   var plek = select([{ slug: '', titel: '— geen plek —' }].concat((OV.plekkenKort || []).map(function(p) { return { slug: p.id, titel: p.naam }; })), start.plekId || '');
-  var foto = el('input', { placeholder: 'https://… (alleen een foto die je mag gebruiken)' }); foto.value = start.foto || '';
-  var fotoBron = el('input', { placeholder: 'Bijv. Natuurmonumenten / naam fotograaf' }); fotoBron.value = start.fotoBron || '';
+  // Foto's upload je in Foto's; een eerder ingevulde foto-link blijft bij het opslaan gewoon staan
+  var fotoVak = bestaand && start.id
+    ? el('div', null, [el('label', { text: 'Foto (optioneel)' }), el('div', { class: 'foto-verwijzing' }, [
+        el('span', { text: start.fotoGeupload ? 'Er staat een foto bij (' + start.fotoGeupload.fotoBron + ').' : start.foto ? 'Er staat een foto bij via een link (' + (start.fotoBron || '') + ').' : 'Nog geen foto.' }),
+        el('button', { class: 'btn secundair klein', type: 'button', text: start.fotoGeupload || start.foto ? 'Foto wijzigen in Foto\'s' : 'Foto toevoegen in Foto\'s', onclick: function() { toonTab('fotos', { feit: start.id }); } })])])
+    : el('div', { class: 'hint', text: 'Een foto bij dit feit voeg je toe in Foto\'s, nadat het feit is opgeslagen.' });
   var maanden = el('div', { class: 'maanden' });
   var gekozen = start.maanden || [];
   MAANDEN.forEach(function(m, i) {
@@ -355,7 +372,7 @@ function feitFormulier(start, knoppen) {
   f.appendChild(el('div', { class: 'rij' }, [veld('Link naar bron (optioneel)', bronUrl), veld('Datum van de bron (optioneel)', bronDatum)]));
   f.appendChild(veld('Handmatige vervaldatum (optioneel)', vervaltOp, 'Leeg = automatisch volgens het type.'));
   f.appendChild(veld('Plek op de kaart (optioneel)', plek, 'Het feit verschijnt dan bij die plek op de kaart en in antwoorden met een kaartje. Nieuwe plekken maak je onder "Kaart en plekken". Feiten over de wolf krijgen nooit een plek.'));
-  f.appendChild(el('div', { class: 'rij' }, [veld('Foto (optioneel)', foto), veld('Foto van (verplicht bij een foto)', fotoBron)]));
+  f.appendChild(fotoVak);
   typeWissel();
 
   f.waarde = function() {
@@ -365,7 +382,7 @@ function feitFormulier(start, knoppen) {
       tekst: tekst.value, onderwerp: onderwerp.value, deelgebied: deelgebied.value, type: type.value,
       zichtbaarheid: zicht.value, bron: bron.value, bronUrl: bronUrl.value, bronDatum: bronDatum.value,
       startdatum: startdatum.value, einddatum: einddatum.value, vervaltOp: vervaltOp.value, maanden: ms,
-      plekId: plek.value, foto: foto.value, fotoBron: fotoBron.value
+      plekId: plek.value, foto: start.foto || '', fotoBron: start.fotoBron || ''
     };
   };
   var acties = el('div', { class: 'acties' });
@@ -574,7 +591,7 @@ function feitKaart(f) {
     el('span', { class: 'badge', text: titelVan(OV.types, f.type) + (f.type === 'seizoen' && f.maanden && f.maanden.length ? ': ' + f.maanden.map(function(m) { return MAANDEN[m - 1]; }).join(', ') : '') }),
     f.zichtbaarheid === 'intern' ? el('span', { class: 'badge intern', text: 'Intern' }) : null,
     f.plekId ? el('span', { class: 'badge', text: 'Op de kaart: ' + ((OV.plekkenKort || []).filter(function(p) { return p.id === f.plekId; })[0] || { naam: 'plek' }).naam }) : null,
-    f.foto ? el('span', { class: 'badge', text: 'Met foto' }) : null,
+    f.foto || f.fotoGeupload ? el('span', { class: 'badge', text: 'Met foto' }) : null,
     f.status === 'ingetrokken' ? el('span', { class: 'badge rood', text: 'Ingetrokken' }) : null,
     f.status === 'actief' && b.verlopen ? el('span', { class: 'badge warn', text: 'Mogelijk verouderd' }) : null,
     f.status === 'actief' && b.afgelopen ? el('span', { class: 'badge rood', text: 'Afgelopen' }) : null
@@ -597,7 +614,7 @@ function feitKaart(f) {
   bewerk.onclick = function() {
     if (vak.firstChild) { vak.innerHTML = ''; return; }
     var opslaan = el('button', { class: 'btn primair klein', text: 'Opslaan (= gecontroleerd)' });
-    var form = feitFormulier(f, [opslaan]);
+    var form = feitFormulier(f, [opslaan], true);
     opslaan.onclick = function() {
       var w = form.waarde(); w.id = f.id;
       api('feit-opslaan', { feit: w }).then(function() { melding('Opgeslagen'); return laadOverzicht(); })

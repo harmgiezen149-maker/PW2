@@ -77,7 +77,9 @@ PW.el = function(tag, attrs, inhoud) {
 // Foto bij een feit (met naam van de maker: alleen foto's met gebruiksrecht)
 PW.feitFoto = function(f) {
   if (!f.foto) return null;
-  return PW.el('figure', { class: 'feit-foto' }, [PW.el('img', { src: f.foto, alt: '', loading: 'lazy' }),
+  var img = PW.el('img', { src: f.foto, alt: '', loading: 'lazy' });
+  if (f.fotoPositie) img.style.objectPosition = f.fotoPositie;
+  return PW.el('figure', { class: 'feit-foto' }, [img,
     PW.el('figcaption', { tekst: 'Foto: ' + (f.fotoBron || 'onbekend') })]);
 };
 
@@ -306,9 +308,29 @@ document.addEventListener('error', function(e) {
   vak.innerHTML = PW.AVATAR_SVG;
 }, true);
 
+// Logo in de kopbalk: eigen afbeelding (op een blauw of wit vlak, of los) of het getekende takje
+function pasLogoToe(logo) {
+  var vak = document.getElementById('kopLogo');
+  if (!vak) return;
+  var sleutel = logo ? logo.versie + ':' + logo.vlak : 'takje';
+  if (vak.getAttribute('data-logo') === sleutel) return;
+  vak.setAttribute('data-logo', sleutel);
+  vak.className = 'kop-logo' + (logo ? ' logo-eigen logo-' + (logo.vlak || 'blauw') : '');
+  vak.innerHTML = logo ? '<img src="/api/achtergrond?soort=logo&amp;v=' + encodeURIComponent(logo.versie) + '" alt="">' : PW.LOGO;
+}
+// App-icoon: tabblad en beginscherm (het webmanifest komt van de server)
+function pasIcoonToe(icoon) {
+  var klein = icoon ? '/api/achtergrond?soort=icoon-192&v=' + encodeURIComponent(icoon.v192) : '/icons/icon-192.png';
+  Array.prototype.forEach.call(document.querySelectorAll('link[rel="icon"], link[rel="apple-touch-icon"]'), function(l) {
+    if (l.getAttribute('href') !== klein) l.setAttribute('href', klein);
+  });
+}
+
 function pasAchtergrondToe(info) {
   PW.achtergrondInfo = info || null;
   pasAvatarToe(info && info.avatar);
+  pasLogoToe(info && info.logo);
+  pasIcoonToe(info && info.icoon);
   var vak = document.querySelector('.view-chat .landschap');
   if (!vak) return;
   var st = info && info.staand, lg = info && info.liggend;
@@ -340,7 +362,7 @@ function laadAchtergrond() {
 
 PW.start = function() {
   bouwTabbalk();
-  document.getElementById('kopLogo').innerHTML = PW.LOGO;
+  pasLogoToe(null);
   document.getElementById('kopTerug').innerHTML = PW.icoon('terug', { maat: 24, kleur: '#FFFFFF', dikte: 2.4 });
   window.addEventListener('hashchange', route);
   route();

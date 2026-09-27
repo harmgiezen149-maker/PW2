@@ -18,6 +18,7 @@ zichtbaar: voetnoten, bronnenlijst, "niet gecontroleerd", "Dat weet ik niet" en
 | Aanvulling · Achtergrondfoto | Beheerpaneel → Foto's: een staande foto (telefoon) en een liggende (tablet en computer). De foto wordt in de browser verkleind, in stukken in de database gezet en via `api/achtergrond` met een versie in de link uitgeleverd (een jaar te cachen, ook offline via de service worker). De foto staat stil achter de chat; de naam van de maker staat klein in de hoek. |
 | Aanvulling · Avatar | Het tabblad heet nu Beheerpaneel → Foto's. Daar kan een beheerder ook de avatar van de assistent vervangen (bij voorkeur een illustratie, geen foto van een echt persoon). Opslag en uitlevering zoals de achtergrondfoto (soort `avatar`, hooguit 300 kB); laadt de afbeelding niet, dan toont de app weer de getekende boswachter. De maker staat bij Profiel. |
 | Aanvulling · Reijerscamp | De Reijerscamp is een zesde deelgebied (was buurgebied): in de kennisbank, de instructie aan de assistent, het tabblad Gebieden, de kaart, het beheerpaneel en de wekelijkse controle (ook de pagina van de Reijerscamp op natuurmonumenten.nl). De grenzen van alle deelgebieden komen uit de NM-beheerkaart en worden via het beheerpaneel in de database gezet, niet in de code. |
+| Aanvulling · Alle afbeeldingen | Beheerpaneel → Foto's beheert nu elke afbeelding in de app, met uploaden in plaats van links: logo in de kopbalk (ook in het beheerpaneel), app-icoon (drie formaten uit één afbeelding; het webmanifest komt nu van `api/achtergrond?manifest=1`), avatar, achtergrond, een foto per deelgebied en foto's bij feiten. Een geüploade foto vervangt een eerder ingevulde link. |
 
 ## Keuzes bij de open vragen uit het plan
 
@@ -36,8 +37,7 @@ zichtbaar: voetnoten, bronnenlijst, "niet gecontroleerd", "Dat weet ik niet" en
 
 1. Akkoord van Communicatie op de blauw-oranje uitstraling, en het officiële beeldmerk.
 2. Natuurfoto's met gebruiksrecht (achtergrond chat; per deelgebied; eventueel per feit).
-   Per gebied en per feit kan een beheerder nu al een foto-link met de naam van de maker
-   invullen.
+   Een beheerder kan ze uploaden in Beheer → Foto's, net als het beeldmerk (logo en app-icoon).
 3. Kaartgegevens: grenzen van de deelgebieden (GIS, als GeoJSON), GPX-bestanden van de
    routes, en de ligging van parkeerplaatsen, uitkijkposten en ingangen.
 
@@ -49,7 +49,7 @@ zichtbaar: voetnoten, bronnenlijst, "niet gecontroleerd", "Dat weet ik niet" en
 - Nieuw endpoint `api/gebied.js` (actueel, gebieden, gebied, kaart); nieuwe modules
   `api/_lib/kaart.js` en `api/_lib/meldstatus.js`. Nieuwe sleutels in de database:
   `kb:plekken`, `kb:routes`, `cfg:gebieden`, `kaart:grens:<gebied>`, `kb:meldstatus`,
-  `cfg:achtergrond` (achtergrondfoto's en avatar, + de stukken van de afbeeldingen; die zitten niet
+  `cfg:achtergrond` (alle afbeeldingen uit Foto's, + de stukken van de afbeeldingen; die zitten niet
   in de back-up).
   De kaart zit in de wekelijkse back-up.
 - UI-tests en schermafbeeldingen draaien tegen een nagebootste API

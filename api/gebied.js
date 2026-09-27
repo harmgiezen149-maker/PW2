@@ -5,6 +5,7 @@ const auth = require('./_lib/auth');
 const { setSecurityHeaders, checkRateLimit, vandaagISO, nlMaand } = require('./_lib/http');
 
 const kaart = require('./_lib/kaart');
+const beeld = require('./_lib/achtergrond');
 const MAANDNAMEN = ['januari', 'februari', 'maart', 'april', 'mei', 'juni', 'juli', 'augustus', 'september', 'oktober', 'november', 'december'];
 const NIEUWS_DAGEN = 60;
 
@@ -13,8 +14,16 @@ function dgTitel(slug) {
   return d ? d.titel : 'Hele gebied';
 }
 
+// Foto: een geüploade foto (Beheer → Foto's) gaat voor een eerder ingevulde link
+function metFoto(uit, beelden, soort, link, linkBron) {
+  const f = beeld.fotoVoor(beelden, soort);
+  if (f) Object.assign(uit, f);
+  else if (link) { uit.foto = link; uit.fotoBron = linkBron || ''; }
+  return uit;
+}
+
 // Wat de app van een feit te zien krijgt (geen historie, geen namen van beheerders)
-function publiek(f, vandaag) {
+function publiek(f, vandaag, beelden) {
   const b = kb.beoordeel(f, vandaag);
   const uit = {
     id: f.id, tekst: f.tekst, onderwerp: f.onderwerp || 'overig', type: f.type,
@@ -24,7 +33,7 @@ function publiek(f, vandaag) {
   };
   if (f.bronUrl) uit.bronUrl = f.bronUrl;
   if (f.plekId) uit.plekId = f.plekId;
-  if (f.foto) { uit.foto = f.foto; uit.fotoBron = f.fotoBron || ''; }
+  metFoto(uit, beelden, 'feit-' + f.id, f.foto, f.fotoBron);
   if (f.type === 'tijdelijk') { uit.einddatum = f.einddatum || null; if (f.startdatum) uit.startdatum = f.startdatum; }
   if (f.type === 'seizoen') uit.maanden = f.maanden || [];
   return uit;
@@ -51,36 +60,36 @@ function sorteer(a, b) {
   return VOLGORDE.indexOf(a.onderwerp) - VOLGORDE.indexOf(b.onderwerp) || a.id.localeCompare(b.id);
 }
 
-function gebieden(feiten, cfg) {
+function gebieden(feiten, cfg, beelden) {
   const lijst = kb.DEELGEBIEDEN.filter(d => d.slug !== 'heel').map(d => {
     const eigen = feiten.filter(f => f.deelgebied === d.slug);
     const c = cfg[d.slug] || {};
     const landschap = eigen.filter(f => f.onderwerp === 'gebied').sort(sorteer)[0];
-    return {
+    return metFoto({
       slug: d.slug, titel: d.titel, aantal: eigen.length,
       beschrijving: c.beschrijving || (landschap ? eersteZin(landschap.tekst, 110) : ''),
-      foto: c.foto || null, fotoBron: c.fotoBron || null
-    };
+      foto: null, fotoBron: null
+    }, beelden, 'gebied-' + d.slug, c.foto, c.fotoBron);
   });
   return { gebieden: lijst, buurgebieden: BUURGEBIEDEN, heelAantal: feiten.filter(f => (f.deelgebied || 'heel') === 'heel').length };
 }
 
-function gebied(feiten, cfg, slug, vandaag) {
+function gebied(feiten, cfg, slug, vandaag, beelden) {
   const d = kb.DEELGEBIEDEN.find(x => x.slug === slug);
   if (!d) return null;
   const c = cfg[slug] || {};
   const eigen = feiten.filter(f => (f.deelgebied || 'heel') === slug).sort(sorteer);
   const onderwerpTitel = s => (kb.ONDERWERPEN.find(o => o.slug === s) || { titel: 'Overig' }).titel;
-  return {
-    slug, titel: d.titel, beschrijving: c.beschrijving || '', foto: c.foto || null, fotoBron: c.fotoBron || null,
-    feiten: eigen.filter(f => f.onderwerp !== 'routes').map(f => Object.assign(publiek(f, vandaag), { onderwerpTitel: onderwerpTitel(f.onderwerp) })),
-    routes: eigen.filter(f => f.onderwerp === 'routes').map(f => Object.assign(publiek(f, vandaag), { onderwerpTitel: onderwerpTitel(f.onderwerp) }))
-  };
+  return Object.assign(metFoto({ slug, titel: d.titel, beschrijving: c.beschrijving || '', foto: null, fotoBron: null },
+    beelden, 'gebied-' + slug, c.foto, c.fotoBron), {
+    feiten: eigen.filter(f => f.onderwerp !== 'routes').map(f => Object.assign(publiek(f, vandaag, beelden), { onderwerpTitel: onderwerpTitel(f.onderwerp) })),
+    routes: eigen.filter(f => f.onderwerp === 'routes').map(f => Object.assign(publiek(f, vandaag, beelden), { onderwerpTitel: onderwerpTitel(f.onderwerp) }))
+  });
 }
 
 // Kaartgegevens: alleen actieve plekken en routes (intern alleen voor wie is ingelogd);
 // bij elke plek de feiten uit de kennisbank die eraan gekoppeld zijn.
-function kaartGegevens(feiten, plekken, routes, cfg, grenzen, ingelogd, vandaag) {
+function kaartGegevens(feiten, plekken, routes, cfg, grenzen, ingelogd, vandaag, beelden) {
   const zichtbaar = x => x && x.status !== 'ingetrokken' && (x.zichtbaarheid !== 'intern' || ingelogd);
   const perPlek = {};
   for (const f of feiten) if (f.plekId) (perPlek[f.plekId] = perPlek[f.plekId] || []).push(f);
@@ -89,7 +98,7 @@ function kaartGegevens(feiten, plekken, routes, cfg, grenzen, ingelogd, vandaag)
   return {
     midden: kaart.MIDDEN,
     plekken: Object.values(plekken).filter(zichtbaar).map(p => {
-      const bij = (perPlek[p.id] || []).sort(sorteer).map(f => publiek(f, vandaag));
+      const bij = (perPlek[p.id] || []).sort(sorteer).map(f => publiek(f, vandaag, beelden));
       return {
         id: p.id, naam: p.naam, soort: p.soort, soortTitel: kaart.SOORTEN[p.soort] || 'Plek', lat: p.lat, lon: p.lon,
         deelgebied: p.deelgebied, deelgebiedTitel: dgTitel(p.deelgebied), intern: p.zichtbaarheid === 'intern',
@@ -100,7 +109,7 @@ function kaartGegevens(feiten, plekken, routes, cfg, grenzen, ingelogd, vandaag)
     routes: Object.values(routes).filter(zichtbaar).map(r => ({
       id: r.id, naam: r.naam, lengteKm: r.lengteKm, punten: r.punten, deelgebied: r.deelgebied, deelgebiedTitel: dgTitel(r.deelgebied),
       intern: r.zichtbaarheid === 'intern', bron: r.bron || '', bronUrl: r.bronUrl || '', gecontroleerdOp: r.gecontroleerdOp || null,
-      feit: r.feitId && feitenPer[r.feitId] ? publiek(feitenPer[r.feitId], vandaag) : null
+      feit: r.feitId && feitenPer[r.feitId] ? publiek(feitenPer[r.feitId], vandaag, beelden) : null
     })).sort((a, b) => a.naam.localeCompare(b.naam)),
     gebieden: kb.DEELGEBIEDEN.filter(d => d.slug !== 'heel').map(d => {
       const c = cfg[d.slug] || {};
@@ -109,20 +118,20 @@ function kaartGegevens(feiten, plekken, routes, cfg, grenzen, ingelogd, vandaag)
   };
 }
 
-function actueel(feiten, vandaag) {
+function actueel(feiten, vandaag, beelden) {
   const maand = nlMaand();
   const grens = new Date(Date.parse(vandaag) - NIEUWS_DAGEN * 86400000).toISOString().slice(0, 10);
   const tijdelijk = feiten.filter(f => f.type === 'tijdelijk')
     .sort((a, b) => (a.einddatum || '').localeCompare(b.einddatum || ''))
-    .map(f => publiek(f, vandaag));
+    .map(f => publiek(f, vandaag, beelden));
   const seizoen = feiten.filter(f => f.type === 'seizoen' && Array.isArray(f.maanden) && f.maanden.includes(maand))
-    .map(f => publiek(f, vandaag));
+    .map(f => publiek(f, vandaag, beelden));
   const nieuws = feiten.filter(f => f.type !== 'tijdelijk')
     .map(f => ({ f, datum: nmGoedgekeurd(f) }))
     .filter(x => x.datum && x.datum >= grens)
     .sort((a, b) => b.datum.localeCompare(a.datum))
     .slice(0, 10)
-    .map(x => Object.assign(publiek(x.f, vandaag), { goedgekeurdOp: x.datum }));
+    .map(x => Object.assign(publiek(x.f, vandaag, beelden), { goedgekeurdOp: x.datum }));
   return { maand: MAANDNAMEN[maand - 1], tijdelijk, seizoen, nieuws };
 }
 
@@ -138,20 +147,21 @@ module.exports = async function handler(req, res) {
     const vandaag = vandaagISO();
     // Zelfde selectie als de chat: actief, niet afgelopen, intern alleen voor wie is ingelogd.
     // Seizoensfeiten van alle maanden, zodat Gebieden ze ook kan tonen.
-    const bruikbaar = kb.bruikbareFeiten(await kb.alleFeiten(), { ingelogd: !!gebruiker, vandaag, alleMaanden: true });
+    const [alleFeiten, beelden] = await Promise.all([kb.alleFeiten(), beeld.meta().catch(() => ({}))]);
+    const bruikbaar = kb.bruikbareFeiten(alleFeiten, { ingelogd: !!gebruiker, vandaag, alleMaanden: true });
     const basis = { bijgewerkt: new Date().toISOString(), ingelogd: !!gebruiker };
 
     switch (body.actie) {
       case 'actueel':
-        return res.json(Object.assign(basis, actueel(bruikbaar, vandaag)));
+        return res.json(Object.assign(basis, actueel(bruikbaar, vandaag, beelden)));
       case 'gebieden':
-        return res.json(Object.assign(basis, gebieden(bruikbaar, await gebiedInstellingen())));
+        return res.json(Object.assign(basis, gebieden(bruikbaar, await gebiedInstellingen(), beelden)));
       case 'kaart': {
         const [plekken, routes, cfg, grenzen] = await Promise.all([kaart.plekken(), kaart.routes(), gebiedInstellingen(), kaart.grenzen()]);
-        return res.json(Object.assign(basis, kaartGegevens(bruikbaar, plekken, routes, cfg, grenzen, !!gebruiker, vandaag)));
+        return res.json(Object.assign(basis, kaartGegevens(bruikbaar, plekken, routes, cfg, grenzen, !!gebruiker, vandaag, beelden)));
       }
       case 'gebied': {
-        const g = gebied(bruikbaar, await gebiedInstellingen(), String(body.slug || ''), vandaag);
+        const g = gebied(bruikbaar, await gebiedInstellingen(), String(body.slug || ''), vandaag, beelden);
         if (!g) return res.status(404).json({ error: 'Onbekend gebied' });
         return res.json(Object.assign(basis, g));
       }

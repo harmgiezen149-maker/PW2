@@ -376,7 +376,7 @@ function bewerkRoute(r) {
 function lijstGebieden() {
   var p = paneel();
   p.appendChild(el('h2', { text: 'Deelgebieden' }));
-  p.appendChild(el('p', { class: 'uitleg', text: 'Per deelgebied: waar de naam op de kaart staat, de grens (GeoJSON, bijvoorbeeld uit de GIS van Natuurmonumenten; RD-coördinaten worden omgerekend), een korte beschrijving voor het tabblad Gebieden en eventueel een foto.' }));
+  p.appendChild(el('p', { class: 'uitleg', text: 'Per deelgebied: waar de naam op de kaart staat, de grens (GeoJSON, bijvoorbeeld uit de GIS van Natuurmonumenten; RD-coördinaten worden omgerekend), en een korte beschrijving voor het tabblad Gebieden. De foto van een gebied upload je in Foto\'s.' }));
   var lijst = el('div', { class: 'bk-lijst' });
   OV.deelgebieden.forEach(function(dg) {
     if (dg.slug === 'heel') return;
@@ -385,7 +385,6 @@ function lijstGebieden() {
     delen.push(cfg.lat ? 'label' : 'geen label');
     delen.push(toestand.data.grenzen[dg.slug] ? 'grens' : 'geen grens');
     if (cfg.beschrijving) delen.push('beschrijving');
-    if (cfg.foto) delen.push('foto');
     var rij = el('button', { class: 'bk-rij', type: 'button', html: '<span style="flex:1"><b></b><span></span></span>' });
     rij.querySelector('b').textContent = dg.titel;
     rij.querySelector('span span').textContent = delen.join(' · ');
@@ -406,8 +405,6 @@ function bewerkGebied(slug) {
   var beschrijving = el('textarea', { maxlength: '200', style: 'min-height:60px', placeholder: 'Leeg = eerste zin van een landschapsfeit uit de kennisbank' }); beschrijving.value = cfg.beschrijving || '';
   var lat = el('input', { inputmode: 'decimal' }); lat.value = cfg.lat || '';
   var lon = el('input', { inputmode: 'decimal' }); lon.value = cfg.lon || '';
-  var foto = el('input', { placeholder: 'https://… (alleen een foto die je mag gebruiken)' }); foto.value = cfg.foto || '';
-  var fotoBron = el('input', { placeholder: 'Bijv. Natuurmonumenten / naam fotograaf' }); fotoBron.value = cfg.fotoBron || '';
   var bestand = el('input', { type: 'file', accept: '.geojson,.json,application/geo+json,application/json' });
   var grensStatus = el('div', { class: 'hint' });
   function toonGrens() {
@@ -433,11 +430,13 @@ function bewerkGebied(slug) {
   f.appendChild(veld('Grens (GeoJSON-bestand)', bestand));
   f.appendChild(grensStatus);
   f.appendChild(el('div', { class: 'acties', style: 'margin-top:6px' }, [el('button', { class: 'btn gevaar klein', type: 'button', text: 'Grens weghalen', onclick: function() { grens = null; grensGewijzigd = true; toonGrens(); } })]));
-  f.appendChild(el('div', { class: 'rij' }, [veld('Foto (optioneel)', foto), veld('Foto van (verplicht bij een foto)', fotoBron)]));
+  f.appendChild(el('label', { text: 'Foto' }));
+  f.appendChild(el('div', { class: 'foto-verwijzing' }, [el('span', { text: 'De foto van een deelgebied upload je in Foto\'s.' }),
+    el('button', { class: 'btn secundair klein', type: 'button', text: 'Naar Foto\'s', onclick: function() { toonTab('fotos', { gebied: slug }); } })]));
   var opslaan = el('button', { class: 'btn primair', text: 'Opslaan' });
   opslaan.onclick = function() {
     opslaan.disabled = true;
-    var g = { beschrijving: beschrijving.value, foto: foto.value, fotoBron: fotoBron.value,
+    var g = { beschrijving: beschrijving.value, foto: cfg.foto || '', fotoBron: cfg.fotoBron || '',
       lat: lat.value ? parseFloat(String(lat.value).replace(',', '.')) : null, lon: lon.value ? parseFloat(String(lon.value).replace(',', '.')) : null };
     if (grensGewijzigd) g.grens = grens;
     api('gebied-opslaan', { slug: slug, gebied: g }).then(function() { melding('Opgeslagen'); return herlaad('gebieden'); })
