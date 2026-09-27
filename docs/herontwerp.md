@@ -12,11 +12,12 @@ zichtbaar: voetnoten, bronnenlijst, "niet gecontroleerd", "Dat weet ik niet" en
 |------|-----|
 | A · Huisstijl en chat | Kleuren en lettertype (Fira Sans, meegeleverd), kopbalk, weerbalk over een getekend heidelandschap, begroeting met getekende boswachter en drie snelle vragen, "+" voor onderwerpen, ballonnen, nieuwe app-iconen. Website-aanvullingen hebben geen eigen voetnootnummers meer (die botsten met de bronnenlijst). |
 | B · Profiel en Meldingen | Profiel vervangt het tandwiel: inlogstatus, verhaalmodus, automatisch voorlezen, tekstgrootte, handleiding, uitleg over de bronnen, beheerpaneel. Meldingen: lopende tijdelijke feiten, seizoenskalender van deze maand, recent goedgekeurd nm.nl-nieuws, "Iets melden" en "Mijn meldingen" met status. |
-| C · Gebieden | De vijf deelgebieden met korte beschrijving; per gebied de feiten en routes, en "Vraag de assistent over dit gebied". |
+| C · Gebieden | De deelgebieden met korte beschrijving; per gebied de feiten en routes, en "Vraag de assistent over dit gebied". |
 | D · Kaart | Kaart met plekken, routes, labels en grenzen; lagen, zoeken, eigen locatie, luchtfoto; onderblad met de gekoppelde feiten; kaartje in antwoorden. Ondergrond: PDOK (Kadaster). |
 | E · Beheer en handleiding | Beheerpaneel in de nieuwe stijl met zijmenu, overzicht met weekendlijst en het nieuwe onderdeel "Kaart en plekken" (plekken aanklikken, routes uit GPX, grenzen uit GeoJSON, ook in RD). Feiten kunnen een plek en een foto krijgen. Handleiding en schermafbeeldingen bijgewerkt (15 pagina's). |
 | Aanvulling · Achtergrondfoto | Beheerpaneel → Foto's: een staande foto (telefoon) en een liggende (tablet en computer). De foto wordt in de browser verkleind, in stukken in de database gezet en via `api/achtergrond` met een versie in de link uitgeleverd (een jaar te cachen, ook offline via de service worker). De foto staat stil achter de chat; de naam van de maker staat klein in de hoek. |
 | Aanvulling · Avatar | Het tabblad heet nu Beheerpaneel → Foto's. Daar kan een beheerder ook de avatar van de assistent vervangen (bij voorkeur een illustratie, geen foto van een echt persoon). Opslag en uitlevering zoals de achtergrondfoto (soort `avatar`, hooguit 300 kB); laadt de afbeelding niet, dan toont de app weer de getekende boswachter. De maker staat bij Profiel. |
+| Aanvulling · Reijerscamp | De Reijerscamp is een zesde deelgebied (was buurgebied): in de kennisbank, de instructie aan de assistent, het tabblad Gebieden, de kaart, het beheerpaneel en de wekelijkse controle (ook de pagina van de Reijerscamp op natuurmonumenten.nl). De grenzen van alle deelgebieden komen uit de NM-beheerkaart en worden via het beheerpaneel in de database gezet, niet in de code. |
 
 ## Keuzes bij de open vragen uit het plan
 

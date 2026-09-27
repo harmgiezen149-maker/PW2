@@ -37,7 +37,7 @@ function nmGoedgekeurd(f) {
 }
 
 // Buurgebieden: horen níet bij Planken Wambuis (ander beheer), zie ook prompts.js
-const BUURGEBIEDEN = ['De Hoge Veluwe', 'Ginkelse Heide', 'Reijerscamp'];
+const BUURGEBIEDEN = ['De Hoge Veluwe', 'Ginkelse Heide'];
 const gebiedInstellingen = kaart.gebiedInstellingen; // per deelgebied: eigen beschrijving, foto, kaartpositie
 
 // Eerste zin van een tekst, ingekort tot ongeveer max tekens

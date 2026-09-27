@@ -5,7 +5,7 @@
 // - Lettertypen, iconen en afbeeldingen: cache-first (veranderen zelden).
 // - /api/*: nooit cachen (antwoorden, weer en meldingen zijn per definitie actueel;
 //   de app bewaart zelf de laatst geladen stand met datum).
-const CACHE = 'pw-v85';
+const CACHE = 'pw-v86';
 const STATIC_ASSETS = [
   '/',
   '/manifest.webmanifest',

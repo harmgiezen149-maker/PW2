@@ -1,4 +1,4 @@
-// Wekelijkse controle (zaterdag 07:00) van de Planken Wambuis-pagina's op natuurmonumenten.nl
+// Wekelijkse controle (zaterdag 07:00) van de pagina's van Planken Wambuis en de Reijerscamp op natuurmonumenten.nl
 // (vraag 16 en 25). Gewijzigde pagina's en nieuwe nieuws-/agendaberichten worden
 // door Claude vergeleken met de kennisbank; wat nieuw of anders is, komt als
 // voorstel in het beheerpaneel. Niets gaat live zonder goedkeuring.
@@ -10,7 +10,7 @@ const { vandaagISO, nlDatum } = require('./http');
 
 const MODEL = 'claude-opus-5';
 const BASIS = 'https://www.natuurmonumenten.nl/natuurgebieden/planken-wambuis';
-const STANDAARD_PAGINAS = [BASIS, BASIS + '/nieuws', BASIS + '/agenda'];
+const STANDAARD_PAGINAS = [BASIS, BASIS + '/nieuws', BASIS + '/agenda', 'https://www.natuurmonumenten.nl/natuurgebieden/reijerscamp'];
 const K_PAGINAS = 'cfg:nmpaginas';
 const K_HASH = 'cron:hash';
 const K_GEZIEN = 'cron:gezien';
@@ -35,10 +35,10 @@ function tekstUitHtml(html) {
   return decodeer(t).replace(/[ \t]+/g, ' ').replace(/ *\n */g, '\n').replace(/\n{2,}/g, '\n').trim();
 }
 
-// Links naar nieuws- en agendaberichten van dit gebied
+// Links naar nieuws- en agendaberichten van dit gebied (Planken Wambuis en de Reijerscamp)
 function berichtLinks(html) {
   const links = new Set();
-  const re = /href="((?:https:\/\/www\.natuurmonumenten\.nl)?\/natuurgebieden\/planken-wambuis\/(?:nieuws|agenda)\/[^"#?]+)"/gi;
+  const re = /href="((?:https:\/\/www\.natuurmonumenten\.nl)?\/natuurgebieden\/(?:planken-wambuis|reijerscamp)\/(?:nieuws|agenda)\/[^"#?]+)"/gi;
   let m;
   while ((m = re.exec(html))) links.add(m[1].startsWith('http') ? m[1] : 'https://www.natuurmonumenten.nl' + m[1]);
   return [...links];
@@ -81,7 +81,9 @@ function schema() {
 function instructie() {
   return `Je helpt de beheerder van de kennisbank van de Boswachter Assistent voor Planken Wambuis (Natuurmonumenten, Zuidwest-Veluwe). Vandaag is het ${nlDatum()}.
 
-Je krijgt de huidige kennisbank (met feit-id's), de openstaande voorstellen en tekst van pagina's van natuurmonumenten.nl over Planken Wambuis. Stel kennisbankfeiten voor op basis van wat er op die pagina's staat:
+Je krijgt de huidige kennisbank (met feit-id's), de openstaande voorstellen en tekst van pagina's van natuurmonumenten.nl over Planken Wambuis (inclusief de Reijerscamp). Stel kennisbankfeiten voor op basis van wat er op die pagina's staat.
+Deelgebieden (veld deelgebied): ${kb.DEELGEBIEDEN.map(d => d.slug + ' = ' + d.titel).join(', ')}.
+Voorstellen:
 - "nieuw": een feit dat nog niet in de kennisbank staat en nuttig is voor boswachters en bezoekers (actuele afsluitingen of omleidingen, activiteiten en excursies, beheerwerkzaamheden, praktische informatie, nieuws over dieren of het gebied).
 - "wijziging": de pagina spreekt een bestaand feit tegen of is recenter. Zet dan het id van dat feit in feitId en schrijf de volledige nieuwe tekst.
 Regels:

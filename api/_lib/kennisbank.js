@@ -29,6 +29,7 @@ const DEELGEBIEDEN = [
   { slug: 'mossel', titel: 'Mossel & Mosselse Zand' },
   { slug: 'reemst', titel: 'Oud & Nieuw Reemst' },
   { slug: 'buunderkamp', titel: 'Buunderkamp' },
+  { slug: 'reijerscamp', titel: 'Reijerscamp' },
   { slug: 'oude-hout', titel: 'Oude Hout' }
 ];
 

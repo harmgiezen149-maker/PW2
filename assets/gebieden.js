@@ -1,4 +1,4 @@
-// Gebieden: de vijf deelgebieden van Planken Wambuis, met per gebied de gecontroleerde
+// Gebieden: de deelgebieden van Planken Wambuis, met per gebied de gecontroleerde
 // feiten en routes en een knop die de chat opent met het gebied al ingevuld.
 (function() {
 // Getekende miniaturen per gebied (tot er echte foto's zijn)
@@ -7,9 +7,10 @@ var MINIATUUR = {
   mossel: '<rect width="56" height="56" fill="#D6E0EA"/><path d="M0 30 Q22 22 38 30 T56 28 V56 H0z" fill="#E7DAB8"/><path d="M6 40 q8 -4 14 0 t14 0 t14 0" stroke="#C9B888" stroke-width="2" fill="none"/>',
   reemst: '<rect width="56" height="56" fill="#D2DEC9"/><path d="M0 36 H56 V56 H0z" fill="#A9BE8E"/><circle cx="16" cy="24" r="9" fill="#4E6B45"/><circle cx="36" cy="20" r="11" fill="#3F5A4B"/><path d="M16 33v5M36 31v7" stroke="#5B4632" stroke-width="2.5"/>',
   buunderkamp: '<rect width="56" height="56" fill="#D7DDE3"/><path d="M0 34 Q28 24 56 34 V56 H0z" fill="#9E8398"/><path d="M20 34 L28 14 L36 34z" fill="#3F5A4B"/>',
+  reijerscamp: '<rect width="56" height="56" fill="#DCE4D2"/><path d="M0 36 Q18 31 34 35 T56 32 V56 H0z" fill="#C9B26A"/><path d="M4 46 q10 -3 20 0 t20 0" stroke="#AE9750" stroke-width="2" fill="none"/><circle cx="42" cy="22" r="8" fill="#4E6B45"/><path d="M42 29v6" stroke="#5B4632" stroke-width="2"/>',
   'oude-hout': '<rect width="56" height="56" fill="#CBD9C5"/><circle cx="14" cy="22" r="10" fill="#4E6B45"/><circle cx="32" cy="18" r="12" fill="#3F5A4B"/><circle cx="46" cy="26" r="9" fill="#56744D"/><path d="M0 40 H56 V56 H0z" fill="#7E9A6E"/>'
 };
-var KLEUR = { wolfheze: '#8F7189', mossel: '#E7DAB8', reemst: '#A9BE8E', buunderkamp: '#9E8398', 'oude-hout': '#7E9A6E' };
+var KLEUR = { wolfheze: '#8F7189', mossel: '#E7DAB8', reemst: '#A9BE8E', buunderkamp: '#9E8398', reijerscamp: '#C9B26A', 'oude-hout': '#7E9A6E' };
 
 function miniatuur(slug) {
   return '<svg width="56" height="56" viewBox="0 0 56 56" aria-hidden="true">' + (MINIATUUR[slug] || MINIATUUR.wolfheze) + '</svg>';
@@ -50,7 +51,7 @@ function stand(d) {
 function toonOverzicht() {
   var box = document.getElementById('gebiedenInhoud');
   box.innerHTML = '';
-  box.appendChild(PW.el('p', { class: 'intro', tekst: 'Planken Wambuis bestaat uit vijf deelgebieden. Tik op een gebied voor de gecontroleerde feiten en routes.' }));
+  box.appendChild(PW.el('p', { class: 'intro', tekst: 'Planken Wambuis bestaat uit deze deelgebieden. Tik op een gebied voor de gecontroleerde feiten en routes.' }));
   var lijst = PW.el('div', { class: 'gebied-lijst' }, [PW.el('p', { class: 'leeg', tekst: 'Laden…' })]);
   box.appendChild(lijst);
   laad('pw_gebieden', { actie: 'gebieden' }).then(function(d) {

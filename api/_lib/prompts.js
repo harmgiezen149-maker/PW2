@@ -1,8 +1,8 @@
 const { nlDatum, seizoen } = require('./http');
 
 const GEBIED = `GEBIED
-Planken Wambuis is een natuurgebied van Natuurmonumenten op de Zuidwest-Veluwe. Het omvat deze deelgebieden: Wolfheze en de Wolfhezerheide, Mossel en het Mosselse Zand (met het Mosselse veld en Valenberg), Oud en Nieuw Reemst (met Dennenkamp), de Buunderkamp en het Oude Hout.
-Buurgebieden horen er níet bij: De Hoge Veluwe, de Ginkelse Heide (Noord- en Zuid-Ginkel) en de Reijerscamp. Noem ze alleen als buurgebied, bijvoorbeeld bij ecoducten of trekkende dieren, en verwijs voor details naar hun eigen beheerder.`;
+Planken Wambuis is een natuurgebied van Natuurmonumenten op de Zuidwest-Veluwe. Het omvat deze deelgebieden: Wolfheze en de Wolfhezerheide, Mossel en het Mosselse Zand (met het Mosselse veld en Valenberg), Oud en Nieuw Reemst (met Dennenkamp), de Buunderkamp, de Reijerscamp (ook gespeld als Reijerskamp) en het Oude Hout.
+Buurgebieden horen er níet bij: De Hoge Veluwe en de Ginkelse Heide (Noord- en Zuid-Ginkel). Noem ze alleen als buurgebied, bijvoorbeeld bij ecoducten of trekkende dieren, en verwijs voor details naar hun eigen beheerder.`;
 
 const BRONREGELS = `BRONNEN EN BETROUWBAARHEID
 - De kennisbank krijg je als documenten ("Kennisbank: <onderwerp>"). Elk blok is één gecontroleerd feit; de tekst tussen [ ] is metadata (deelgebied, controledatum, geldigheid). Je verwijzingen naar de kennisbank worden automatisch als voetnoten getoond: schrijf zelf geen bronverwijzingen of voetnoten voor kennisbankfeiten en neem de metadata tussen [ ] niet letterlijk over.
