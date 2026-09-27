@@ -247,3 +247,8 @@ html body .leaflet-container { font-family: 'Fira Sans', system-ui, sans-serif; 
 .badge.kal-badge { background: #2256A0; color: #fff; border-color: transparent; }
 .kal-soort { margin-bottom: 4px; }
 .kal-form { scroll-margin-top: 90px; border: 2px solid var(--lichtblauw-rand); }
+
+/* ---------------------------------------------------------------- versie en updatebalk */
+.bh-versie { position: fixed; left: 20px; bottom: 14px; font-size: 0.8125rem; color: var(--tekst-3); }
+@media (max-width: 900px) { .bh-versie { position: static; padding: 8px 14px 0; } }
+.bh-update { position: fixed; right: 20px; bottom: 20px; z-index: 50; max-width: 420px; background: var(--navy); color: #fff; border-radius: 14px; padding: 12px 14px; display: flex; align-items: center; gap: 12px; box-shadow: 0 6px 24px rgba(20, 32, 56, 0.35); font-size: 0.9375rem; }

@@ -105,7 +105,26 @@ function toon() {
         PW.uitloggen();
       } }));
   }
-  box.appendChild(PW.el('p', { class: 'versie', tekst: 'Versie ' + PW.VERSIE + ' · Planken Wambuis · Natuurmonumenten' }));
+  // Versie, wat er nieuw is en zelf op updates controleren
+  var info = self.PW_VERSIE || {};
+  var datum = info.datum ? ' · ' + new Date(info.datum + 'T12:00:00').toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
+  box.appendChild(PW.el('p', { class: 'versie', tekst: 'Versie ' + PW.VERSIE + datum + ' · Planken Wambuis · Natuurmonumenten' }));
+  var uitkomst = PW.el('span', { class: 'versie-uitkomst', role: 'status' });
+  var controle = PW.el('button', { type: 'button', class: 'knop knop-rand knop-klein versie-knop', html: PW.icoon('info', { maat: 18 }) + 'Controleren op updates',
+    onclick: function() {
+      controle.disabled = true; uitkomst.textContent = 'Controleren…';
+      PW.controleerVersie().then(function(v) {
+        controle.disabled = false;
+        uitkomst.textContent = !v ? 'Controleren lukt nu niet. Heb je verbinding?'
+          : v.nummer === PW.VERSIE ? 'Je hebt de nieuwste versie.' : 'Er is een nieuwe versie (' + v.nummer + '): tik bovenin op Bijwerken.';
+      });
+    } });
+  box.appendChild(PW.el('div', { class: 'versie-rij' }, [controle, uitkomst]));
+  if ((info.nieuw || []).length) {
+    var lijst = PW.el('ul', { class: 'versie-nieuw' });
+    info.nieuw.forEach(function(t) { lijst.appendChild(PW.el('li', { tekst: t })); });
+    box.appendChild(PW.el('details', { class: 'versie-details' }, [PW.el('summary', { tekst: 'Wat is er nieuw in versie ' + PW.VERSIE }), lijst]));
+  }
   var ag = PW.achtergrondInfo;
   var makers = ag ? [ag.staand, ag.liggend].filter(Boolean).map(function(x) { return x.fotoBron; }) : [];
   makers = makers.filter(function(m, i) { return makers.indexOf(m) === i; });

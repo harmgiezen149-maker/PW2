@@ -33,6 +33,7 @@
   </header>
   <div class="bh-body">
     <nav class="tabs" id="tabs" aria-label="Beheer"></nav>
+    <div class="bh-versie" id="bhVersie"></div>
     <main id="inhoud"></main>
   </div>
 </div>
@@ -88,7 +89,30 @@ function pasBeheerLogo(logo) {
   vak.innerHTML = logo ? '<img src="/api/achtergrond?soort=logo&amp;v=' + encodeURIComponent(logo.versie) + '" alt="">' : TAKJE;
 }
 
+// Versiecontrole: zelfde versiebestand als de app. Nieuwere versie gepubliceerd? Dan een balk met "Vernieuwen".
+function beheerVersie() {
+  var v = self.PW_VERSIE || {};
+  var vak = document.getElementById('bhVersie');
+  if (vak) vak.textContent = 'Versie ' + (v.nummer || '?') + (v.datum ? ' · ' + datumNL(v.datum) : '');
+  function controleer() {
+    fetch('/assets/versie.js?controle=' + Date.now(), { cache: 'no-store' }).then(function(r) { return r.ok ? r.text() : null; }).then(function(t) {
+      if (!t) return;
+      var a = t.indexOf('{'), b = t.lastIndexOf('}');
+      var n = JSON.parse(t.slice(a, b + 1));
+      if (!n.nummer || n.nummer === v.nummer || document.getElementById('bhUpdate')) return;
+      var balk = el('div', { class: 'bh-update', id: 'bhUpdate', role: 'status' }, [
+        el('span', { text: 'Er is een nieuwe versie van het beheerpaneel (' + n.nummer + '). Sla eerst op waar je mee bezig bent.' }),
+        el('button', { class: 'btn primair klein', text: 'Vernieuwen', onclick: function() { location.reload(); } })
+      ]);
+      document.body.appendChild(balk);
+    }).catch(function() {});
+  }
+  setTimeout(controleer, 5000);
+  setInterval(function() { if (!document.hidden) controleer(); }, 30 * 60 * 1000);
+}
+
 function start() {
+  beheerVersie();
   fetch('/api/achtergrond?info=1').then(function(r) { return r.ok ? r.json() : null; })
     .then(function(i) { if (i) pasBeheerLogo(i.logo); }).catch(function() {});
   laadOverzicht().then(function() {
@@ -908,6 +932,7 @@ function tabBackup(inhoud) {
   }).catch(fout);
 }
 </script>
+<script src="/assets/versie.js"></script>
 <script src="/assets/beheer-kaart.js"></script>
 <script src="/assets/beheer-kalender.js"></script>
 <script src="/assets/beheer-fotos.js"></script>

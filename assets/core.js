@@ -1,7 +1,7 @@
 // Kern van de app: iconen, inloggen, voorkeuren, tabbladen en kleine hulpfuncties.
 // Gedeeld door chat, meldingen, gebieden, kaart en profiel.
 var PW = window.PW = window.PW || {};
-PW.VERSIE = '2.0';
+PW.VERSIE = (self.PW_VERSIE && self.PW_VERSIE.nummer) || '?';
 
 // ============================================================
 // Iconen (lijn-iconen, viewBox 24x24)
@@ -368,6 +368,7 @@ PW.start = function() {
   route();
   laadAchtergrond();
   PW.controleerLogin();
+  startVersiecontrole();
 };
 
 // Tabbalk verbergen zolang het toetsenbord open is (meer ruimte op de telefoon)
@@ -383,6 +384,100 @@ document.addEventListener('focusout', function() {
     if (!a || !(a.tagName === 'TEXTAREA' || a.tagName === 'INPUT')) document.body.classList.remove('typt');
   }, 250);
 });
+
+// ============================================================
+// Versiecontrole: is er een nieuwere versie van de app gepubliceerd? Dan een melding
+// met "Bijwerken". assets/versie.js is de enige plek met het versienummer.
+// ============================================================
+var K_BIJWERKEN = 'pw_bijwerken';   // { nummer, poging }: lopende update, tegen eindeloos herladen
+var laatsteControle = 0;
+PW.nieuwsteVersie = null;
+
+function sessie(k, v) {
+  try {
+    if (v === undefined) return JSON.parse(sessionStorage.getItem(k) || 'null');
+    if (v === null) sessionStorage.removeItem(k); else sessionStorage.setItem(k, JSON.stringify(v));
+  } catch (e) { return null; }
+}
+
+// Het versiebestand als tekst ophalen en het object eruit lezen
+function leesVersie(tekst) {
+  if (!tekst) return null;
+  var a = tekst.indexOf('{'), b = tekst.lastIndexOf('}');
+  if (a < 0 || b < a) return null;
+  try { return JSON.parse(tekst.slice(a, b + 1)); } catch (e) { return null; }
+}
+
+PW.controleerVersie = function() {
+  laatsteControle = Date.now();
+  return fetch('/assets/versie.js?controle=' + Date.now(), { cache: 'no-store' })
+    .then(function(r) { return r.ok ? r.text() : null; })
+    .then(function(t) {
+      var v = leesVersie(t);
+      if (!v || !v.nummer) return null;
+      PW.nieuwsteVersie = v;
+      if (v.nummer !== PW.VERSIE) toonUpdateMelding(v);
+      PW.meld('versie', v);
+      return v;
+    }).catch(function() { return null; });
+};
+
+function gesprekBezig() { return !!document.querySelector('#chat .msg.user'); }
+
+function toonUpdateMelding(v) {
+  var lopend = sessie(K_BIJWERKEN);
+  // Drie keer geprobeerd en nog steeds de oude versie: deze sessie niet meer vragen
+  if (lopend && lopend.nummer === v.nummer && lopend.poging >= 3) return;
+  var oud = document.getElementById('updateMelding');
+  if (oud) oud.remove();
+  var nieuw = (v.nieuw || []).slice(0, 2);
+  var knop = PW.el('button', { type: 'button', class: 'knop knop-oranje knop-klein', tekst: 'Bijwerken', onclick: function() { PW.werkBij(v.nummer); } });
+  var later = PW.el('button', { type: 'button', class: 'update-later', tekst: 'Later', onclick: function() { m.remove(); } });
+  var m = PW.el('div', { class: 'update-melding', id: 'updateMelding', role: 'status' }, [
+    PW.el('div', { class: 'update-tekst' }, [
+      PW.el('b', { tekst: 'Nieuwe versie van de app (' + v.nummer + ')' }),
+      nieuw.length ? PW.el('span', { tekst: nieuw.join(' · ') }) : null,
+      gesprekBezig() ? PW.el('span', { class: 'update-let-op', tekst: 'Bijwerken start de app opnieuw; het huidige gesprek verdwijnt.' }) : null
+    ]),
+    PW.el('div', { class: 'update-knoppen' }, [knop, later])
+  ]);
+  document.body.appendChild(m);
+}
+
+// Bijwerken: de service worker laten controleren en de app opnieuw laden. Lukt dat niet
+// (nog steeds de oude versie), dan bij de tweede poging eerst de opgeslagen bestanden wissen.
+PW.werkBij = function(nummer) {
+  var lopend = sessie(K_BIJWERKEN);
+  var poging = lopend && lopend.nummer === nummer ? lopend.poging + 1 : 1;
+  sessie(K_BIJWERKEN, { nummer: nummer, poging: poging });
+  var wissen = poging >= 2 && window.caches ? caches.keys().then(function(ks) { return Promise.all(ks.map(function(k) { return caches.delete(k); })); }) : Promise.resolve();
+  var sw = navigator.serviceWorker ? navigator.serviceWorker.getRegistration().then(function(r) { return r && r.update(); }) : Promise.resolve();
+  Promise.all([wissen.catch(function() {}), sw.catch(function() {})]).then(function() { location.reload(); });
+};
+
+// Na het bijwerken: kort laten zien dat het gelukt is
+function naBijwerken() {
+  var lopend = sessie(K_BIJWERKEN);
+  if (!lopend || lopend.nummer !== PW.VERSIE) return;
+  sessie(K_BIJWERKEN, null);
+  var nieuw = ((self.PW_VERSIE || {}).nieuw || []).slice(0, 3);
+  var m = PW.el('div', { class: 'update-melding update-klaar', role: 'status' }, [
+    PW.el('div', { class: 'update-tekst' }, [PW.el('b', { tekst: 'Bijgewerkt naar versie ' + PW.VERSIE }), nieuw.length ? PW.el('span', { tekst: 'Nieuw: ' + nieuw.join(' · ') }) : null]),
+    PW.el('div', { class: 'update-knoppen' }, [PW.el('button', { type: 'button', class: 'update-later', tekst: 'Sluiten', onclick: function() { m.remove(); } })])
+  ]);
+  document.body.appendChild(m);
+  setTimeout(function() { m.remove(); }, 12000);
+}
+
+function startVersiecontrole() {
+  naBijwerken();
+  setTimeout(PW.controleerVersie, 4000);
+  setInterval(function() { if (!document.hidden) PW.controleerVersie(); }, 30 * 60 * 1000);
+  document.addEventListener('visibilitychange', function() {
+    if (!document.hidden && Date.now() - laatsteControle > 5 * 60 * 1000) PW.controleerVersie();
+  });
+  window.addEventListener('online', function() { PW.controleerVersie(); });
+}
 
 // PWA: service worker registreren (installeerbaar + basis-offline)
 if ('serviceWorker' in navigator) {
