@@ -443,22 +443,31 @@ function miniKaart(L, el, d, filter, maxZoom) {
   return map;
 }
 
-// Na een antwoord: gaat het over plekken met een locatie, dan een kaartje erbij
+// Na een antwoord: gaat het over plekken of routes op de kaart, dan een kaartje erbij
 PW.op('antwoord', function(e) {
-  var ids = [];
-  (e.feiten || []).forEach(function(f) { if (f.plekId && ids.indexOf(f.plekId) < 0) ids.push(f.plekId); });
-  if (!ids.length || !e.rendered) return;
+  var ids = [], routeIds = [];
+  (e.feiten || []).forEach(function(f) {
+    if (f.plekId && ids.indexOf(f.plekId) < 0) ids.push(f.plekId);
+    if (f.routeId && routeIds.indexOf(f.routeId) < 0) routeIds.push(f.routeId);
+  });
+  if ((!ids.length && !routeIds.length) || !e.rendered) return;
   laadData().then(function(d) {
     var plekken = (d.plekken || []).filter(function(p) { return ids.indexOf(p.id) >= 0; });
-    if (!plekken.length) return;
+    var routes = (d.routes || []).filter(function(r) { return routeIds.indexOf(r.id) >= 0; });
+    if (!plekken.length && !routes.length) return;
     return PW.laadLeaflet().then(function(L) {
-      var vak = PW.el('div', { class: 'mini-kaart', role: 'img', 'aria-label': 'Kaartje met ' + plekken.map(function(p) { return p.naam; }).join(', ') });
-      var link = plekken.length === 1 ? '#kaart/plek/' + plekken[0].id : '#kaart/plekken/' + plekken.map(function(p) { return p.id; }).join(',');
-      var fig = PW.el('figure', { class: 'antwoord-kaart' }, [vak,
-        PW.el('figcaption', {}, [legenda(plekken), PW.el('a', { href: link, tekst: 'Open op kaart ›' })])]);
+      var namen = plekken.concat(routes).map(function(p) { return p.naam; });
+      var vak = PW.el('div', { class: 'mini-kaart', role: 'img', 'aria-label': 'Kaartje met ' + namen.join(', ') });
+      var link = !routes.length && plekken.length === 1 ? '#kaart/plek/' + plekken[0].id
+        : !plekken.length && routes.length === 1 ? '#kaart/route/' + routes[0].id
+        : plekken.length && !routes.length ? '#kaart/plekken/' + plekken.map(function(p) { return p.id; }).join(',')
+        : '#kaart';
+      var leg = legenda(plekken);
+      if (routes.length) leg.appendChild(PW.el('span', { class: 'legenda-item', html: '<span class="legenda-lijn"></span>' + PW.esc(routes.length === 1 ? routes[0].naam : routes.length + ' routes') }));
+      var fig = PW.el('figure', { class: 'antwoord-kaart' }, [vak, PW.el('figcaption', {}, [leg, PW.el('a', { href: link, tekst: 'Open op kaart ›' })])]);
       var voor = e.rendered.bronEl || e.rendered.kloptEl || e.rendered.scrollBtn;
       e.rendered.bub.insertBefore(fig, voor);
-      miniKaart(L, vak, { plekken: plekken, routes: [], gebieden: [] }, null, 15);
+      miniKaart(L, vak, { plekken: plekken, routes: routes, gebieden: [] }, null, 15);
     });
   }).catch(function() {});
 });

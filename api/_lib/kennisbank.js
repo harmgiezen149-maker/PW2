@@ -132,7 +132,8 @@ function bouwDocumenten(feiten, vandaag) {
       fm.push({
         id: f.id, onderwerp: o.titel, deelgebied: dgTitel(f.deelgebied),
         gecontroleerdOp: f.gecontroleerdOp || null, verouderd: b.verlopen,
-        bron: f.bron || '', bronUrl: f.bronUrl || '', intern: f.zichtbaarheid === 'intern', plekId: f.plekId || undefined
+        bron: f.bron || '', bronUrl: f.bronUrl || '', intern: f.zichtbaarheid === 'intern', plekId: f.plekId || undefined,
+        routeId: f.routeId || undefined
       });
     }
     docs.push({

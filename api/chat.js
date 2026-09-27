@@ -2,6 +2,7 @@ const Anthropic = require('@anthropic-ai/sdk');
 const { setSecurityHeaders, checkRateLimit, sanitizeText } = require('./_lib/http');
 const prompts = require('./_lib/prompts');
 const kb = require('./_lib/kennisbank');
+const kaart = require('./_lib/kaart');
 const auth = require('./_lib/auth');
 const logboek = require('./_lib/logboek');
 
@@ -39,13 +40,14 @@ module.exports = async function handler(req, res) {
   const ingelogd = !!gebruiker;
   const vraag = messages[0].content;
 
-  let feiten, sites;
+  let feiten, sites, routes;
   try {
-    [feiten, sites] = await Promise.all([kb.alleFeiten(), kb.getSites()]);
+    // De routes op de kaart horen ook bij de kennis; lukt dat ophalen niet, dan zonder
+    [feiten, sites, routes] = await Promise.all([kb.alleFeiten(), kb.getSites(), kaart.routes().catch(() => ({}))]);
   } catch (e) {
     return res.status(503).json({ error: 'De kennisbank is even niet bereikbaar. Probeer het zo opnieuw.' });
   }
-  const bruikbaar = kb.bruikbareFeiten(feiten, { ingelogd });
+  const bruikbaar = kb.bruikbareFeiten(Object.assign({}, feiten, kaart.routeFeiten(routes)), { ingelogd });
 
   const instructie = phase === 2 ? prompts.systeemAanvulling()
     : mode === 'storytelling' ? prompts.systeemVerhaal() : prompts.systeemNormaal();
