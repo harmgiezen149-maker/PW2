@@ -12,7 +12,7 @@ const MAX_TEKST = 20000;
 
 function instructie() {
   return `Je helpt de beheerder van de kennisbank van de Boswachter Assistent voor Planken Wambuis (Natuurmonumenten, Zuidwest-Veluwe). Vandaag is het ${nlDatum()}.
-Het gebied omvat: Wolfheze en de Wolfhezerheide, Mossel en het Mosselse Zand, Oud en Nieuw Reemst, de Buunderkamp en het Oude Hout. Buurgebieden (De Hoge Veluwe, Ginkelse Heide, Reijerscamp) horen er niet bij.
+Het gebied omvat: Wolfheze en de Wolfhezerheide, Mossel en het Mosselse Zand, Oud en Nieuw Reemst, de Buunderkamp, de Reijerscamp (ook: Reijerskamp) en het Oude Hout. Buurgebieden (De Hoge Veluwe, Ginkelse Heide) horen er niet bij.
 
 Je krijgt de huidige kennisbank (met feit-id's), de openstaande voorstellen en (een deel van) een document. Haal uit het document de feiten die specifiek over dit gebied gaan en nuttig zijn voor boswachters en bezoekers: geschiedenis, landschap, soorten, beheer, regels, routes, plekken.
 - Alleen wat in het document staat; niets aanvullen uit eigen kennis.

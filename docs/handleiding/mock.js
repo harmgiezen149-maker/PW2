@@ -17,7 +17,7 @@ const ONDERWERPEN = [
 ].map(([slug, titel]) => ({ slug, titel }));
 const DEELGEBIEDEN = [
   ['heel', 'Hele gebied'], ['wolfheze', 'Wolfheze & Wolfhezerheide'], ['mossel', 'Mossel & Mosselse Zand'],
-  ['reemst', 'Oud & Nieuw Reemst'], ['buunderkamp', 'Buunderkamp'], ['oude-hout', 'Oude Hout']
+  ['reemst', 'Oud & Nieuw Reemst'], ['buunderkamp', 'Buunderkamp'], ['reijerscamp', 'Reijerscamp'], ['oude-hout', 'Oude Hout']
 ].map(([slug, titel]) => ({ slug, titel }));
 const TYPES = [
   { slug: 'vast', titel: 'Vast', maanden: 36 }, { slug: 'jaarlijks', titel: 'Jaarlijks', maanden: 12 },
@@ -176,12 +176,13 @@ const ACTUEEL = {
   nieuws: [item({ id: 'n1', type: 'jaarlijks', onderwerp: 'nm', goedgekeurdOp: '2026-09-20', tekst: 'Natuurmonumenten heeft ongeveer 977.000 leden en donateurs.', bronUrl: 'https://www.natuurmonumenten.nl/over-natuurmonumenten' })]
 };
 const GEBIEDEN = {
-  bijgewerkt: '2026-09-26T12:03:00Z', ingelogd: true, heelAantal: 40, buurgebieden: ['De Hoge Veluwe', 'Ginkelse Heide', 'Reijerscamp'],
+  bijgewerkt: '2026-09-26T12:03:00Z', ingelogd: true, heelAantal: 40, buurgebieden: ['De Hoge Veluwe', 'Ginkelse Heide'],
   gebieden: [
     { slug: 'wolfheze', titel: 'Wolfheze & Wolfhezerheide', aantal: 9, beschrijving: 'De Wodanseiken in Laag Wolfheze waren in 2021 ruim 450 jaar oud en behoren tot de bekendste…' },
     { slug: 'mossel', titel: 'Mossel & Mosselse Zand', aantal: 4, beschrijving: 'Voorbeeld van een korte beschrijving van het Mosselse Zand.' },
     { slug: 'reemst', titel: 'Oud & Nieuw Reemst', aantal: 3, beschrijving: '' },
     { slug: 'buunderkamp', titel: 'Buunderkamp', aantal: 0, beschrijving: '' },
+    { slug: 'reijerscamp', titel: 'Reijerscamp', aantal: 0, beschrijving: '' },
     { slug: 'oude-hout', titel: 'Oude Hout', aantal: 1, beschrijving: '' }
   ]
 };
@@ -213,6 +214,7 @@ const KAART = {
     { slug: 'mossel', titel: 'Mossel & Mosselse Zand', lat: 52.052, lon: 5.755, grens: null },
     { slug: 'wolfheze', titel: 'Wolfheze & Wolfhezerheide', lat: 52.008, lon: 5.79, grens: null },
     { slug: 'buunderkamp', titel: 'Buunderkamp', lat: null, lon: null, grens: null },
+    { slug: 'reijerscamp', titel: 'Reijerscamp', lat: null, lon: null, grens: null },
     { slug: 'oude-hout', titel: 'Oude Hout', lat: null, lon: null, grens: null }
   ]
 };

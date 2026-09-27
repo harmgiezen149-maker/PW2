@@ -44,8 +44,8 @@ Startlijst toegestane sites:
 
 | # | Onderwerp | Besluit |
 |---|-----------|---------|
-| 7 | Deelgebieden | Wolfheze en Wolfhezerheide, Mossel en Mosselse Zand (incl. Mosselse veld, Valenberg), Oud en Nieuw Reemst (incl. Dennenkamp), Buunderkamp, Oude Hout. |
-| 7b | Buurgebieden | De Hoge Veluwe, Ginkelse Heide (Noord- en Zuid-Ginkel), Reijerscamp: alleen noemen als buurgebied (bijv. bij ecoducten en trekkende dieren); voor details doorverwijzen naar de eigen beheerder. |
+| 7 | Deelgebieden | Wolfheze en Wolfhezerheide, Mossel en Mosselse Zand (incl. Mosselse veld, Valenberg), Oud en Nieuw Reemst (incl. Dennenkamp), Buunderkamp, Reijerscamp (toegevoegd september 2026), Oude Hout. |
+| 7b | Buurgebieden | De Hoge Veluwe, Ginkelse Heide (Noord- en Zuid-Ginkel): alleen noemen als buurgebied (bijv. bij ecoducten en trekkende dieren); voor details doorverwijzen naar de eigen beheerder. |
 | 8 | Gebiedskaart | Staat in de Kiek-kennisbank (vrijwilligers Zuid-Veluwe & IJsselvallei). |
 
 ### Kennisbank en werkwijze
@@ -96,7 +96,7 @@ Twijfelachtige feiten die bij vraag 13 horen:
 | Veld | Toelichting |
 |------|-------------|
 | onderwerp | Bijv. wolf, praktisch bezoek, beheer, seizoen |
-| deelgebied | Hele gebied, Wolfheze/Wolfhezerheide, Mossel/Mosselse Zand, Oud/Nieuw Reemst, Buunderkamp of Oude Hout |
+| deelgebied | Hele gebied, Wolfheze/Wolfhezerheide, Mossel/Mosselse Zand, Oud/Nieuw Reemst, Buunderkamp, Reijerscamp of Oude Hout |
 | tekst | Het feit zelf, met absolute datums (geen "over zeven jaar") |
 | type | vast / jaarlijks / seizoen / tijdelijk |
 | vervaldatum | Standaard volgens de termijn van het type; bij tijdelijk een eigen einddatum |
