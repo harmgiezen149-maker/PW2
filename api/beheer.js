@@ -9,6 +9,7 @@ const documentimport = require('./_lib/documentimport');
 const meldstatus = require('./_lib/meldstatus');
 const kaart = require('./_lib/kaart');
 const achtergrond = require('./_lib/achtergrond');
+const kalender = require('./_lib/kalender');
 
 const K_MELDINGEN = 'kb:meldingen';
 const { setSecurityHeaders, vandaagISO } = require('./_lib/http');
@@ -36,7 +37,9 @@ function valideerFeit(inv) {
     einddatum: tekstVeld(inv.einddatum, 10),
     startdatum: tekstVeld(inv.startdatum, 10),
     vervaltOp: tekstVeld(inv.vervaltOp, 10),
-    maanden: Array.isArray(inv.maanden) ? [...new Set(inv.maanden.map(Number).filter(m => m >= 1 && m <= 12))].sort((a, b) => a - b) : []
+    maanden: Array.isArray(inv.maanden) ? [...new Set(inv.maanden.map(Number).filter(m => m >= 1 && m <= 12))].sort((a, b) => a - b) : [],
+    kalender: typeof inv.kalender === 'string' ? inv.kalender : '',
+    titel: tekstVeld(inv.titel, 80)
   };
   if (f.tekst.length < 5) return { fout: 'De tekst van het feit is te kort.' };
   if (!kb.ONDERWERPEN.some(o => o.slug === f.onderwerp)) return { fout: 'Kies een onderwerp.' };
@@ -56,6 +59,10 @@ function valideerFeit(inv) {
   if (f.foto && !/^https:\/\/\S+$/.test(f.foto)) return { fout: 'De foto-link moet met https:// beginnen.' };
   if (f.foto && !f.fotoBron) return { fout: 'Vermeld van wie de foto is (je moet hem mogen gebruiken).' };
   if (!f.foto) { delete f.foto; delete f.fotoBron; }
+  const kalenderFout = kalender.controleer(f);
+  if (kalenderFout) return { fout: kalenderFout };
+  if (!f.kalender) delete f.kalender;
+  if (!f.titel) delete f.titel;
   return { feit: f };
 }
 
@@ -68,7 +75,7 @@ async function controleerPlek(feit) {
   return null;
 }
 
-const OPTIONELE_VELDEN = ['einddatum', 'startdatum', 'vervaltOp', 'maanden', 'bronUrl', 'bronDatum', 'plekId', 'foto', 'fotoBron'];
+const OPTIONELE_VELDEN = ['einddatum', 'startdatum', 'vervaltOp', 'maanden', 'bronUrl', 'bronDatum', 'plekId', 'foto', 'fotoBron', 'kalender', 'titel'];
 
 // Welk melder-id hoort bij een voorstel: de oorspronkelijke melding, of de suggestie zelf.
 function meldingVanVoorstel(v) {
@@ -178,6 +185,22 @@ module.exports = async function handler(req, res) {
         }
         await kv.hsetJSON(kb.K_FEITEN, f.id, f);
         return res.json({ ok: true, feit: metBeoordeling(f, vandaag) });
+      }
+
+      // ------------------------------------------------ jaarkalender: per maand, alle feiten (ook intern)
+      case 'kalender': {
+        const feiten = await kb.alleFeiten();
+        const k = kalender.bouw(feiten, { vandaag, ingelogd: true, publiek: f => metBeoordeling(f, vandaag) });
+        return res.json(Object.assign(k, { onderwerpVoor: kalender.ONDERWERP_VOOR }));
+      }
+
+      case 'kalender-zoeken': {
+        try {
+          const r = await nmcheck.zoekKalender();
+          return res.json(Object.assign({ ok: true }, r));
+        } catch (e) {
+          return res.status(502).json({ error: e.message || 'Zoeken op de websites is mislukt.' });
+        }
       }
 
       case 'voorstellen': {

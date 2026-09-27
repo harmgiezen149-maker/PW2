@@ -234,3 +234,16 @@ html body .leaflet-container { font-family: 'Fira Sans', system-ui, sans-serif; 
 .fo-kop span { font-size: 0.875rem; color: var(--tekst-3); overflow: hidden; text-overflow: ellipsis; }
 #fo-feit-nieuw .ag-blok { margin-top: 16px; }
 .ag-form input[type="color"] { width: 64px; height: 40px; padding: 3px; cursor: pointer; }
+
+/* ---------------------------------------------------------------- jaarkalender */
+.kal-maanden { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+.kal-maanden button { min-width: 64px; border: 2px solid var(--lijn); background: #fff; border-radius: 12px; padding: 6px 10px; display: flex; flex-direction: column; align-items: center; cursor: pointer; color: var(--tekst-2); }
+.kal-maanden button b { font-size: 0.9375rem; text-transform: capitalize; }
+.kal-maanden button span { font-size: 0.8125rem; color: var(--tekst-3); }
+.kal-maanden button[aria-pressed="true"] { background: var(--blauw); border-color: var(--blauw); color: #fff; }
+.kal-maanden button[aria-pressed="true"] span { color: rgba(255, 255, 255, 0.85); }
+.kal-kop { font-size: 1.1875rem; font-weight: 700; color: var(--navy); margin: 4px 0 10px; }
+.kal-card-titel { font-weight: 700; color: var(--navy); font-size: 1.0625rem; margin: 6px 0 2px; }
+.badge.kal-badge { background: #2256A0; color: #fff; border-color: transparent; }
+.kal-soort { margin-bottom: 4px; }
+.kal-form { scroll-margin-top: 90px; border: 2px solid var(--lichtblauw-rand); }

@@ -42,6 +42,13 @@ async function knip(page, selector, naam, marge) {
   await wacht(600);
   await page.screenshot({ path: path.join(OUT, 'app-gebieden.png') });
 
+  // Kalender (oktober: activiteiten, beheer en seizoen)
+  await page.click('#tabbalk a[data-tab="kalender"]');
+  await wacht(600);
+  await page.click('.kal-maanden button:nth-child(2)');
+  await wacht(400);
+  await page.screenshot({ path: path.join(OUT, 'app-kalender.png') });
+
   // Meldingen
   await page.click('#tabbalk a[data-tab="meldingen"]');
   await wacht(600);
@@ -158,6 +165,18 @@ async function knip(page, selector, naam, marge) {
     const k = await kaarten[1].boundingBox();
     await page.screenshot({ path: path.join(OUT, 'beheer-kennisbank.png'), fullPage: true,
       clip: { x: sec.x, y: sec.y, width: sec.width, height: k.y + k.height - sec.y + 14 } });
+  }
+
+  await tab('Jaarkalender');
+  await wacht(400);
+  await page.click('.kal-maanden button:nth-child(2)');
+  await wacht(300);
+  {
+    const a = await (await page.$('#inhoud > .acties')).boundingBox();
+    const kaarten = await page.$$('#inhoud .kal-card');
+    const k = await kaarten[1].boundingBox();
+    await page.screenshot({ path: path.join(OUT, 'beheer-kalender.png'), fullPage: true,
+      clip: { x: k.x - 4, y: a.y - 8, width: k.width + 8, height: k.y + k.height - a.y + 16 } });
   }
 
   await tab('Klopt niet');
