@@ -106,6 +106,26 @@ function valideerGrens(grens) {
   return { grens: ringen };
 }
 
+// Routes op de kaart als kennisbankblokken voor de assistent: naam, lengte en deelgebied, door de
+// beheerder gecontroleerd bij het opslaan. Zo kan de assistent ze noemen en komt er een kaartje bij.
+function routeFeiten(routes) {
+  const uit = {};
+  for (const r of Object.values(routes || {})) {
+    if (!r || !r.id || r.status === 'ingetrokken') continue;
+    const d = kb.DEELGEBIEDEN.find(x => x.slug === r.deelgebied && x.slug !== 'heel');
+    const km = String(r.lengteKm || 0).replace('.', ',');
+    const f = {
+      id: 'kaartroute_' + r.id, routeId: r.id, onderwerp: 'routes', deelgebied: d ? d.slug : 'heel', type: 'vast', status: 'actief',
+      zichtbaarheid: r.zichtbaarheid === 'intern' ? 'intern' : 'openbaar', gecontroleerdOp: r.gecontroleerdOp || null,
+      tekst: `Op de kaart in de app staat de route "${r.naam}"${d ? ' in ' + d.titel : ''}, ${km} km lang.`,
+      bron: r.bron || 'Kaart en plekken'
+    };
+    if (r.bronUrl) f.bronUrl = r.bronUrl;
+    uit[f.id] = f;
+  }
+  return uit;
+}
+
 async function plekken() { return kv.hgetallJSON(K_PLEKKEN); }
 async function routes() { return kv.hgetallJSON(K_ROUTES); }
 
@@ -124,6 +144,6 @@ async function grenzen() {
 
 module.exports = {
   K_PLEKKEN, K_ROUTES, K_GEBIEDEN, K_GRENS, SOORTEN, GRENZEN, MIDDEN, GEVOELIG,
-  binnenGebied, valideerPlek, valideerRoute, valideerGrens, afstand,
+  binnenGebied, valideerPlek, valideerRoute, valideerGrens, afstand, routeFeiten,
   plekken, routes, gebiedInstellingen, grenzen
 };

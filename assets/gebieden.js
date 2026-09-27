@@ -104,6 +104,30 @@ function feitKaart(f) {
   return k;
 }
 
+// Route uit Kaart en plekken: naam, lengte, het gekoppelde feit en een knop naar de kaart
+function routeKaart(r) {
+  var kop = PW.el('div', { class: 'melding-kop' }, [PW.el('span', { class: 'onderwerp-label', html: PW.icoon('route', { maat: 14, dikte: 2.4 }) + 'Route op de kaart' })]);
+  if (r.intern) kop.appendChild(PW.el('span', { class: 'label label-intern', html: PW.icoon('slot', { maat: 12, dikte: 2.4 }) + 'Intern' }));
+  var inhoud = [kop, PW.el('h3', { class: 'route-naam', tekst: r.naam }),
+    PW.el('p', { class: 'route-lengte', tekst: String(r.lengteKm).replace('.', ',') + ' km' })];
+  if (r.feit) {
+    var foto = PW.feitFoto(r.feit);
+    if (foto) inhoud.push(foto);
+    inhoud.push(PW.el('p', { class: 'melding-tekst', tekst: r.feit.tekst }));
+  }
+  var voet = PW.el('div', { class: 'feit-voet' });
+  voet.appendChild(PW.el('span', { class: 'gecontroleerd', html: PW.icoon('vinkje', { maat: 15, dikte: 2.4 }) + 'Gecontroleerd ' + PW.nlDatumKort(r.gecontroleerdOp) }));
+  if (r.bron) {
+    var bron = PW.el('span', { class: 'feit-bron' }, ['· ']);
+    if (r.bronUrl) bron.appendChild(PW.el('a', { href: r.bronUrl, target: '_blank', rel: 'noopener', tekst: r.bron }));
+    else bron.appendChild(document.createTextNode(r.bron));
+    voet.appendChild(bron);
+  }
+  voet.appendChild(PW.el('a', { href: '#kaart/route/' + encodeURIComponent(r.id), class: 'melding-link', tekst: 'Op de kaart ›' }));
+  inhoud.push(voet);
+  return PW.el('article', { class: 'kaart melding route-kaart' }, inhoud);
+}
+
 function toonDeel() {
   var d = huidig.data;
   var box = document.getElementById('gebiedDeel');
@@ -119,9 +143,16 @@ function toonDeel() {
   } else {
     var lijst = huidig.deel === 'routes' ? d.routes : d.feiten;
     if (d.beschrijving && huidig.deel === 'feiten') box.appendChild(PW.el('p', { class: 'intro', tekst: d.beschrijving }));
-    if (!lijst.length) {
+    if (huidig.deel === 'routes') {
+      // Eerst de routes op de kaart; een routefeit dat al bij zo'n route hoort, niet nog eens los
+      var kaartRoutes = d.kaartRoutes || [];
+      var bijRoute = {};
+      kaartRoutes.forEach(function(r) { if (r.feit) bijRoute[r.feit.id] = true; box.appendChild(routeKaart(r)); });
+      lijst = lijst.filter(function(f) { return !bijRoute[f.id]; });
+    }
+    if (!lijst.length && !(huidig.deel === 'routes' && (d.kaartRoutes || []).length)) {
       box.appendChild(PW.el('p', { class: 'leeg', tekst: huidig.deel === 'routes'
-        ? 'Er staan nog geen routes voor dit gebied in de kennisbank. Kijk bij Hele gebied of vraag de assistent.'
+        ? 'Er staan nog geen routes voor dit gebied op de kaart of in de kennisbank. Kijk op de kaart of vraag de assistent.'
         : 'Er staan nog geen gecontroleerde feiten over dit gebied in de kennisbank.' }));
     }
     lijst.forEach(function(f) { box.appendChild(feitKaart(f)); });

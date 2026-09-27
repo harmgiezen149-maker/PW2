@@ -74,7 +74,21 @@ function gebieden(feiten, cfg, beelden) {
   return { gebieden: lijst, buurgebieden: BUURGEBIEDEN, heelAantal: feiten.filter(f => (f.deelgebied || 'heel') === 'heel').length };
 }
 
-function gebied(feiten, cfg, slug, vandaag, beelden) {
+// Routes op de kaart in dit deelgebied (uit Kaart en plekken), met het gekoppelde feit
+function kaartRoutesVan(routes, feiten, slug, ingelogd, vandaag, beelden) {
+  const perId = {};
+  for (const f of feiten) perId[f.id] = f;
+  return Object.values(routes || {})
+    .filter(r => r && r.deelgebied === slug && r.status !== 'ingetrokken' && (r.zichtbaarheid !== 'intern' || ingelogd))
+    .sort((a, b) => a.naam.localeCompare(b.naam))
+    .map(r => ({
+      id: r.id, naam: r.naam, lengteKm: r.lengteKm, intern: r.zichtbaarheid === 'intern',
+      bron: r.bron || '', bronUrl: r.bronUrl || '', gecontroleerdOp: r.gecontroleerdOp || null,
+      feit: r.feitId && perId[r.feitId] ? publiek(perId[r.feitId], vandaag, beelden) : null
+    }));
+}
+
+function gebied(feiten, cfg, slug, vandaag, beelden, routes, ingelogd) {
   const d = kb.DEELGEBIEDEN.find(x => x.slug === slug);
   if (!d) return null;
   const c = cfg[slug] || {};
@@ -83,7 +97,8 @@ function gebied(feiten, cfg, slug, vandaag, beelden) {
   return Object.assign(metFoto({ slug, titel: d.titel, beschrijving: c.beschrijving || '', foto: null, fotoBron: null },
     beelden, 'gebied-' + slug, c.foto, c.fotoBron), {
     feiten: eigen.filter(f => f.onderwerp !== 'routes').map(f => Object.assign(publiek(f, vandaag, beelden), { onderwerpTitel: onderwerpTitel(f.onderwerp) })),
-    routes: eigen.filter(f => f.onderwerp === 'routes').map(f => Object.assign(publiek(f, vandaag, beelden), { onderwerpTitel: onderwerpTitel(f.onderwerp) }))
+    routes: eigen.filter(f => f.onderwerp === 'routes').map(f => Object.assign(publiek(f, vandaag, beelden), { onderwerpTitel: onderwerpTitel(f.onderwerp) })),
+    kaartRoutes: kaartRoutesVan(routes, feiten, slug, ingelogd, vandaag, beelden)
   });
 }
 
@@ -161,7 +176,8 @@ module.exports = async function handler(req, res) {
         return res.json(Object.assign(basis, kaartGegevens(bruikbaar, plekken, routes, cfg, grenzen, !!gebruiker, vandaag, beelden)));
       }
       case 'gebied': {
-        const g = gebied(bruikbaar, await gebiedInstellingen(), String(body.slug || ''), vandaag, beelden);
+        const [cfg, routes] = await Promise.all([gebiedInstellingen(), kaart.routes().catch(() => ({}))]);
+        const g = gebied(bruikbaar, cfg, String(body.slug || ''), vandaag, beelden, routes, !!gebruiker);
         if (!g) return res.status(404).json({ error: 'Onbekend gebied' });
         return res.json(Object.assign(basis, g));
       }

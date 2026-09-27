@@ -116,7 +116,8 @@ function stream(blokken, extra) {
 }
 
 const META_ROUTES = [
-  { titel: 'Plekken & routes', feiten: [{ id: 'f1', deelgebied: 'Hele gebied', gecontroleerdOp: NU, verouderd: false, bron: 'Gebiedsfolder Planken Wambuis (2021)' }] },
+  { titel: 'Plekken & routes', feiten: [{ id: 'f1', deelgebied: 'Hele gebied', gecontroleerdOp: NU, verouderd: false, bron: 'Gebiedsfolder Planken Wambuis (2021)' },
+    { id: 'kaartroute_r1', routeId: 'r1', deelgebied: 'Oud & Nieuw Reemst', gecontroleerdOp: NU, verouderd: false, bron: 'GPX natuurmonumenten.nl' }] },
   { titel: 'Praktisch bezoek', feiten: [
     { id: 'f2', deelgebied: 'Oud & Nieuw Reemst', gecontroleerdOp: NU, verouderd: false, bron: 'natuurmonumenten.nl', bronUrl: 'https://www.natuurmonumenten.nl/natuurgebieden/planken-wambuis', plekId: 'p1' },
     { id: 'f5', deelgebied: 'Hele gebied', gecontroleerdOp: NU, verouderd: false, bron: 'natuurmonumenten.nl', bronUrl: 'https://www.natuurmonumenten.nl/natuurgebieden/planken-wambuis' },
@@ -126,6 +127,8 @@ const META_ROUTES = [
 const ANTWOORD_ROUTES = [
   { t: 'Er zijn drie wandelroutes van Natuurmonumenten in het gebied, en bij Oud Reemst ligt een parkeerplaats.\n\n## 🥾 Wandelroutes\n- **Drie routes**\n  - ' },
   { t: 'Route Mosselse Zand (2,5 km), route Oud Reemst (3,5 km) en route Planken Wambuis (8 km); alle routes staan op natuurmonumenten.nl en in de app Natuur Routes.', cit: [kb(0, 0)] },
+  { t: '\n  - ' },
+  { t: 'De wandelroute bij Oud Reemst (3,5 km) staat ook op de kaart in de app.', cit: [kb(0, 1)] },
   { t: '\n\n## 🅿️ Parkeren\n- **Oud Reemst**\n  - ' },
   { t: 'Niet-leden betalen € 2,00 per uur, met een maximum van € 8,00 per dag. Leden parkeren gratis met hun ledenpas.', cit: [kb(1, 0)] },
   { t: '\n\n## 🐕 Regels in het gebied\n- **Honden**\n  - ' },
@@ -194,7 +197,8 @@ const GEBIED_WOLFHEZE = {
     { id: 'w3', onderwerp: 'gebied', onderwerpTitel: 'Gebied & landschap', tekst: 'De Heelsumse Beek is een spreng uit 1550.', gecontroleerdOp: '2023-02-01', verouderd: true, bron: 'Gebiedsfolder (2021)' },
     { id: 'w4', onderwerp: 'overig', onderwerpTitel: 'Overig', intern: true, tekst: 'Voorbeeld van een intern feit: alleen zichtbaar voor wie is ingelogd.', gecontroleerdOp: NU, bron: 'Kiek' }
   ],
-  routes: []
+  routes: [],
+  kaartRoutes: []
 };
 // Voorbeeldplekken met verzonnen coördinaten: alleen voor schermafbeeldingen en tests
 const KAART = {
