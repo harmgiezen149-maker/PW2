@@ -5,10 +5,14 @@
 // - Lettertypen, iconen en afbeeldingen: cache-first (veranderen zelden).
 // - /api/*: nooit cachen (antwoorden, weer en meldingen zijn per definitie actueel;
 //   de app bewaart zelf de laatst geladen stand met datum).
-const CACHE = 'pw-v89';
+// De cachenaam volgt de versie uit assets/versie.js: een nieuwe versie ruimt de oude cache op.
+// (Browsers vergelijken ook geïmporteerde scripts, dus een nieuw versienummer activeert deze service worker.)
+importScripts('/assets/versie.js');
+const CACHE = 'pw-' + ((self.PW_VERSIE && self.PW_VERSIE.nummer) || 'onbekend');
 const STATIC_ASSETS = [
   '/',
   '/assets/app.css',
+  '/assets/versie.js',
   '/assets/core.js',
   '/assets/vogels.js',
   '/assets/chat.js',
@@ -79,8 +83,9 @@ self.addEventListener('fetch', function(event) {
     }));
     return;
   }
-  // Overig API-verkeer nooit cachen
+  // Overig API-verkeer nooit cachen, en de versiecontrole altijd rechtstreeks
   if (url.pathname.startsWith('/api/')) return;
+  if (url.searchParams.has('controle')) return;
 
   // Navigaties: network-first met cache-fallback
   if (event.request.mode === 'navigate') {
