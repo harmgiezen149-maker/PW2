@@ -19,6 +19,19 @@
         <item name="android:windowLightStatusBar">true</item>
     </style>
 
+    <!--
+        Home screen only. Every launcher known to work with One UI's swipe-up
+        gesture (AOSP Launcher3, Nova, Niagara, Olauncher) shows the wallpaper
+        behind a transparent window: during a gesture hand-off the system uses
+        that wallpaper window as the animation's home target. The black look is
+        kept by the layout's own background.
+    -->
+    <style name="Theme.MiniLauncher.Home" parent="Theme.MiniLauncher">
+        <item name="android:windowShowWallpaper">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:colorBackgroundCacheHint">@null</item>
+    </style>
+
     <!-- CRT text style: phosphor green on the (pure black) background -->
     <style name="ThemeOverlay.MiniLauncher.Crt" parent="">
         <item name="android:textColorPrimary">@color/crt_green</item>

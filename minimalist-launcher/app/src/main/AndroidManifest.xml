@@ -48,6 +48,7 @@
         -->
         <activity
             android:name=".ui.home.HomeActivity"
+            android:theme="@style/Theme.MiniLauncher.Home"
             android:exported="true"
             android:launchMode="singleTask"
             android:stateNotNeeded="true"
