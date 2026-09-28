@@ -31,9 +31,7 @@ import io.github.minilauncher.ui.common.PermissionChecks
 import io.github.minilauncher.ui.common.TextListAdapter
 import io.github.minilauncher.ui.drawer.AppDrawerActivity
 import io.github.minilauncher.ui.onboarding.OnboardingActivity
-import io.github.minilauncher.ui.recents.RecentAppsActivity
 import io.github.minilauncher.ui.settings.SettingsActivity
-import io.github.minilauncher.util.EventLog
 import kotlin.math.abs
 
 class HomeActivity : BaseActivity() {
@@ -67,7 +65,6 @@ class HomeActivity : BaseActivity() {
         setContentView(R.layout.activity_home)
         repo = AppRepository(this)
         prefs = Prefs.get(this)
-        EventLog.record(this, "HOME onCreate (restored=${savedInstanceState != null})")
 
         adapter = TextListAdapter(
             onClick = { pos -> favorites.getOrNull(pos)?.let { AppLauncher.launch(this, it.packageName) } },
@@ -126,14 +123,6 @@ class HomeActivity : BaseActivity() {
                 val dy = e2.y - e1.y
                 val dx = e2.x - e1.x
                 val minDistance = 100 * resources.displayMetrics.density
-                // Sideways: the launcher's own recent-apps list.
-                if (abs(dx) > abs(dy) && abs(dx) > minDistance && abs(velocityX) > 1200) {
-                    if (!prefs.recentAppsEnabled) return false
-                    startActivity(Intent(this@HomeActivity, RecentAppsActivity::class.java))
-                    @Suppress("DEPRECATION")
-                    overridePendingTransition(R.anim.slide_in_up, R.anim.stay)
-                    return true
-                }
                 if (abs(dy) < abs(dx) || abs(dy) < minDistance || abs(velocityY) < 1500) return false
                 if (dy < 0) {
                     // Only treat as "open drawer" when the list has no more to scroll
@@ -157,32 +146,8 @@ class HomeActivity : BaseActivity() {
         return super.dispatchTouchEvent(ev)
     }
 
-    override fun onNewIntent(intent: Intent) {
-        super.onNewIntent(intent)
-        setIntent(intent)
-        // Who sent this home intent, and what does it look like? A redundant
-        // one arriving right after the overview appears is what closes it.
-        val categories = intent.categories?.joinToString(",") { it.substringAfterLast('.') } ?: "-"
-        val from = runCatching { referrer?.host ?: referrer?.toString() }.getOrNull() ?: "?"
-        EventLog.record(
-            this,
-            "HOME onNewIntent cat=$categories flags=0x${Integer.toHexString(intent.flags)} from=$from",
-        )
-    }
-
-    override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {
-        super.onConfigurationChanged(newConfig)
-        EventLog.record(
-            this,
-            "HOME onConfigurationChanged " +
-                "orientation=${newConfig.orientation} " +
-                "size=${newConfig.screenWidthDp}x${newConfig.screenHeightDp}dp",
-        )
-    }
-
     override fun onResume() {
         super.onResume()
-        EventLog.record(this, "HOME onResume")
         // Fallback path: the accessibility service forced us home because a
         // blocked app opened, but could not start the block screen itself.
         BlockState.consumePendingBlock()?.let { info ->
@@ -194,18 +159,11 @@ class HomeActivity : BaseActivity() {
     }
 
     override fun onPause() {
-        EventLog.record(this, "HOME onPause")
         handler.removeCallbacks(countdownTick)
         super.onPause()
     }
 
     override fun onDestroy() {
-        // isChangingConfigurations tells a configuration-driven recreate apart
-        // from the system simply tearing the launcher down.
-        EventLog.record(
-            this,
-            "HOME onDestroy finishing=$isFinishing changingConfig=$isChangingConfigurations",
-        )
         background.shutdown()
         super.onDestroy()
     }

@@ -17,7 +17,6 @@ import io.github.minilauncher.data.model.BlockedInfo
 import io.github.minilauncher.data.model.Decision
 import io.github.minilauncher.ui.common.AppLauncher
 import io.github.minilauncher.usage.UsageRepository
-import io.github.minilauncher.util.EventLog
 import java.time.LocalDateTime
 import java.util.concurrent.Executors
 
@@ -54,10 +53,6 @@ class AppBlockerAccessibilityService : AccessibilityService() {
         homePackages = queryHomePackages()
         launchableCache.clear()
         contentWatching = false // config declares window-state events only
-        EventLog.record(
-            this,
-            "SERVICE connected, windows=${runCatching { windows.size }.getOrDefault(-1)}",
-        )
         registerReceiver(
             screenOffReceiver,
             android.content.IntentFilter(android.content.Intent.ACTION_SCREEN_OFF),
@@ -114,7 +109,6 @@ class AppBlockerAccessibilityService : AccessibilityService() {
                 // Without this check we would read those as "the user just
                 // opened that app" and send them home, emptying the switcher.
                 if (!isActiveAppWindow(event, pkg)) return
-                EventLog.record(this, "FG $pkg")
 
                 setContentWatching(
                     SystemSurfaces.shouldWatchWindowContent(
@@ -197,7 +191,6 @@ class AppBlockerAccessibilityService : AccessibilityService() {
         // Cooldown: BACK itself triggers a burst of content events
         if (SystemClock.uptimeMillis() - lastSiteBlockMillis < 2000) return
         lastSiteBlockMillis = SystemClock.uptimeMillis()
-        EventLog.record(this, "BLOCK site $site in $pkg -> HOME")
         val info = BlockedInfo(pkg, BlockReason.WEBSITE, site)
         BlockState.pendingBlock = info
         // BACK navigates the browser off the blocked page so returning to it
@@ -216,7 +209,6 @@ class AppBlockerAccessibilityService : AccessibilityService() {
     private fun handleForeground(pkg: String) {
         val decision = evaluate(pkg)
         if (decision is Decision.Block) {
-            EventLog.record(this, "BLOCK $pkg (${decision.reason}) -> HOME")
             sessionTracker.reset()
             val label = AppRepository(this).labelFor(pkg)
             val info = BlockedInfo(pkg, decision.reason, decision.detail)

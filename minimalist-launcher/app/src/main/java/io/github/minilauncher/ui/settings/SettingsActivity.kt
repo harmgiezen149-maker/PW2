@@ -14,7 +14,6 @@ import io.github.minilauncher.ui.common.AppLongPressDialog
 import io.github.minilauncher.ui.common.BaseActivity
 import io.github.minilauncher.ui.common.EveningOverrideDialog
 import io.github.minilauncher.ui.common.PermissionChecks
-import io.github.minilauncher.ui.diagnostics.DiagnosticsActivity
 import io.github.minilauncher.ui.onboarding.OnboardingActivity
 import io.github.minilauncher.ui.stats.StatsActivity
 
@@ -209,22 +208,11 @@ class SettingsActivity : BaseActivity() {
                 selected = prefs.hiddenApps,
             ) { prefs.hiddenApps = it; render() }
         }
-        row(
-            container,
-            getString(R.string.settings_recent_apps),
-            if (prefs.recentAppsEnabled) getString(R.string.state_on) else getString(R.string.state_off),
-        ) {
-            prefs.recentAppsEnabled = !prefs.recentAppsEnabled
-            render()
-        }
         row(container, getString(R.string.settings_stats), "") {
             startActivity(Intent(this, StatsActivity::class.java))
         }
         row(container, getString(R.string.settings_permissions), "") {
             startActivity(Intent(this, OnboardingActivity::class.java))
-        }
-        row(container, getString(R.string.diagnostics_title), "") {
-            startActivity(Intent(this, DiagnosticsActivity::class.java))
         }
         if (!PermissionChecks.isDefaultHome(this)) {
             row(container, getString(R.string.settings_set_default_home), "") {

@@ -9,7 +9,6 @@ import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
 import io.github.minilauncher.data.AppRepository
 import io.github.minilauncher.data.Prefs
-import io.github.minilauncher.util.EventLog
 
 class App : Application() {
 
@@ -23,7 +22,6 @@ class App : Application() {
     override fun onCreate() {
         super.onCreate()
         applyNightMode(Prefs.get(this).theme)
-        EventLog.record(this, "PROCESS START")
         ContextCompat.registerReceiver(
             this,
             packageReceiver,
@@ -36,11 +34,6 @@ class App : Application() {
             },
             ContextCompat.RECEIVER_NOT_EXPORTED,
         )
-    }
-
-    override fun onTrimMemory(level: Int) {
-        super.onTrimMemory(level)
-        EventLog.record(this, "trimMemory level=$level")
     }
 
     companion object {

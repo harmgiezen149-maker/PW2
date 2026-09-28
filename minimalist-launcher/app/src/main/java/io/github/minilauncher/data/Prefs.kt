@@ -302,11 +302,6 @@ class Prefs(context: Context) {
         get() = sp.getString(KEY_ALIGNMENT, ALIGN_LEFT)!!
         set(value) = sp.edit().putString(KEY_ALIGNMENT, value).apply()
 
-    /** Swipe sideways on the home screen for the launcher's own recent-apps list. */
-    var recentAppsEnabled: Boolean
-        get() = sp.getBoolean(KEY_RECENT_APPS, true)
-        set(value) = sp.edit().putBoolean(KEY_RECENT_APPS, value).apply()
-
     /** CRT-style green text instead of white/black. */
     var crtGreen: Boolean
         get() = sp.getBoolean(KEY_CRT_GREEN, false)
@@ -320,13 +315,6 @@ class Prefs(context: Context) {
     var shortcutRight: String
         get() = sp.getString(KEY_SHORTCUT_RIGHT, "com.google.android.gm")!!
         set(value) = sp.edit().putString(KEY_SHORTCUT_RIGHT, value).apply()
-
-    // ---- diagnostics ----
-
-    /** Lifecycle trail, kept across process death so a crash or kill is visible. */
-    var diagnosticsLog: List<String>
-        get() = readStringList(KEY_DIAGNOSTICS)
-        set(value) = writeStringList(KEY_DIAGNOSTICS, value)
 
     // ---- onboarding ----
 
@@ -396,7 +384,6 @@ class Prefs(context: Context) {
         private const val KEY_FOCUS_SESSION = "focus_session_until"
         private const val KEY_BLOCKED_SITES = "blocked_sites"
         private const val KEY_CRT_GREEN = "crt_green"
-        private const val KEY_RECENT_APPS = "recent_apps_enabled"
         private const val KEY_ALIGNMENT = "alignment"
         private const val KEY_SHORTCUT_LEFT = "shortcut_left"
         private const val KEY_SHORTCUT_RIGHT = "shortcut_right"
@@ -409,7 +396,6 @@ class Prefs(context: Context) {
         private const val KEY_LARGE_FONT = "large_font"
         private const val KEY_DRAWER_HINT = "drawer_hint"
         private const val KEY_ONBOARDING_DONE = "onboarding_done"
-        private const val KEY_DIAGNOSTICS = "diagnostics_log"
 
         @Volatile
         private var instance: Prefs? = null
