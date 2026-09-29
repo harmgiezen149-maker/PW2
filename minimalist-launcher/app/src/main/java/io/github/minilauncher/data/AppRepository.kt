@@ -1,0 +1,105 @@
+package io.github.minilauncher.data
+
+import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
+import io.github.minilauncher.data.model.AppEntry
+import io.github.minilauncher.data.model.AppVisibility
+import io.github.minilauncher.mode.DayEveningEvaluator
+import io.github.minilauncher.mode.ModeState
+
+/**
+ * Lists launchable apps with the user's renames, hidden set and day/evening
+ * visibility applied. Queried fresh on demand (the list is small); callers
+ * refresh in onResume.
+ */
+class AppRepository(private val context: Context) {
+
+    private val prefs = Prefs.get(context)
+
+    /**
+     * All launchable apps except this launcher itself, sorted by display label.
+     * [respectMode] hides apps that do not belong to the current day/evening
+     * mode; configuration screens pass false so every app stays selectable.
+     */
+    fun allApps(includeHidden: Boolean = false, respectMode: Boolean = true): List<AppEntry> {
+        val renames = prefs.renames
+        val hidden = prefs.hiddenApps
+        val favorites = prefs.favorites.toSet()
+        val visibility = prefs.appVisibility
+        val mode = if (respectMode) prefs.currentModeState() else ModeState.DISABLED
+        return installedApps()
+            .asSequence()
+            .map { raw ->
+                AppEntry(
+                    packageName = raw.packageName,
+                    originalLabel = raw.label,
+                    displayLabel = renames[raw.packageName] ?: raw.label,
+                    isHidden = raw.packageName in hidden,
+                    isFavorite = raw.packageName in favorites,
+                    visibility = AppVisibility.fromStored(visibility[raw.packageName]),
+                )
+            }
+            .filter { includeHidden || !it.isHidden }
+            .filter { DayEveningEvaluator.isVisible(it.visibility, mode) }
+            .sortedBy { it.displayLabel.lowercase() }
+            .toList()
+    }
+
+    /**
+     * The raw launchable apps with their original labels. Loading a label
+     * reads another package's resources, so doing this for every installed app
+     * costs hundreds of milliseconds — far too slow to repeat on every resume.
+     * The result is cached and dropped when packages change.
+     */
+    private fun installedApps(): List<RawApp> {
+        cache?.let { return it }
+        val pm = context.packageManager
+        val intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
+        val apps = pm.queryIntentActivities(intent, PackageManager.MATCH_ALL)
+            .asSequence()
+            .map { it.activityInfo }
+            .filter { it.packageName != context.packageName }
+            .distinctBy { it.packageName }
+            .map { RawApp(it.packageName, it.applicationInfo.loadLabel(pm).toString()) }
+            .toList()
+        cache = apps
+        return apps
+    }
+
+    private data class RawApp(val packageName: String, val label: String)
+
+    /** Favorites in the user's chosen order, skipping uninstalled apps. */
+    fun favoriteApps(): List<AppEntry> {
+        val byPackage = allApps(includeHidden = true).associateBy { it.packageName }
+        return prefs.favorites.mapNotNull { byPackage[it] }
+    }
+
+    fun labelFor(pkg: String): String {
+        prefs.renames[pkg]?.let { return it }
+        cache?.firstOrNull { it.packageName == pkg }?.let { return it.label }
+        return runCatching {
+            val pm = context.packageManager
+            pm.getApplicationInfo(pkg, 0).loadLabel(pm).toString()
+        }.getOrDefault(pkg)
+    }
+
+    companion object {
+        @Volatile
+        private var cache: List<RawApp>? = null
+
+        /** Call when packages are installed, removed or replaced. */
+        fun invalidate() {
+            cache = null
+        }
+    }
+
+    fun launch(pkg: String): Boolean {
+        val intent = context.packageManager.getLaunchIntentForPackage(pkg) ?: return false
+        // RESET_TASK_IF_NEEDED resumes an app's existing task instead of
+        // stacking a new one, which is what keeps the task switcher correct.
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
+        context.startActivity(intent)
+        return true
+    }
+}
