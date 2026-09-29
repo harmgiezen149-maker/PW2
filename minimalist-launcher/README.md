@@ -78,6 +78,23 @@ Accessibility if blocking doesn't react.
 To go back to your old home screen: Settings › Apps › Default apps ›
 Home app, or simply uninstall Minimalist Launcher.
 
+### Recent apps overview empty?
+
+On Samsung phones the recent-apps overview is always drawn by One UI
+Home, even when another launcher is the default; this launcher has no
+way to remove apps from that list. If apps sometimes vanish from it:
+
+1. Test first: set One UI Home as the home app for a day or two
+   (Settings › Apps › Default apps › Home app). If the list still empties,
+   the cause is outside this launcher.
+2. Settings › Apps › One UI Home › Battery → Unrestricted.
+3. Device Care › Battery › Background usage limits: keep One UI Home and
+   your everyday apps out of "Sleeping apps" / "Deep sleeping apps" (or add
+   them to "Never sleeping apps"), and turn off "Put unused apps to sleep".
+4. Device Care › Auto optimisation: turn off the automatic restart and
+   memory clean-up.
+5. Switch the home app to One UI Home and back, then restart the phone.
+
 ### System-wide grayscale (optional, power users)
 
 The in-app themes are already monochrome. To make the *entire phone*
