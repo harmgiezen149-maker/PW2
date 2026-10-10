@@ -174,7 +174,9 @@ const ACTUEEL = {
   bijgewerkt: '2026-09-26T12:03:00Z', ingelogd: true, maand: 'september',
   tijdelijk: [
     item({ id: 't1', type: 'tijdelijk', einddatum: '2026-10-15', deelgebied: 'reemst', deelgebiedTitel: 'Oud & Nieuw Reemst', plekId: 'p1', tekst: 'Het fiets- en wandelpad van Nieuw Reemst naar Mossel is afgesloten, zodat de jonge wolven niet aan mensen wennen. Volg de omleidingsroute (voorbeeld).', bronUrl: 'https://www.natuurmonumenten.nl/natuurgebieden/planken-wambuis/nieuws' }),
-    item({ id: 't2', type: 'tijdelijk', einddatum: '2026-10-04', startdatum: '2026-10-03', onderwerp: 'nm', tekst: 'Voorbeeld van een activiteit: excursie "Heide in de herfst".', intern: true })
+  ],
+  binnenkort: [
+    item({ id: 't2', type: 'tijdelijk', einddatum: '2026-10-03', startdatum: '2026-10-03', onderwerp: 'nm', titel: 'Heide in de herfst', tekst: 'Voorbeeld van een activiteit: excursie "Heide in de herfst" met de boswachter, zaterdag 3 oktober om 10.00 uur vanaf de parkeerplaats. Aanmelden via natuurmonumenten.nl.', bronUrl: 'https://www.natuurmonumenten.nl/agenda' })
   ],
   seizoen: [item({ id: 's1', type: 'seizoen', onderwerp: 'seizoen', maanden: [9], tekst: 'Voorbeeld uit de seizoenskalender: in september bloeit de struikheide na en begint de bronst van het edelhert.' })],
   nieuws: [item({ id: 'n1', type: 'jaarlijks', onderwerp: 'nm', goedgekeurdOp: '2026-09-20', tekst: 'Natuurmonumenten heeft ongeveer 977.000 leden en donateurs.', bronUrl: 'https://www.natuurmonumenten.nl/over-natuurmonumenten' })]

@@ -140,7 +140,7 @@ async function knip(page, selector, naam, marge) {
   await page.waitForSelector('#startVak', { state: 'visible' });
   await wacht(400);
   const sv = await (await page.$('#startVak')).boundingBox();
-  await page.screenshot({ path: path.join(OUT, 'beheer-start.png'), clip: { x: 230, y: sv.y - 190, width: 440, height: sv.height + 210 } });
+  await page.screenshot({ path: path.join(OUT, 'beheer-start.png'), fullPage: true, clip: { x: 230, y: sv.y - 190, width: 440, height: sv.height + 210 } });
   await ctx.close();
 
   ctx = await nieuweContext(browser, LAPTOP, Object.assign({ bestaatBeheerder: true }, { gebruiker: BEHEERDER, token: true }));

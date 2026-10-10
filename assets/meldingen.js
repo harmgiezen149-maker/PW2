@@ -98,13 +98,13 @@ function laadActueel() {
 function nieuweIds(d) {
   if (!d) return [];
   var gezien = PW.opslag.leesJSON(K_GEZIEN, []);
-  return (d.tijdelijk || []).concat(d.nieuws || []).map(function(x) { return x.id; })
+  return (d.tijdelijk || []).concat(d.binnenkort || [], d.nieuws || []).map(function(x) { return x.id; })
     .filter(function(id) { return gezien.indexOf(id) < 0; });
 }
 function werkTellerBij() { PW.zetTeller('meldingen', PW.huidigeView === 'meldingen' && tab === 'actueel' ? 0 : nieuweIds(actueel).length); }
 function markeerGezien() {
   if (!actueel) return;
-  var ids = (actueel.tijdelijk || []).concat(actueel.nieuws || [], actueel.seizoen || []).map(function(x) { return x.id; });
+  var ids = (actueel.tijdelijk || []).concat(actueel.binnenkort || [], actueel.nieuws || [], actueel.seizoen || []).map(function(x) { return x.id; });
   PW.opslag.schrijfJSON(K_GEZIEN, ids);
   PW.zetTeller('meldingen', 0);
 }
@@ -140,8 +140,8 @@ function toonActueel(box) {
     return;
   }
   box.appendChild(PW.el('p', { class: 'stand', tekst: stand(d) }));
-  var tijdelijk = d.tijdelijk || [], seizoen = d.seizoen || [], nieuws = d.nieuws || [];
-  if (!tijdelijk.length && !seizoen.length && !nieuws.length) {
+  var tijdelijk = d.tijdelijk || [], binnenkort = d.binnenkort || [], seizoen = d.seizoen || [], nieuws = d.nieuws || [];
+  if (!tijdelijk.length && !binnenkort.length && !seizoen.length && !nieuws.length) {
     box.appendChild(PW.el('p', { class: 'leeg', tekst: 'Er is op dit moment niets bijzonders te melden: geen afsluitingen, activiteiten of nieuws.' }));
     return;
   }
@@ -150,6 +150,15 @@ function toonActueel(box) {
     tijdelijk.forEach(function(x) {
       var geldt = x.einddatum ? PW.el('span', { class: 'melding-geldt', tekst: (x.startdatum ? 'Van ' + PW.nlDatumKort(x.startdatum) + ' ' : '') + 't/m ' + PW.nlDatumKort(x.einddatum) }) : null;
       box.appendChild(kaartje(x, 'Tijdelijk', 'label-tijdelijk', [geldt]));
+    });
+  }
+  if (binnenkort.length) {
+    box.appendChild(PW.el('h2', { class: 'sectie-kop', tekst: 'Binnenkort · de komende zes weken' }));
+    binnenkort.forEach(function(x) {
+      var wanneer = PW.el('span', { class: 'melding-geldt', tekst: !x.einddatum || x.einddatum === x.startdatum
+        ? 'Op ' + PW.nlDatumKort(x.startdatum) : 'Van ' + PW.nlDatumKort(x.startdatum) + ' t/m ' + PW.nlDatumKort(x.einddatum) });
+      var lees = x.bronUrl ? PW.el('a', { href: x.bronUrl, target: '_blank', rel: 'noopener', class: 'melding-link', tekst: 'Meer informatie ›' }) : null;
+      box.appendChild(kaartje(x, 'Binnenkort', 'label-binnenkort', [wanneer, lees]));
     });
   }
   if (seizoen.length) {
