@@ -8,6 +8,7 @@ const { vandaagISO } = require('./http');
 const WAARSCHUWING = 0.75;              // vanaf 75% van het maximum krijgt de gebruiker een waarschuwing
 const BEWAAR = 400 * 86400;             // ruim een jaar
 const sleutel = maand => 'gebruik:' + maand;
+const K_MAX_ANONIEM = 'cfg:maxanoniem';   // maximum per maand voor alle niet-ingelogde bezoekers samen
 const huidigeMaand = () => vandaagISO().slice(0, 7);
 
 // Kosten (dollars) en eventueel één vraag optellen bij deze gebruiker in deze maand
@@ -45,6 +46,19 @@ async function stand(g) {
   };
 }
 
-const OP_MELDING = 'Je hebt je maximum voor deze maand bereikt. Vanaf de eerste van de volgende maand kun je weer vragen stellen, of vraag de beheerder om je maximum te verhogen.';
+// Niet-ingelogde bezoekers delen één maximum
+async function maxAnoniem() {
+  const v = Number(await kv.cmd('GET', K_MAX_ANONIEM));
+  return v > 0 ? v : null;
+}
+async function zetMaxAnoniem(max) {
+  if (max > 0) await kv.cmd('SET', K_MAX_ANONIEM, String(max)); else await kv.cmd('DEL', K_MAX_ANONIEM);
+}
+async function standAnoniem() {
+  return Object.assign(await stand({ id: 'anoniem', maxPerMaand: await maxAnoniem() }), { anoniem: true });
+}
 
-module.exports = { WAARSCHUWING, registreer, maandOverzicht, stand, huidigeMaand, OP_MELDING };
+const OP_MELDING = 'Je hebt je maximum voor deze maand bereikt. Vanaf de eerste van de volgende maand kun je weer vragen stellen, of vraag de beheerder om je maximum te verhogen.';
+const OP_MELDING_ANONIEM = 'De assistent is deze maand niet meer beschikbaar voor bezoekers zonder inlog. Boswachters en vrijwilligers kunnen inloggen met hun persoonlijke link; vanaf de eerste van de volgende maand kan iedereen weer vragen stellen.';
+
+module.exports = { WAARSCHUWING, registreer, maandOverzicht, stand, huidigeMaand, OP_MELDING, OP_MELDING_ANONIEM, maxAnoniem, zetMaxAnoniem, standAnoniem };

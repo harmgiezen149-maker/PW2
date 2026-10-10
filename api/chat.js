@@ -40,9 +40,14 @@ module.exports = async function handler(req, res) {
   const gebruiker = await auth.gebruiker(req);
   const ingelogd = !!gebruiker;
   // Maandmaximum (Beheer → Gebruikers): op = geen nieuwe vragen meer deze maand
+  // Niet ingelogd: één gezamenlijk maximum voor alle bezoekers (Beheer → Gebruikers)
+  let standAnoniem = null;
   if (gebruiker && gebruiker.maxPerMaand) {
     const st = await gebruik.stand(gebruiker);
     if (st.op) return res.status(429).json({ error: gebruik.OP_MELDING, gebruik: st });
+  } else if (!gebruiker) {
+    standAnoniem = await gebruik.standAnoniem();
+    if (standAnoniem.op) return res.status(429).json({ error: gebruik.OP_MELDING_ANONIEM, gebruik: standAnoniem });
   }
   const vraag = messages[0].content;
 
@@ -158,6 +163,7 @@ module.exports = async function handler(req, res) {
     if (logId) stuur({ type: 'pw_log', id: logId });
     // Stand tegenover het maandmaximum, zodat de app bij 75% kan waarschuwen
     if (gebruiker && gebruiker.maxPerMaand) stuur({ type: 'pw_gebruik', gebruik: await gebruik.stand(gebruiker) });
+    else if (standAnoniem && standAnoniem.max) stuur({ type: 'pw_gebruik', gebruik: await gebruik.standAnoniem() });
   } catch (err) {
     const status = err instanceof Anthropic.APIError && err.status ? err.status : 502;
     if (!gestart) return res.status(status === 429 ? 429 : 502).json({ error: 'De assistent is even niet bereikbaar: ' + err.message });
