@@ -214,6 +214,9 @@ body.typt .tabbalk { display: none; }
 .bron .web-label { color: var(--oranje-donker); font-weight: 600; }
 .bron a { overflow-wrap: anywhere; }
 
+.aanvul-knop { display: flex; align-items: center; gap: 0.5rem; width: 100%; margin-top: 0.875rem; min-height: 2.75rem; padding: 0.5rem 0.875rem; border: 1.5px dashed #9DB5D6; border-radius: 0.75rem; background: #F2F6FB; color: var(--blauw); font: inherit; font-size: 0.9375rem; font-weight: 600; text-align: left; cursor: pointer; }
+.aanvul-knop:focus-visible { outline: 3px solid var(--blauw); outline-offset: 2px; }
+.aanvul-niets { margin-top: 0.625rem; font-size: 0.875rem; color: var(--tekst-3); }
 .aanvul-indicator { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.75rem; padding-top: 0.625rem; border-top: 1px dashed var(--lijn); font-size: 0.875rem; color: var(--tekst-3); }
 .aanvul-dot { width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--blauw); animation: puls 1.1s infinite; }
 @keyframes puls { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.35); opacity: 0.6; } }

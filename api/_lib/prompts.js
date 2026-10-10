@@ -24,13 +24,22 @@ function kop() {
 Vandaag is het ${nlDatum()} (${seizoen()}). Houd rekening met het seizoen.`;
 }
 
-function systeemNormaal() {
+// Eén vaste systeemprompt voor alle chatverzoeken (antwoord, verhaal en aanvulling): zo delen ze
+// dezelfde gecachete voorkant (systeemprompt + kennisbank) en betaal je die maar één keer volledig.
+// Welke taak geldt, staat als taakregel in het gebruikersbericht ([TAAK: …]).
+const TAAK = { antwoord: '[TAAK: ANTWOORD]', verhaal: '[TAAK: VERHAAL]', aanvulling: '[TAAK: AANVULLING]' };
+
+function systeem() {
   return `${kop()}
 
 ${GEBIED}
 
 ${BRONREGELS}
 
+TAKEN
+Het bericht met de vraag begint met een taakregel: ${TAAK.antwoord} of ${TAAK.verhaal}. Vraagt een later bericht met ${TAAK.aanvulling} om een aanvulling, voer dan alleen die taak uit. Volg steeds alleen de regels van de taak die in het laatste bericht gevraagd wordt.
+
+=== ${TAAK.antwoord} ===
 VORM
 - Zo lang als nodig: kort als er weinig bekend is, uitgebreider als de kennisbank veel biedt. Vul nooit op en herhaal jezelf niet.
 - Begin met een korte inleiding van 1-2 zinnen.
@@ -38,16 +47,9 @@ VORM
   - Hoofdpunt (- **Onderwerp**)
     - Toelichting als subbullet
 - Sluit, als dat zinvol is, af met ## Gesprekstips (tips voor het gesprek met bezoekers).
-- ${SOORTEN_REGEL}`;
-}
+- ${SOORTEN_REGEL}
 
-function systeemVerhaal() {
-  return `${kop()}
-
-${GEBIED}
-
-${BRONREGELS}
-
+=== ${TAAK.verhaal} ===
 VORM (verhaalmodus)
 Vertel sfeervol, maar zo lang als nodig en zonder op te vullen:
 
@@ -71,19 +73,11 @@ Tastbare beschrijving van het moment.
 ### 💬 Gesprekstips
 2-3 tips als bullets.
 
-${SOORTEN_REGEL}`;
-}
+${SOORTEN_REGEL}
 
-function systeemAanvulling() {
-  return `${kop()}
-
-${GEBIED}
-
-${BRONREGELS}
-
-JOUW TAAK
+=== ${TAAK.aanvulling} ===
 Je krijgt een vraag en een eerder gegeven antwoord (met ## kopjes per onderwerp). Vul dat antwoord AAN met actuele informatie van de toegestane websites.
-- Zoek met maximaal 2 gerichte zoekacties naar actuele, gebiedsspecifieke informatie (nieuws, afsluitingen, activiteiten, beheer, waarnemingen) die het antwoord verbetert.
+- Zoek met hoogstens 1 gerichte zoekactie naar actuele, gebiedsspecifieke informatie (nieuws, afsluitingen, activiteiten, beheer, waarnemingen) die het antwoord verbetert.
 - Groepeer je aanvullingen onder de EXACTE kop uit het eerdere antwoord waar ze bij horen: een regel "## <exacte kop>" gevolgd door bullets (- ...). Noem in elke bullet de bron en de datum van de informatie.
 - Gebruik alleen koppen die letterlijk in het eerdere antwoord staan. Past iets nergens onder, zet het onder "## Overig".
 - Geef alleen nieuwe of recentere feiten die nog niet in het antwoord staan. Geen inleiding, geen afsluiting, geen herhaling.
@@ -91,4 +85,4 @@ Je krijgt een vraag en een eerder gegeven antwoord (met ## kopjes per onderwerp)
 - Geef geen {"soorten":...}-regel.`;
 }
 
-module.exports = { systeemNormaal, systeemVerhaal, systeemAanvulling };
+module.exports = { systeem, TAAK };

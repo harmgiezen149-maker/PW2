@@ -649,7 +649,7 @@ function ask(q, label) {
     var rendered = addBot(fase1Tekst, r1.bronnen, r1.logId);
     rendered.logId = r1.logId;
     PW.meld('antwoord', { vraag: q, feiten: r1.feiten, rendered: rendered });
-    startAanvulling(q, mode, fase1Tekst, rendered);
+    aanvulKnop(q, mode, fase1Tekst, rendered);
   })
   .catch(function(e) {
     bezig = false;
@@ -700,6 +700,16 @@ function maakAanvulBlok(bodyTekst) {
   return PW.el('div', { class: 'aanvul-inline', html: '<span class="aanvul-tag">Van website · niet gecontroleerd</span><div>' + render(zonderVoetnoten(bodyTekst)) + '</div>' });
 }
 
+// De aanvulling van websites is een tweede, duurdere aanroep (met zoekresultaten). Daarom alleen
+// op verzoek: een knop onder het antwoord, vóór de bronnen.
+function aanvulKnop(q, mode, fase1Tekst, rendered) {
+  if (!rendered || !rendered.bub) return;
+  var knop = PW.el('button', { type: 'button', class: 'aanvul-knop',
+    html: PW.icoon('zoek', { maat: 18, dikte: 2.4 }) + 'Zoek actuele aanvulling op websites' });
+  knop.onclick = function() { knop.remove(); startAanvulling(q, mode, fase1Tekst, rendered); };
+  rendered.bub.insertBefore(knop, rendered.bronEl || rendered.kloptEl || rendered.scrollBtn);
+}
+
 function startAanvulling(q, mode, fase1Tekst, rendered) {
   if (!rendered || !rendered.bub) return;
   var ind = PW.el('div', { class: 'aanvul-indicator', html: '<span class="aanvul-dot"></span> Aanvullen met actuele informatie van websites…' });
@@ -707,6 +717,9 @@ function startAanvulling(q, mode, fase1Tekst, rendered) {
   var naTekst = rendered.content.nextSibling;
   var voorKlopt = rendered.kloptEl || rendered.scrollBtn;
   rendered.bub.insertBefore(ind, naTekst);
+  function niets(tekst) {
+    rendered.bub.insertBefore(PW.el('p', { class: 'aanvul-niets', tekst: tekst }), voorKlopt);
+  }
 
   runChat({
     messages: [
@@ -719,8 +732,8 @@ function startAanvulling(q, mode, fase1Tekst, rendered) {
   .then(function(r2) {
     var tekst = (r2.rawText || '').trim();
     ind.remove();
-    // Niets gevonden betekent niet dat het antwoord klopt: dan tonen we gewoon niets.
-    if (!tekst || /^GEEN_AANVULLING\b/i.test(tekst)) return;
+    // Niets gevonden betekent niet dat het antwoord klopt; alleen dat er niets nieuws op de websites stond.
+    if (!tekst || /^GEEN_AANVULLING\b/i.test(tekst)) { niets('Geen actuele aanvulling gevonden op de websites.'); return; }
 
     var secties = parseSecties(tekst);
     var koppen = rendered.content.querySelectorAll('.bh');
@@ -749,9 +762,11 @@ function startAanvulling(q, mode, fase1Tekst, rendered) {
       rendered.bub.insertBefore(PW.el('div', { class: 'aanvul-blok', html:
         '<span class="aanvul-tag">Aanvulling van websites · niet gecontroleerd</span><div>' + render(zonderVoetnoten(overig.join('\n'))) + '</div>' }), rendered.content.nextSibling);
     }
-    if (r2.bronnen && r2.bronnen.length > 0) {
-      var bl = PW.el('details', { class: 'aanvul-blok aanvul-bronnen' }, [PW.el('summary', { class: 'aanvul-kop', tekst: 'Bronnen aanvulling (' + r2.bronnen.length + ') · niet gecontroleerd door een boswachter' })]);
-      r2.bronnen.forEach(function(b) {
+    // Alleen websites: verwijzingen naar de kennisbank staan al bij het antwoord zelf
+    var web = (r2.bronnen || []).filter(function(b) { return b.soort === 'web' && b.url; });
+    if (web.length > 0) {
+      var bl = PW.el('details', { class: 'aanvul-blok aanvul-bronnen' }, [PW.el('summary', { class: 'aanvul-kop', tekst: 'Bronnen aanvulling (' + web.length + ') · niet gecontroleerd door een boswachter' })]);
+      web.forEach(function(b) {
         bl.appendChild(PW.el('div', { class: 'bl' }, [PW.el('a', { href: b.url, target: '_blank', rel: 'noopener', tekst: b.titel || b.url }),
           b.datum ? document.createTextNode(' · ' + b.datum) : null]));
       });
@@ -759,7 +774,7 @@ function startAanvulling(q, mode, fase1Tekst, rendered) {
     }
     if (window.addBirdButtons) addBirdButtons(rendered.bub);
   })
-  .catch(function() { ind.remove(); });
+  .catch(function() { ind.remove(); niets('De aanvulling kon niet worden opgehaald. Probeer het later opnieuw.'); });
 }
 
 // Tijdelijke ballon tijdens het streamen

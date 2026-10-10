@@ -7,7 +7,8 @@ const kb = require('./kennisbank');
 const nmcheck = require('./nmcheck');
 const { nlDatum } = require('./http');
 
-const MODEL = 'claude-opus-5';
+// Omzetten in voorstellen (de beheerder keurt alles goed) draait op het goedkopere Sonnet 5.5
+const MODEL = 'claude-sonnet-5-5';
 const MAX_TEKST = 20000;
 
 function instructie() {
@@ -60,7 +61,7 @@ async function importeer({ bronNaam, bronUrl, bronDatum, zichtbaarheid, tekst, d
     bestaand.add(t);
   }
   if (cmds.length) await kv.pipeline(cmds);
-  return { voorstellen: cmds.length, kosten: require('./logboek').kosten(r.usage) };
+  return { voorstellen: cmds.length, kosten: require('./logboek').kosten(r.usage, r.model) };
 }
 
 module.exports = { importeer, MAX_TEKST };
