@@ -17,7 +17,8 @@ const K_NAMEN = 'pw:namen';           // gebruikersnaam -> gebruiker-id
 const ROLLEN = ['gebruiker', 'beheerder'];
 const SESSIE_DAGEN = 180;
 const UITNODIGING_DAGEN = 14;
-const NAAM_RE = /^[a-z0-9][a-z0-9._-]{2,39}$/;
+const NAAM_RE = /^[a-z0-9][a-z0-9._@+-]{2,79}$/;   // een e-mailadres mag ook
+const NAAM_FOUT = 'Kies een gebruikersnaam van 3 tot 80 tekens: letters, cijfers, punt, streepje, liggend streepje of @ (een e-mailadres mag ook), zonder spaties.';
 
 function hash(code) {
   return crypto.createHash('sha256').update(String(code)).digest('hex');
@@ -197,7 +198,7 @@ async function activeren({ code, gebruikersnaam, wachtwoord }) {
   const nieuw = Object.assign({}, g);
   if (!g.gebruikersnaam) {
     const n = normaalNaam(gebruikersnaam);
-    if (!NAAM_RE.test(n)) throw Object.assign(new Error('Kies een gebruikersnaam van 3 tot 40 tekens: kleine letters, cijfers, punt, streepje of liggend streepje.'), { status: 400 });
+    if (!NAAM_RE.test(n)) throw Object.assign(new Error(NAAM_FOUT), { status: 400 });
     const bezet = await kv.cmd('HGET', K_NAMEN, n);
     if (bezet && bezet !== g.id) throw Object.assign(new Error('Die gebruikersnaam is al in gebruik. Kies een andere.'), { status: 409 });
     nieuw.gebruikersnaam = n;
@@ -254,5 +255,5 @@ function zonderGeheim(g) {
   return k;
 }
 
-module.exports = { ROLLEN, K_GEBRUIKERS, K_CODES, K_SESSIES, K_NAMEN, NAAM_RE, gebruiker, beheerder, heeftActieveBeheerder, heeftBeheerderMetInlog, beheerderZonderInlog, oudeLink, maakLink, intrekken, alleGebruikers, zonderGeheim, gelijk,
+module.exports = { ROLLEN, K_GEBRUIKERS, K_CODES, K_SESSIES, K_NAMEN, NAAM_RE, NAAM_FOUT, gebruiker, beheerder, heeftActieveBeheerder, heeftBeheerderMetInlog, beheerderZonderInlog, oudeLink, maakLink, intrekken, alleGebruikers, zonderGeheim, gelijk,
   uitnodigingInfo, activeren, inloggen, uitloggen, wachtwoordWijzigen, wachtwoordHash, controleerWachtwoord, nieuweSessie, normaalNaam };

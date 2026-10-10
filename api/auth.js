@@ -73,13 +73,13 @@ module.exports = async function handler(req, res) {
       if (await auth.heeftBeheerderMetInlog()) return res.status(409).json({ error: 'Er is al een beheerder. Log in met je gebruikersnaam en wachtwoord.' });
       const pw = process.env.BEHEER_WACHTWOORD;
       if (!pw || typeof body.wachtwoord !== 'string' || !auth.gelijk(body.wachtwoord, pw)) {
-        return res.status(401).json({ error: 'Ongeldig beheerwachtwoord' });
+        return res.status(401).json({ error: 'Het beheerwachtwoord (onderste veld) klopt niet.' });
       }
       const naam = sanitizeText(body.naam, 60);
       if (naam.length < 2) return res.status(400).json({ error: 'Vul je naam in.' });
       const wwFout = auth.controleerWachtwoord(body.nieuwWachtwoord);
       if (wwFout) return res.status(400).json({ error: wwFout });
-      if (!auth.NAAM_RE.test(auth.normaalNaam(body.gebruikersnaam))) return res.status(400).json({ error: 'Kies een gebruikersnaam van 3 tot 40 tekens: kleine letters, cijfers, punt, streepje of liggend streepje.' });
+      if (!auth.NAAM_RE.test(auth.normaalNaam(body.gebruikersnaam))) return res.status(400).json({ error: auth.NAAM_FOUT });
       if (await require('./_lib/kv').cmd('HGET', auth.K_NAMEN, auth.normaalNaam(body.gebruikersnaam))) return res.status(409).json({ error: 'Die gebruikersnaam is al in gebruik. Kies een andere.' });
       // Beheerder met een eenmalige uitnodiging, die meteen wordt gebruikt om de inlog in te stellen.
       // Een bestaande beheerder zonder wachtwoord wordt overgenomen (zelfde account en gebruik).

@@ -15,18 +15,25 @@
   <h1>Beheer Planken Wambuis</h1>
   <p id="loginUitleg">Laden…</p>
   <form id="inlogVak" style="display:none;width:100%;max-width:320px" onsubmit="event.preventDefault();inloggenBeheer()">
-    <input id="inlogNaam" placeholder="Gebruikersnaam" autocomplete="username" autocapitalize="none" spellcheck="false" />
-    <input type="password" id="inlogWw" placeholder="Wachtwoord" autocomplete="current-password" />
+    <label for="inlogNaam">Gebruikersnaam</label>
+    <input id="inlogNaam" autocomplete="username" autocapitalize="none" spellcheck="false" />
+    <label for="inlogWw">Wachtwoord</label>
+    <input type="password" id="inlogWw" autocomplete="current-password" />
     <button class="btn primair" type="submit">Inloggen</button>
     <p class="hint" style="margin-top:10px">Wachtwoord vergeten of nog geen inlog? Vraag een andere beheerder om een uitnodigingslink.</p>
   </form>
   <form id="startVak" style="display:none;width:100%;max-width:320px" onsubmit="event.preventDefault();startBeheer()">
     <p>Er is nog geen beheerder die kan inloggen. Stel met het beheerwachtwoord je gebruikersnaam en wachtwoord in (dit kan maar één keer; daarna log je in met je gebruikersnaam en wachtwoord). Was je al beheerder? Vul dan je naam in zoals die bij Gebruikers staat; je account blijft behouden.</p>
-    <input id="startNaam" placeholder="Je naam" autocomplete="name" />
-    <input id="startGebruiker" placeholder="Kies een gebruikersnaam" autocomplete="username" autocapitalize="none" spellcheck="false" />
-    <input type="password" id="startWw" placeholder="Kies een wachtwoord (min. 8 tekens)" autocomplete="new-password" />
-    <input type="password" id="startWw2" placeholder="Herhaal het wachtwoord" autocomplete="new-password" />
-    <input type="password" id="pwInput" placeholder="Beheerwachtwoord" autocomplete="off" />
+    <label for="startNaam">Je naam</label>
+    <input id="startNaam" autocomplete="name" />
+    <label for="startGebruiker">Kies een gebruikersnaam <span>(bijv. je voornaam of e-mailadres)</span></label>
+    <input id="startGebruiker" autocomplete="username" autocapitalize="none" spellcheck="false" />
+    <label for="startWw">Kies een nieuw wachtwoord <span>(minstens 8 tekens)</span></label>
+    <input type="password" id="startWw" autocomplete="new-password" />
+    <label for="startWw2">Herhaal het nieuwe wachtwoord</label>
+    <input type="password" id="startWw2" autocomplete="new-password" />
+    <label for="pwInput">Beheerwachtwoord <span>(het bestaande, vaste wachtwoord)</span></label>
+    <input type="password" id="pwInput" autocomplete="off" />
     <button class="btn primair" type="submit">Eerste beheerder aanmaken</button>
   </form>
   <p class="err" id="loginErr"></p>
