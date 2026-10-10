@@ -9,6 +9,7 @@ const beeld = require('./_lib/achtergrond');
 const kalender = require('./_lib/kalender');
 const MAANDNAMEN = ['januari', 'februari', 'maart', 'april', 'mei', 'juni', 'juli', 'augustus', 'september', 'oktober', 'november', 'december'];
 const NIEUWS_DAGEN = 60;
+const BINNENKORT_DAGEN = 42;   // Actueel: activiteiten en werkzaamheden die de komende zes weken beginnen
 
 function dgTitel(slug) {
   const d = kb.DEELGEBIEDEN.find(x => x.slug === slug);
@@ -134,7 +135,8 @@ function kaartGegevens(feiten, plekken, routes, cfg, grenzen, ingelogd, vandaag,
   };
 }
 
-function actueel(feiten, vandaag, beelden) {
+// komend: tijdelijke feiten die nog moeten beginnen (binnen BINNENKORT_DAGEN), op begindatum
+function actueel(feiten, vandaag, beelden, komend) {
   const maand = nlMaand();
   const grens = new Date(Date.parse(vandaag) - NIEUWS_DAGEN * 86400000).toISOString().slice(0, 10);
   const tijdelijk = feiten.filter(f => f.type === 'tijdelijk')
@@ -148,7 +150,10 @@ function actueel(feiten, vandaag, beelden) {
     .sort((a, b) => b.datum.localeCompare(a.datum))
     .slice(0, 10)
     .map(x => Object.assign(publiek(x.f, vandaag, beelden), { goedgekeurdOp: x.datum }));
-  return { maand: MAANDNAMEN[maand - 1], tijdelijk, seizoen, nieuws };
+  const binnenkort = (komend || []).filter(f => f.type === 'tijdelijk' && f.startdatum && f.startdatum > vandaag)
+    .sort((a, b) => a.startdatum.localeCompare(b.startdatum))
+    .map(f => publiek(f, vandaag, beelden));
+  return { maand: MAANDNAMEN[maand - 1], tijdelijk, binnenkort, seizoen, nieuws };
 }
 
 module.exports = async function handler(req, res) {
@@ -168,8 +173,10 @@ module.exports = async function handler(req, res) {
     const basis = { bijgewerkt: new Date().toISOString(), ingelogd: !!gebruiker };
 
     switch (body.actie) {
-      case 'actueel':
-        return res.json(Object.assign(basis, actueel(bruikbaar, vandaag, beelden)));
+      case 'actueel': {
+        const komend = kb.bruikbareFeiten(alleFeiten, { ingelogd: !!gebruiker, vandaag, alleMaanden: true, vooruitDagen: BINNENKORT_DAGEN });
+        return res.json(Object.assign(basis, actueel(bruikbaar, vandaag, beelden, komend)));
+      }
       case 'kalender':
         // Ook wat nog moet beginnen: de kalender kijkt twaalf maanden vooruit
         return res.json(Object.assign(basis, kalender.bouw(alleFeiten, { vandaag, ingelogd: !!gebruiker, publiek: f => publiek(f, vandaag, beelden) })));

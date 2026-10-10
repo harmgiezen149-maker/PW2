@@ -277,3 +277,5 @@ html body .leaflet-container { font-family: 'Fira Sans', system-ui, sans-serif; 
 .anoniem-kaart { border-style: dashed; }
 button.naar-app { background: transparent; font-family: inherit; cursor: pointer; }
 @media (max-width: 700px) { .naar-app.uitlog { display: none; } }
+
+.feit-titel { font-weight: 600; color: var(--navy); margin-bottom: 4px; }

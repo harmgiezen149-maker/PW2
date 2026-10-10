@@ -239,7 +239,7 @@ function melding(tekst, fout) {
   m.className = 'melding' + (fout ? ' fout' : '');
   m.style.display = 'block';
   clearTimeout(m._t);
-  m._t = setTimeout(function() { m.style.display = 'none'; }, fout ? 5000 : 2500);
+  m._t = setTimeout(function() { m.style.display = 'none'; }, fout ? 5000 : Math.max(2500, tekst.length * 50));
 }
 
 function datumNL(iso) {
@@ -520,7 +520,12 @@ function tabVoorstellen(inhoud) {
       goed.onclick = function() {
         goed.disabled = true;
         api('voorstel-goedkeuren', { id: v.id, feit: form.waarde() })
-          .then(function() { melding('Goedgekeurd en toegevoegd aan de kennisbank'); return laadOverzicht(); })
+          .then(function(r) {
+            melding(r.feit && isActiviteit(r.feit)
+              ? 'Goedgekeurd. Je vindt de activiteit in de Jaarkalender en in de Kennisbank (filter "Activiteiten (agenda)").'
+              : 'Goedgekeurd en toegevoegd aan de kennisbank');
+            return laadOverzicht();
+          })
           .then(function() { toonTab('voorstellen'); })
           .catch(function(e) { goed.disabled = false; fout(e); });
       };
@@ -621,7 +626,7 @@ function tabKennisbank(inhoud, opties) {
       zoek,
       sel([{ slug: '', titel: 'Alle onderwerpen' }].concat(OV.onderwerpen), filter.onderwerp, 'onderwerp'),
       sel([{ slug: '', titel: 'Alle deelgebieden' }].concat(OV.deelgebieden), filter.deelgebied, 'deelgebied'),
-      sel([{ slug: 'actief', titel: 'Actief' }, { slug: 'verlopen', titel: 'Mogelijk verouderd' }, { slug: 'afgelopen', titel: 'Tijdelijk, afgelopen' }, { slug: 'intern', titel: 'Intern' }, { slug: 'ingetrokken', titel: 'Ingetrokken' }, { slug: 'alle', titel: 'Alle' }], filter.status, 'status')
+      sel([{ slug: 'actief', titel: 'Actief' }, { slug: 'verlopen', titel: 'Mogelijk verouderd' }, { slug: 'activiteiten', titel: 'Activiteiten (agenda)' }, { slug: 'afgelopen', titel: 'Tijdelijk, afgelopen' }, { slug: 'intern', titel: 'Intern' }, { slug: 'ingetrokken', titel: 'Ingetrokken' }, { slug: 'alle', titel: 'Alle' }], filter.status, 'status')
     ]);
     zoek.oninput = function() { filter.zoek = zoek.value; teken(); };
     s.appendChild(fl);
@@ -649,10 +654,11 @@ function tabKennisbank(inhoud, opties) {
       var b = f.beoordeling;
       if (filter.onderwerp && f.onderwerp !== filter.onderwerp) return false;
       if (filter.deelgebied && f.deelgebied !== filter.deelgebied) return false;
-      if (filter.zoek && (f.tekst + ' ' + (f.bron || '')).toLowerCase().indexOf(filter.zoek.toLowerCase()) < 0) return false;
+      if (filter.zoek && [f.tekst, f.titel, f.bron, f.bronUrl].join(' ').toLowerCase().indexOf(filter.zoek.toLowerCase()) < 0) return false;
       switch (filter.status) {
         case 'actief': return f.status === 'actief' && !b.afgelopen;
         case 'verlopen': return f.status === 'actief' && b.verlopen;
+        case 'activiteiten': return f.status === 'actief' && !b.afgelopen && isActiviteit(f);
         case 'afgelopen': return f.status === 'actief' && b.afgelopen;
         case 'intern': return f.zichtbaarheid === 'intern';
         case 'ingetrokken': return f.status === 'ingetrokken';
@@ -663,6 +669,8 @@ function tabKennisbank(inhoud, opties) {
     function teken() {
       lijst.innerHTML = '';
       var feiten = d.feiten.filter(past).sort(function(a, b) {
+        // Activiteiten op datum: wat het eerst begint, bovenaan
+        if (filter.status === 'activiteiten') return (a.startdatum || a.einddatum || '').localeCompare(b.startdatum || b.einddatum || '');
         return (a.onderwerp || '').localeCompare(b.onderwerp || '') || (a.tekst || '').localeCompare(b.tekst || '');
       });
       lijst.appendChild(el('p', { class: 'meta', text: feiten.length + ' feit(en)' }));
@@ -671,6 +679,11 @@ function tabKennisbank(inhoud, opties) {
     }
     teken();
   }).catch(fout);
+}
+
+// Een activiteit uit de agenda: tijdelijk, in de kalender als activiteit (zelf gekozen of via onderwerp Natuurmonumenten)
+function isActiviteit(f) {
+  return f.type === 'tijdelijk' && (f.kalender === 'activiteit' || (!f.kalender && f.onderwerp === 'nm'));
 }
 
 function feitKaart(f) {
@@ -689,6 +702,7 @@ function feitKaart(f) {
     f.status === 'actief' && b.afgelopen ? el('span', { class: 'badge rood', text: 'Afgelopen' }) : null
   ]);
   card.appendChild(badges);
+  if (f.titel) card.appendChild(el('div', { class: 'feit-titel', text: f.titel }));
   card.appendChild(el('div', { class: 'tekst', text: f.tekst }));
   var meta = el('div', { class: 'meta' });
   meta.appendChild(document.createTextNode('Bron: '));
@@ -697,7 +711,7 @@ function feitKaart(f) {
   if (f.bronDatum) meta.appendChild(document.createTextNode(' (' + datumNL(f.bronDatum) + ')'));
   meta.appendChild(el('br'));
   meta.appendChild(document.createTextNode('Gecontroleerd ' + datumNL(f.gecontroleerdOp) + (f.gecontroleerdDoor ? ' door ' + f.gecontroleerdDoor : '') +
-    ' · ' + (f.type === 'tijdelijk' ? 'geldt t/m ' : 'vervalt ') + datumNL(b.verval)));
+    ' · ' + (f.type === 'tijdelijk' ? (f.startdatum ? 'geldt van ' + datumNL(f.startdatum) + ' t/m ' : 'geldt t/m ') : 'vervalt ') + datumNL(b.verval)));
   card.appendChild(meta);
 
   var acties = el('div', { class: 'acties' });
