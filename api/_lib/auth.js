@@ -60,6 +60,20 @@ async function heeftActieveBeheerder() {
   return Object.values(alle).some(g => g.rol === 'beheerder' && !g.ingetrokken);
 }
 
+// Kan er een beheerder inloggen met gebruikersnaam en wachtwoord? Zo niet (bijvoorbeeld na de overstap
+// van persoonlijke links), dan kan met het beheerwachtwoord een beheerder een inlog instellen.
+async function heeftBeheerderMetInlog() {
+  const alle = await alleGebruikers();
+  return Object.values(alle).some(g => g.rol === 'beheerder' && !g.ingetrokken && g.wachtwoord);
+}
+// Beheerders zonder inlog (geen wachtwoord): bij de start wordt zo'n account overgenomen in plaats van
+// een tweede beheerder aan te maken. Voorkeur voor dezelfde naam, anders de enige.
+async function beheerderZonderInlog(naam) {
+  const kandidaten = Object.values(await alleGebruikers()).filter(g => g.rol === 'beheerder' && !g.ingetrokken && !g.wachtwoord);
+  const n = String(naam || '').trim().toLowerCase();
+  return kandidaten.find(g => String(g.naam || '').trim().toLowerCase() === n) || (kandidaten.length === 1 ? kandidaten[0] : null);
+}
+
 // Maakt een gebruiker aan, of geeft een bestaande gebruiker een nieuwe uitnodiging (om een wachtwoord
 // te kiezen of te herstellen). Geeft de code één keer terug; daarna is alleen de hash bekend.
 async function maakLink({ id, naam, rol, door }) {
@@ -156,6 +170,12 @@ async function bijUitnodiging(code) {
   return g;
 }
 
+// Oude persoonlijke link (van vóór gebruikersnaam en wachtwoord), nog niet omgezet
+async function oudeLink(code) {
+  const g = await bijUitnodiging(code);
+  return g && !g.codeVerloopt && !g.wachtwoord ? g : null;
+}
+
 function naamVoorstel(naam) {
   const basis = String(naam || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\(.*?\)/g, '')
     .trim().split(/\s+/)[0].replace(/[^a-z0-9._-]/g, '');
@@ -234,5 +254,5 @@ function zonderGeheim(g) {
   return k;
 }
 
-module.exports = { ROLLEN, K_GEBRUIKERS, K_CODES, K_SESSIES, K_NAMEN, NAAM_RE, gebruiker, beheerder, heeftActieveBeheerder, maakLink, intrekken, alleGebruikers, zonderGeheim, gelijk,
+module.exports = { ROLLEN, K_GEBRUIKERS, K_CODES, K_SESSIES, K_NAMEN, NAAM_RE, gebruiker, beheerder, heeftActieveBeheerder, heeftBeheerderMetInlog, beheerderZonderInlog, oudeLink, maakLink, intrekken, alleGebruikers, zonderGeheim, gelijk,
   uitnodigingInfo, activeren, inloggen, uitloggen, wachtwoordWijzigen, wachtwoordHash, controleerWachtwoord, nieuweSessie, normaalNaam };

@@ -140,7 +140,7 @@ var uitLink = false;
 PW.controleerLogin = function() {
   var stap = PW.token() ? PW.api('/api/auth', { actie: 'wie' }) : Promise.resolve({ gebruiker: null });
   return stap.then(function(d) {
-    PW.gebruiker = d.gebruiker || null;
+    PW.gebruiker = d.oudeLink ? null : (d.gebruiker || null);
     PW.gebruik = d.gebruik || null;
     if (!PW.gebruiker && PW.token()) {
       // Geen geldige sessie. Was het een oude persoonlijke link? Die werkt nog één keer als uitnodiging.
