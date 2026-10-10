@@ -82,6 +82,8 @@ async function knip(page, selector, naam, marge) {
   await page.fill('#txt', 'Welke wandelroutes zijn er en waar kan ik parkeren?');
   await page.click('#btn');
   await page.waitForSelector('.bronnen');
+  await page.waitForSelector('.aanvul-knop');   // aanvulling van websites alleen op verzoek
+  await page.click('.aanvul-knop');
   await page.waitForSelector('.aanvul-inline', { timeout: 10000 });
   await page.waitForSelector('.antwoord-kaart', { timeout: 10000 });
   await wacht(1200);

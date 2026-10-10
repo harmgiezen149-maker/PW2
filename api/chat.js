@@ -6,7 +6,7 @@ const kaart = require('./_lib/kaart');
 const auth = require('./_lib/auth');
 const logboek = require('./_lib/logboek');
 
-const MODEL = 'claude-opus-5';
+const MODEL = 'claude-opus-5-5';
 
 module.exports = async function handler(req, res) {
   setSecurityHeaders(res, req.headers.origin, 'POST, OPTIONS');
@@ -50,23 +50,28 @@ module.exports = async function handler(req, res) {
   // Ook activiteiten en werkzaamheden die binnen 90 dagen beginnen (gemarkeerd met "begint …")
   const bruikbaar = kb.bruikbareFeiten(Object.assign({}, feiten, kaart.routeFeiten(routes)), { ingelogd, vooruitDagen: 90 });
 
-  const instructie = phase === 2 ? prompts.systeemAanvulling()
-    : mode === 'storytelling' ? prompts.systeemVerhaal() : prompts.systeemNormaal();
-  const system = [{ type: 'text', text: instructie }];
-  let meta = [];
-
-  if (phase === 2) {
-    // Aanvulronde: kennisbank als platte tekst, zodat bekende feiten niet herhaald worden.
-    system.push({ type: 'text', text: kb.alsTekst(bruikbaar), cache_control: { type: 'ephemeral' } });
+  // Kosten: antwoord en aanvulling sturen precies dezelfde voorkant (tools, systeemprompt, kennisbank
+  // als documenten met de cache-markering op het laatste document). De aanvulling leest die dan uit
+  // de cache van het antwoord in plaats van de hele kennisbank opnieuw te betalen. De taak staat
+  // daarom niet in de systeemprompt maar als taakregel in het gebruikersbericht.
+  const system = [{ type: 'text', text: prompts.systeem() }];
+  const taak = mode === 'storytelling' ? prompts.TAAK.verhaal : prompts.TAAK.antwoord;
+  const vraagTekst = `${taak}\n\n${messages[0].content}`;
+  // Elk onderwerp als document met citaties, zodat elk gebiedsfeit terug te leiden is
+  // naar een gecontroleerd kennisbankfeit.
+  const gebouwd = kb.bouwDocumenten(bruikbaar);
+  const meta = phase === 1 ? gebouwd.meta : [];
+  if (gebouwd.docs.length > 0) {
+    gebouwd.docs[gebouwd.docs.length - 1].cache_control = { type: 'ephemeral' };
+    messages[0] = { role: 'user', content: [...gebouwd.docs, { type: 'text', text: vraagTekst }] };
   } else {
-    // Hoofdantwoord: elk onderwerp als document met citaties, zodat elk gebiedsfeit
-    // terug te leiden is naar een gecontroleerd kennisbankfeit.
-    const gebouwd = kb.bouwDocumenten(bruikbaar);
-    meta = gebouwd.meta;
-    if (gebouwd.docs.length > 0) {
-      gebouwd.docs[gebouwd.docs.length - 1].cache_control = { type: 'ephemeral' };
-      messages[0] = { role: 'user', content: [...gebouwd.docs, { type: 'text', text: messages[0].content }] };
-    }
+    messages[0] = { role: 'user', content: vraagTekst };
+  }
+  if (phase === 2) {
+    // Aanvulling: vraag, eerder antwoord en de taakregel voor de aanvulling
+    if (messages.length < 3 || messages[1].role !== 'assistant') return res.status(400).json({ error: 'Ongeldige aanvulling' });
+    messages.splice(3);
+    messages[2] = { role: 'user', content: `${prompts.TAAK.aanvulling}\n\nVul het antwoord hierboven aan volgens de regels van deze taak.` };
   }
 
   const client = new Anthropic();
@@ -81,7 +86,7 @@ module.exports = async function handler(req, res) {
     tools: [{
       type: 'web_search_20260209',
       name: 'web_search',
-      max_uses: phase === 2 ? 2 : 1,
+      max_uses: 1,   // in beide fasen gelijk: de tools horen bij de gedeelde, gecachete voorkant
       allowed_domains: sites,
       user_location: { type: 'approximate', country: 'NL', timezone: 'Europe/Amsterdam' }
     }]
@@ -107,7 +112,7 @@ module.exports = async function handler(req, res) {
       }
       const antwoord = tekst.join('').replace(/\{\s*"soorten"[\s\S]*\}\s*$/, '').trim().slice(0, 8000);
       const gebruik = {
-        stop: final.stop_reason, usage: final.usage || null, kosten: logboek.kosten(final.usage)
+        stop: final.stop_reason, model: final.model, usage: final.usage || null, kosten: logboek.kosten(final.usage, final.model)
       };
       if (phase === 2) {
         if (req.body.logId) await logboek.aanvullen(req.body.logId, { tekst: antwoord, web: [...web], ...gebruik });

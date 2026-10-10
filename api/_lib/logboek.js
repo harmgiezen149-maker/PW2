@@ -6,16 +6,28 @@ const kv = require('./kv');
 const BEWAAR = 90 * 86400;
 const K_INDEX = 'log:index';
 
-// Globale schatting van de kosten per vraag (Claude Opus 5, prijzen per miljoen tokens).
-const PRIJS = { input: 5, output: 25, cacheSchrijven: 6.25, cacheLezen: 0.5, zoekactie: 0.01 };
+// Schatting van de kosten van één aanroep, met de prijs van het model dat antwoordde
+// (dollars per miljoen tokens; platform.claude.com/docs/en/about-claude/pricing, oktober 2026).
+// Een cache-schrijfactie (5 minuten) kost 1,25x de invoerprijs, een cache-treffer een fractie.
+const PRIJZEN = {
+  'claude-opus-5-5': { input: 4, output: 20, cacheSchrijven: 5, cacheLezen: 0.2 },
+  'claude-opus-5': { input: 5, output: 25, cacheSchrijven: 6.25, cacheLezen: 0.5 },
+  'claude-opus-4-8': { input: 5, output: 25, cacheSchrijven: 6.25, cacheLezen: 0.5 },
+  'claude-sonnet-5-5': { input: 2, output: 10, cacheSchrijven: 2.5, cacheLezen: 0.1 },
+  'claude-sonnet-5': { input: 2, output: 10, cacheSchrijven: 2.5, cacheLezen: 0.2 }
+};
+const ZOEKACTIE = 0.01;   // web search: $10 per 1.000 zoekacties
 
-function kosten(usage) {
+// usage: één usage-object of een lijst (bij een vervolgronde na pause_turn). Onbekend model: Opus 5-prijs.
+function kosten(usage, model) {
   if (!usage) return 0;
+  if (Array.isArray(usage)) return usage.reduce((t, u) => t + kosten(u, model), 0);
   const u = usage;
+  const p = PRIJZEN[String(model || '').replace(/-\d{8}$/, '')] || PRIJZEN['claude-opus-5'];
   const zoek = (u.server_tool_use && u.server_tool_use.web_search_requests) || 0;
-  return ((u.input_tokens || 0) * PRIJS.input + (u.output_tokens || 0) * PRIJS.output +
-    (u.cache_creation_input_tokens || 0) * PRIJS.cacheSchrijven + (u.cache_read_input_tokens || 0) * PRIJS.cacheLezen) / 1e6 +
-    zoek * PRIJS.zoekactie;
+  return ((u.input_tokens || 0) * p.input + (u.output_tokens || 0) * p.output +
+    (u.cache_creation_input_tokens || 0) * p.cacheSchrijven + (u.cache_read_input_tokens || 0) * p.cacheLezen) / 1e6 +
+    zoek * ZOEKACTIE;
 }
 
 async function schrijf(entry) {

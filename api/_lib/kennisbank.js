@@ -153,14 +153,6 @@ function bouwDocumenten(feiten, vandaag) {
   return { docs, meta };
 }
 
-// Platte tekst (voor de aanvulronde, zonder citaties).
-function alsTekst(feiten, vandaag) {
-  const { docs } = bouwDocumenten(feiten, vandaag);
-  const body = docs.map(d => `## ${d.title.replace('Kennisbank: ', '')}\n` +
-    d.source.content.map(b => `- ${b.text}`).join('\n')).join('\n\n');
-  return `<kennisbank>\n${body}\n</kennisbank>`;
-}
-
 async function alleFeiten() {
   await zorgVoorSeed();
   return kv.hgetallJSON(K_FEITEN);
@@ -264,7 +256,7 @@ async function zorgVoorSeed() {
 
 module.exports = {
   ONDERWERPEN, DEELGEBIEDEN, TYPES, K_FEITEN, K_VOORSTELLEN, K_SITES,
-  nieuwId, vervaldatum, beoordeel, bruikbareFeiten, bouwDocumenten, alsTekst,
+  nieuwId, vervaldatum, beoordeel, bruikbareFeiten, bouwDocumenten,
   alleFeiten, alleVoorstellen, getSites, normaliseerSite, metHistorie, zorgVoorSeed,
   _reset() { seedGecontroleerd = false; }
 };

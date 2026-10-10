@@ -8,7 +8,8 @@ const kv = require('./kv');
 const kb = require('./kennisbank');
 const { vandaagISO, nlDatum } = require('./http');
 
-const MODEL = 'claude-opus-5';
+// Beheertaken (alleen voorstellen; de beheerder keurt alles goed) draaien op het goedkopere Sonnet 5.5
+const MODEL = 'claude-sonnet-5-5';
 const BASIS = 'https://www.natuurmonumenten.nl/natuurgebieden/planken-wambuis';
 // De agenda van Natuurmonumenten staat niet onder het natuurgebied, maar op één centrale pagina
 // met een filter op locatie (N_299 = Planken Wambuis) en meerdere pagina's (page=1, 2, …).
@@ -213,7 +214,7 @@ async function vraagClaude(feiten, voorstellen, paginas) {
   });
   if (r.stop_reason === 'refusal') throw new Error('Controle geweigerd door het model');
   const tekst = r.content.filter(b => b.type === 'text').map(b => b.text).join('');
-  return { voorstellen: JSON.parse(tekst).voorstellen || [], usage: r.usage };
+  return { voorstellen: JSON.parse(tekst).voorstellen || [], usage: r.usage, model: r.model };
 }
 
 // Terugval als natuurmonumenten.nl directe verzoeken blokkeert: Claude haalt de
@@ -228,8 +229,10 @@ async function vraagClaudeMetFetch(feiten, voorstellen, urls) {
   }];
   const tools = [{ type: 'web_fetch_20260209', name: 'web_fetch', max_uses: 16, allowed_domains: ['natuurmonumenten.nl'] }];
   let r;
+  const gebruik = [];
   for (let i = 0; i < 3; i++) {
     r = await client.messages.create({ model: MODEL, max_tokens: 16000, output_config: { effort: 'medium' }, system: instructie(), messages, tools });
+    gebruik.push(r.usage);
     if (r.stop_reason !== 'pause_turn') break;
     messages.push({ role: 'assistant', content: r.content });
   }
@@ -237,7 +240,7 @@ async function vraagClaudeMetFetch(feiten, voorstellen, urls) {
   const tekst = r.content.filter(b => b.type === 'text').map(b => b.text).join('');
   const m = tekst.match(/<json>([\s\S]*?)<\/json>/);
   if (!m) throw new Error('Terugvalcontrole gaf geen bruikbaar antwoord');
-  return { voorstellen: JSON.parse(m[1]).voorstellen || [], usage: r.usage };
+  return { voorstellen: JSON.parse(m[1]).voorstellen || [], usage: gebruik, model: r.model };
 }
 
 async function controleer() {
@@ -297,7 +300,7 @@ async function controleer() {
     } else {
       r = await vraagClaude(feiten, voorstellen, teAnalyseren);
     }
-    status.kosten = require('./logboek').kosten(r.usage);
+    status.kosten = require('./logboek').kosten(r.usage, r.model);
     const bestaandeTeksten = new Set(Object.values(voorstellen).map(v => v.tekst));
     const cmds = [];
     for (const v of r.voorstellen) {
@@ -388,8 +391,10 @@ async function zoekKalender() {
     { type: 'web_fetch_20260209', name: 'web_fetch', max_uses: agendaTekst ? 8 : 16, allowed_domains: sites }
   ];
   let r;
+  const gebruik = [];
   for (let i = 0; i < 4; i++) {
     r = await client.messages.create({ model: MODEL, max_tokens: 16000, output_config: { effort: 'medium' }, system: instructieKalender(tot), messages, tools });
+    gebruik.push(r.usage);
     if (r.stop_reason !== 'pause_turn') break;
     messages.push({ role: 'assistant', content: r.content });
   }
@@ -427,7 +432,7 @@ async function zoekKalender() {
     bestaand.add(t);
   }
   if (cmds.length) await kv.pipeline(cmds);
-  return { voorstellen: cmds.length, kalender: kalenderItems, agenda, kosten: require('./logboek').kosten(r.usage) };
+  return { voorstellen: cmds.length, kalender: kalenderItems, agenda, kosten: require('./logboek').kosten(gebruik, r.model) };
 }
 
 // Algemene natuurweetjes per maand of seizoen voor de jaarkalender (Beheer → Jaarkalender).
@@ -489,7 +494,7 @@ async function algemeenVoorstellen({ maand } = {}) {
     bestaand.add(tekst);
   }
   if (cmds.length) await kv.pipeline(cmds);
-  return { voorstellen: cmds.length, kosten: require('./logboek').kosten(r.usage) };
+  return { voorstellen: cmds.length, kosten: require('./logboek').kosten(r.usage, r.model) };
 }
 
 module.exports = { AGENDA, isAgendaOverzicht, activiteitenUitHtml, leesAgenda, controleer, zoekKalender, algemeenVoorstellen, getPaginas, STANDAARD_PAGINAS, K_PAGINAS, KALENDERREGELS, kalenderVelden, tekstUitHtml, berichtLinks, schema, kennisbankTekst };
