@@ -77,6 +77,7 @@ const LOGBOEK = {
 
 let GEBRUIKERS = [
   { id: 'u1', naam: 'Beheerder (voorbeeld)', rol: 'beheerder', linkGemaakt: '2026-09-26' },
+  { id: 'u2', naam: 'Els (vrijwilliger, voorbeeld)', rol: 'gebruiker', linkGemaakt: '2026-09-26', linkGemaaktDoor: 'Beheerder (voorbeeld)', maxPerMaand: 10 },
   { id: 'u3', naam: 'Tom (oud-vrijwilliger, voorbeeld)', rol: 'gebruiker', linkGemaakt: '2026-09-26', linkGemaaktDoor: 'Beheerder (voorbeeld)', ingetrokken: true, ingetrokkenOp: '2026-09-26' }
 ];
 
@@ -340,7 +341,7 @@ async function installeer(context, opties) {
     switch (url.pathname) {
       case '/api/weather': return json(WEER);
       case '/api/auth':
-        if (body.actie === 'wie') return json({ gebruiker: opties.gebruiker || null });
+        if (body.actie === 'wie') return json({ gebruiker: opties.gebruiker || null, gebruik: opties.gebruik || null });
         if (body.actie === 'status') return json({ beheerderAanwezig: !!opties.bestaatBeheerder });
         return json({});
       case '/api/feedback': return json({ ok: true });
@@ -353,7 +354,13 @@ async function installeer(context, opties) {
         if (a === 'meldingen') return json({ meldingen: MELDINGEN });
         if (a === 'logboek') return json(LOGBOEK);
         if (a === 'backups') return json(BACKUPS);
-        if (a === 'gebruikers') return json({ gebruikers: GEBRUIKERS });
+        if (a === 'gebruikers') return json({ gebruikers: GEBRUIKERS.map(g => Object.assign({ gebruik: GEBRUIK[g.id] || { kosten: 0, vragen: 0 } }, g)), waarschuwing: 0.75 });
+        if (a === 'gebruiker-maximum') {
+          const max = Math.round(Number(String(body.max || '').replace(',', '.')) * 100) / 100;
+          GEBRUIKERS = GEBRUIKERS.map(g => g.id !== body.id ? g : Object.assign({}, g, { maxPerMaand: max > 0 ? max : undefined }));
+          return json({ ok: true, gebruiker: GEBRUIKERS.find(g => g.id === body.id) });
+        }
+        if (a === 'gebruik-overzicht') return json(gebruikOverzicht(body.maand));
         if (a === 'gebruiker-maken') {
           const g = { id: 'u4', naam: body.naam, rol: body.rol, linkGemaakt: NU, linkGemaaktDoor: 'Beheerder (voorbeeld)' };
           GEBRUIKERS = GEBRUIKERS.concat([g]);
@@ -373,6 +380,22 @@ const wacht = ms => new Promise(r => setTimeout(r, ms));
 
 // Lichte vervangtegel voor de PDOK-ondergrond (256x256, rasterlijnen), zodat schermafbeeldingen zonder internet werken
 const TEGEL = fs.readFileSync(path.join(__dirname, 'tegel.png'));
+
+// Gebruik deze maand per gebruiker (voorbeeld; dollars)
+const GEBRUIK = { u1: { kosten: 3.42, vragen: 41 }, u2: { kosten: 7.86, vragen: 88 }, u3: { kosten: 0.51, vragen: 6 }, anoniem: { kosten: 12.3, vragen: 154 }, systeem: { kosten: 0.62, vragen: 0 } };
+function gebruikOverzicht(maand) {
+  const nu = new Date(NU);
+  const maanden = [];
+  for (let i = 0; i < 12; i++) { const d = new Date(Date.UTC(nu.getUTCFullYear(), nu.getUTCMonth() - i, 15)); maanden.push(d.toISOString().slice(0, 7)); }
+  const deze = maand || maanden[0];
+  const factor = deze === maanden[0] ? 1 : 0.8;
+  const rijen = GEBRUIKERS.map(g => Object.assign({ id: g.id, naam: g.naam, rol: g.rol, ingetrokken: !!g.ingetrokken, max: g.maxPerMaand || null },
+    { kosten: (GEBRUIK[g.id] || { kosten: 0 }).kosten * factor, vragen: Math.round((GEBRUIK[g.id] || { vragen: 0 }).vragen * factor) }))
+    .concat([['anoniem', 'Niet ingelogd (bezoekers)'], ['systeem', 'Wekelijkse controle (automatisch)']].map(([id, naam]) =>
+      ({ id, naam, rol: id, max: null, kosten: GEBRUIK[id].kosten * factor, vragen: Math.round(GEBRUIK[id].vragen * factor) })))
+    .sort((a, b) => b.kosten - a.kosten);
+  return { maand: deze, maanden, rijen, totaal: rijen.reduce((t, r) => t + r.kosten, 0), waarschuwing: 0.75 };
+}
 
 async function nieuweContext(browser, viewport, opties) {
   const context = await browser.newContext({ viewport, deviceScaleFactor: 2, serviceWorkers: 'block', locale: 'nl-NL', timezoneId: 'Europe/Amsterdam' });

@@ -5,6 +5,7 @@ const kb = require('./_lib/kennisbank');
 const kaart = require('./_lib/kaart');
 const auth = require('./_lib/auth');
 const logboek = require('./_lib/logboek');
+const gebruik = require('./_lib/gebruik');
 
 const MODEL = 'claude-opus-5-5';
 
@@ -38,6 +39,11 @@ module.exports = async function handler(req, res) {
   // Interne feiten alleen voor ingelogde boswachters en vrijwilligers
   const gebruiker = await auth.gebruiker(req);
   const ingelogd = !!gebruiker;
+  // Maandmaximum (Beheer → Gebruikers): op = geen nieuwe vragen meer deze maand
+  if (gebruiker && gebruiker.maxPerMaand) {
+    const st = await gebruik.stand(gebruiker);
+    if (st.op) return res.status(429).json({ error: gebruik.OP_MELDING, gebruik: st });
+  }
   const vraag = messages[0].content;
 
   let feiten, sites, routes;
@@ -111,16 +117,18 @@ module.exports = async function handler(req, res) {
         }
       }
       const antwoord = tekst.join('').replace(/\{\s*"soorten"[\s\S]*\}\s*$/, '').trim().slice(0, 8000);
-      const gebruik = {
+      const verbruik = {
         stop: final.stop_reason, model: final.model, usage: final.usage || null, kosten: logboek.kosten(final.usage, final.model)
       };
+      // Maandtotaal per gebruiker (bezoekers samen als "anoniem"); niet in het logboek zelf
+      await gebruik.registreer(gebruiker ? gebruiker.id : 'anoniem', verbruik.kosten, { vraag: phase === 1 });
       if (phase === 2) {
-        if (req.body.logId) await logboek.aanvullen(req.body.logId, { tekst: antwoord, web: [...web], ...gebruik });
+        if (req.body.logId) await logboek.aanvullen(req.body.logId, { tekst: antwoord, web: [...web], ...verbruik });
         return null;
       }
       return await logboek.schrijf({
         vraag, antwoord, mode, rol: gebruiker ? gebruiker.rol : 'anoniem',
-        feiten: [...feitIds], web: [...web], ...gebruik
+        feiten: [...feitIds], web: [...web], ...verbruik
       });
     } catch (e) {
       return null;
@@ -148,6 +156,8 @@ module.exports = async function handler(req, res) {
     }
     const logId = await schrijfLog(final);
     if (logId) stuur({ type: 'pw_log', id: logId });
+    // Stand tegenover het maandmaximum, zodat de app bij 75% kan waarschuwen
+    if (gebruiker && gebruiker.maxPerMaand) stuur({ type: 'pw_gebruik', gebruik: await gebruik.stand(gebruiker) });
   } catch (err) {
     const status = err instanceof Anthropic.APIError && err.status ? err.status : 502;
     if (!gestart) return res.status(status === 429 ? 429 : 502).json({ error: 'De assistent is even niet bereikbaar: ' + err.message });

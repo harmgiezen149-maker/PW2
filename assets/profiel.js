@@ -71,6 +71,14 @@ function toon() {
     info.appendChild(PW.el('div', { class: 'profiel-naam', tekst: g.naam }));
     info.appendChild(PW.el('div', { class: 'profiel-rol', tekst: g.rol === 'beheerder' ? 'Beheerder' : 'Boswachter / vrijwilliger' }));
     info.appendChild(PW.el('div', { class: 'gecontroleerd', html: PW.icoon('slot', { maat: 15, dikte: 2.2 }) + 'Ingelogd · je krijgt ook interne informatie' }));
+    var st = PW.gebruik;
+    if (st && st.max) {
+      var pct = Math.min(100, st.procent || 0);
+      var balk = PW.el('div', { class: 'gebruik-balk' + (st.op ? ' op' : st.waarschuwing ? ' bijna' : ''), role: 'progressbar',
+        'aria-valuemin': '0', 'aria-valuemax': '100', 'aria-valuenow': String(pct), 'aria-label': 'Gebruik deze maand' }, [PW.el('span', { style: 'width:' + pct + '%' })]);
+      info.appendChild(PW.el('div', { class: 'profiel-gebruik' }, [
+        PW.el('div', { tekst: st.op ? 'Maximum voor deze maand bereikt' : 'Gebruik deze maand: ' + pct + '% van je maximum' }), balk]));
+    }
   } else {
     info.appendChild(PW.el('div', { class: 'profiel-naam', tekst: 'Niet ingelogd' }));
     info.appendChild(PW.el('div', { class: 'profiel-rol', tekst: 'Boswachters en vrijwilligers loggen in met hun persoonlijke link van de beheerder. Daarna krijg je ook interne informatie.' }));
@@ -138,4 +146,5 @@ function toon() {
 document.getElementById('view-profiel').innerHTML = '<div class="view-scroll"><div class="view-inhoud" id="profielInhoud"></div></div>';
 PW.registreerView('profiel', { kop: 'Profiel', tabblad: { titel: 'Profiel', icoon: 'profiel', volgorde: 5 }, toon: toon });
 PW.op('login', function() { if (PW.huidigeView === 'profiel') toon(); });
+PW.op('gebruik', function() { if (PW.huidigeView === 'profiel') toon(); });
 })();

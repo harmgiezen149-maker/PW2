@@ -28,6 +28,7 @@ module.exports = async function handler(req, res) {
 
   const status = { tijd: new Date().toISOString() };
   try { status.nm = await nmcheck.controleer(); } catch (e) { status.nm = { fout: e.message }; }
+  if (status.nm && status.nm.kosten) await require('./_lib/gebruik').registreer('systeem', status.nm.kosten);
   try { status.backup = await backup.wekelijks(); } catch (e) { status.backup = { fout: e.message }; }
   try { await logboek.opruimen(); } catch (e) { status.logboekFout = e.message; }
   try { await meldstatus.opruimen(); } catch (e) { status.meldstatusFout = e.message; }

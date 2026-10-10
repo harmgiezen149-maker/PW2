@@ -10,6 +10,7 @@ const meldstatus = require('./_lib/meldstatus');
 const kaart = require('./_lib/kaart');
 const achtergrond = require('./_lib/achtergrond');
 const kalender = require('./_lib/kalender');
+const gebruik = require('./_lib/gebruik');
 
 const K_MELDINGEN = 'kb:meldingen';
 const { setSecurityHeaders, vandaagISO } = require('./_lib/http');
@@ -101,6 +102,11 @@ module.exports = async function handler(req, res) {
   const body = req.body || {};
   const door = gebruiker.naam;
   const vandaag = vandaagISO();
+  // Knoppen die de assistent aanroepen tellen mee voor het maandmaximum van deze beheerder
+  const AI_ACTIES = ['kalender-zoeken', 'kalender-algemeen', 'nm-controleren', 'document-importeren'];
+  if (AI_ACTIES.includes(body.actie) && gebruiker.maxPerMaand && (await gebruik.stand(gebruiker)).op) {
+    return res.status(429).json({ error: gebruik.OP_MELDING });
+  }
 
   try {
     switch (body.actie) {
@@ -197,6 +203,7 @@ module.exports = async function handler(req, res) {
       case 'kalender-zoeken': {
         try {
           const r = await nmcheck.zoekKalender();
+          await gebruik.registreer(gebruiker.id, r.kosten);
           return res.json(Object.assign({ ok: true }, r));
         } catch (e) {
           return res.status(502).json({ error: e.message || 'Zoeken op de websites is mislukt.' });
@@ -205,7 +212,9 @@ module.exports = async function handler(req, res) {
 
       case 'kalender-algemeen': {
         try {
-          return res.json(Object.assign({ ok: true }, await nmcheck.algemeenVoorstellen({ maand: Number(body.maand) || null })));
+          const r = await nmcheck.algemeenVoorstellen({ maand: Number(body.maand) || null });
+          await gebruik.registreer(gebruiker.id, r.kosten);
+          return res.json(Object.assign({ ok: true }, r));
         } catch (e) {
           return res.status(502).json({ error: e.message || 'Voorstellen maken is mislukt.' });
         }
@@ -301,10 +310,42 @@ module.exports = async function handler(req, res) {
       }
 
       case 'gebruikers': {
-        const alle = await auth.alleGebruikers();
+        const [alle, maand] = await Promise.all([auth.alleGebruikers(), gebruik.maandOverzicht()]);
         const lijst = Object.values(alle).map(auth.zonderGeheim)
-          .sort((a, b) => (a.ingetrokken - b.ingetrokken) || a.naam.localeCompare(b.naam));
-        return res.json({ gebruikers: lijst });
+          .sort((a, b) => (a.ingetrokken - b.ingetrokken) || a.naam.localeCompare(b.naam))
+          .map(g => Object.assign(g, { gebruik: maand[g.id] || { kosten: 0, vragen: 0 } }));
+        return res.json({ gebruikers: lijst, waarschuwing: gebruik.WAARSCHUWING });
+      }
+
+      // Maximum per maand (in dollars, zoals de API-kosten); leeg of 0 = geen maximum
+      case 'gebruiker-maximum': {
+        const alle = await auth.alleGebruikers();
+        const g = alle[body.id];
+        if (!g) return res.status(404).json({ error: 'Gebruiker niet gevonden' });
+        const ruw = String(body.max == null ? '' : body.max).replace(',', '.').trim();
+        const max = ruw === '' ? 0 : Math.round(Number(ruw) * 100) / 100;
+        if (!Number.isFinite(max) || max < 0 || max > 10000) return res.status(400).json({ error: 'Vul een bedrag in tussen 0 en 10.000 (dollar), of laat het leeg voor geen maximum.' });
+        const nieuw = Object.assign({}, g);
+        if (max > 0) nieuw.maxPerMaand = max; else delete nieuw.maxPerMaand;
+        await kv.cmd('HSET', auth.K_GEBRUIKERS, g.id, JSON.stringify(nieuw));
+        return res.json({ ok: true, gebruiker: auth.zonderGeheim(nieuw) });
+      }
+
+      // Gebruik per gebruiker in een maand (Logboek): maandtotalen, geen losse vragen
+      case 'gebruik-overzicht': {
+        const maand = /^\d{4}-\d{2}$/.test(body.maand || '') ? body.maand : gebruik.huidigeMaand();
+        const [alle, per] = await Promise.all([auth.alleGebruikers(), gebruik.maandOverzicht(maand)]);
+        const rijen = Object.values(alle).map(g => Object.assign({ id: g.id, naam: g.naam, rol: g.rol, ingetrokken: !!g.ingetrokken, max: g.maxPerMaand || null },
+          per[g.id] || { kosten: 0, vragen: 0 }));
+        for (const [id, naam] of [['anoniem', 'Niet ingelogd (bezoekers)'], ['systeem', 'Wekelijkse controle (automatisch)']]) {
+          rijen.push(Object.assign({ id, naam, rol: id, max: null }, per[id] || { kosten: 0, vragen: 0 }));
+        }
+        rijen.sort((a, b) => b.kosten - a.kosten || a.naam.localeCompare(b.naam));
+        // Maanden om uit te kiezen: deze en de elf ervoor
+        const maanden = [];
+        let [j, mnd] = gebruik.huidigeMaand().split('-').map(Number);
+        for (let i = 0; i < 12; i++) { maanden.push(`${j}-${String(mnd).padStart(2, '0')}`); if (--mnd === 0) { mnd = 12; j--; } }
+        return res.json({ maand, maanden, rijen, totaal: rijen.reduce((t, r) => t + r.kosten, 0), waarschuwing: gebruik.WAARSCHUWING });
       }
 
       case 'gebruiker-maken': {
@@ -379,6 +420,7 @@ module.exports = async function handler(req, res) {
 
       case 'nm-controleren': {
         const nm = await nmcheck.controleer();
+        await gebruik.registreer(gebruiker.id, nm.kosten);
         const vorig = (await kv.getJSON('cron:status', null)) || {};
         await kv.setJSON('cron:status', Object.assign(vorig, { tijd: new Date().toISOString(), nm, handmatig: door }));
         return res.json({ ok: true, nm });
@@ -394,6 +436,7 @@ module.exports = async function handler(req, res) {
         if (bronUrl && !/^https?:\/\/\S+$/.test(bronUrl)) return res.status(400).json({ error: 'De link moet met http:// of https:// beginnen.' });
         const bronDatum = DATUM.test(body.bronDatum || '') ? body.bronDatum : '';
         const r = await documentimport.importeer({ bronNaam, bronUrl, bronDatum, zichtbaarheid: body.zichtbaarheid, tekst, deel: tekstVeld(body.deel, 20) });
+        await gebruik.registreer(gebruiker.id, r.kosten);
         return res.json(Object.assign({ ok: true }, r));
       }
 

@@ -421,7 +421,12 @@ function loadPhotos(soorten, container) {
 function runChat(payload, onDelta, onSearch) {
   return fetch('/api/chat?' + Date.now(), { method: 'POST', headers: PW.apiHeaders(), body: JSON.stringify(payload) })
   .then(function(res) {
-    if (!res.ok) return res.json().catch(function() { return {}; }).then(function(d) { throw new Error(d.error || 'Server fout'); });
+    if (!res.ok) return res.json().catch(function() { return {}; }).then(function(d) {
+      var err = new Error(d.error || 'Server fout');
+      err.status = res.status;
+      if (d.gebruik) PW.zetGebruik(d.gebruik);
+      throw err;
+    });
     var rawText = '';
     var fout = null;
     var meta = [];          // kennisbankdocumenten met hun feiten (pw_meta)
@@ -474,6 +479,7 @@ function runChat(payload, onDelta, onSearch) {
       if (evt.type === 'pw_error') { fout = evt.message; return; }
       if (evt.type === 'pw_meta') { meta = evt.docs || []; return; }
       if (evt.type === 'pw_log') { logId = evt.id; return; }
+      if (evt.type === 'pw_gebruik') { PW.zetGebruik(evt.gebruik); return; }
       if (evt.type === 'content_block_start' && evt.content_block) {
         var cb = evt.content_block;
         blokken[evt.index] = { type: cb.type, cit: [] };
@@ -650,12 +656,14 @@ function ask(q, label) {
     rendered.logId = r1.logId;
     PW.meld('antwoord', { vraag: q, feiten: r1.feiten, rendered: rendered });
     aanvulKnop(q, mode, fase1Tekst, rendered);
+    gebruikMelding();
   })
   .catch(function(e) {
     bezig = false;
     hideTyping();
     if (streamBubble) streamBubble.remove();
     if (!navigator.onLine) showErr('Geen internetverbinding. Vragen stellen werkt alleen online: controleer je verbinding en probeer het opnieuw.');
+    else if (e.status === 429) { showErr(e.message); gebruikMelding(); }
     else showErr('Verbindingsfout: ' + e.message);
     $('btn').disabled = false;
   });
@@ -698,6 +706,22 @@ function parseSecties(tekst) {
 // van het hoofdantwoord); de bronnen van de aanvulling staan in een eigen lijst.
 function maakAanvulBlok(bodyTekst) {
   return PW.el('div', { class: 'aanvul-inline', html: '<span class="aanvul-tag">Van website · niet gecontroleerd</span><div>' + render(zonderVoetnoten(bodyTekst)) + '</div>' });
+}
+
+// Maandmaximum (ingesteld door de beheerder): één keer per maand een melding bij 75%, en bij 100%
+function gebruikMelding() {
+  var st = PW.gebruik;
+  if (!st || !st.max || !st.waarschuwing) return;
+  var sleutel = st.maand + (st.op ? ':op' : ':75');
+  if (PW.opslag.lees('pw_gebruik_melding', '') === sleutel) return;
+  PW.opslag.schrijf('pw_gebruik_melding', sleutel);
+  var tekst = st.op
+    ? 'Je hebt je maximum voor deze maand bereikt. Vanaf de eerste van de volgende maand kun je weer vragen stellen, of vraag de beheerder om je maximum te verhogen.'
+    : 'Let op: je hebt ' + Math.min(st.procent, 99) + '% van je gebruik voor deze maand verbruikt. Bij 100% kun je deze maand geen vragen meer stellen.';
+  var w = PW.el('div', { class: 'gebruik-melding' + (st.op ? ' op' : ''), role: 'status',
+    html: PW.icoon('waarschuwing', { maat: 20, dikte: 2.2 }) + '<span>' + PW.esc(tekst) + '</span>' });
+  $('chatInhoud').appendChild(w);
+  scrollNaar(w);
 }
 
 // De aanvulling van websites is een tweede, duurdere aanroep (met zoekresultaten). Daarom alleen

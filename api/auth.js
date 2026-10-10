@@ -4,6 +4,7 @@
 // - 'start': eerste beheerder aanmaken met het beheerwachtwoord. Werkt alleen zolang
 //   er geen actieve beheerder is; daarna heeft het wachtwoord geen functie meer.
 const auth = require('./_lib/auth');
+const gebruik = require('./_lib/gebruik');
 const { setSecurityHeaders, checkRateLimit, sanitizeText } = require('./_lib/http');
 
 module.exports = async function handler(req, res) {
@@ -14,7 +15,9 @@ module.exports = async function handler(req, res) {
 
   try {
     if (body.actie === 'wie') {
-      return res.json({ gebruiker: await auth.gebruiker(req) });
+      const g = await auth.gebruiker(req);
+      // Met het gebruik van deze maand, voor Profiel en de waarschuwing bij 75% van het maximum
+      return res.json({ gebruiker: g, gebruik: g ? await gebruik.stand(g) : null });
     }
 
     if (body.actie === 'status') {

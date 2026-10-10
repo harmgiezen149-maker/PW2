@@ -254,3 +254,21 @@ html body .leaflet-container { font-family: 'Fira Sans', system-ui, sans-serif; 
 .bh-update { position: fixed; right: 20px; bottom: 20px; z-index: 50; max-width: 420px; background: var(--navy); color: #fff; border-radius: 14px; padding: 12px 14px; display: flex; align-items: center; gap: 12px; box-shadow: 0 6px 24px rgba(20, 32, 56, 0.35); font-size: 0.9375rem; }
 .kal-voor { border: 2px solid var(--lijn); border-radius: 10px; padding: 6px 8px; background: #fff; }
 .kal-bulk { text-align: left; display: flex; flex-direction: column; gap: 6px; margin: 12px 0; }
+.max-vak { margin-top: 10px; display: flex; flex-direction: column; gap: 4px; }
+.max-vak label { font-size: 0.8125rem; font-weight: 600; color: var(--tekst-2); }
+.max-rij { display: flex; gap: 8px; align-items: center; }
+.max-veld { width: 110px; border: 1.5px solid var(--b); border-radius: 6px; padding: 6px 9px; font: inherit; }
+.max-bijna { color: #9A5200; font-weight: 600; }
+.max-op { color: #B42318; font-weight: 600; }
+.gebruik-vak { margin: 14px 0 18px; padding: 12px 14px; border: 1px solid var(--lijn); border-radius: 10px; background: #fff; }
+.gebruik-kop { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+.gebruik-kop h3 { margin: 0; font-size: 1rem; }
+.gebruik-kop select { border: 1.5px solid var(--b); border-radius: 6px; padding: 5px 8px; font: inherit; }
+.tabel-scroll { overflow-x: auto; }
+.gebruik-tabel { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+.gebruik-tabel th { text-align: left; font-weight: 600; color: var(--tekst-3); border-bottom: 1px solid var(--lijn); padding: 6px 8px; }
+.gebruik-tabel td { padding: 6px 8px; border-bottom: 1px solid #EEF0F2; white-space: nowrap; }
+.gebruik-tabel td:first-child { white-space: normal; }
+.gebruik-tabel tr.max-bijna td { background: #FFF4E5; }
+.gebruik-tabel tr.max-op td { background: #FDECEA; }
+.gebruik-tabel tr.totaal td { font-weight: 700; border-bottom: 0; }
