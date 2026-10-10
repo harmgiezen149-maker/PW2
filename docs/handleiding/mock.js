@@ -342,6 +342,8 @@ async function installeer(context, opties) {
       case '/api/weather': return json(WEER);
       case '/api/auth':
         if (body.actie === 'wie') {
+          // Oude persoonlijke link: de server meldt hem (zodat een oude app hem niet wist); de app zet hem om
+          if (route.request().headers()['x-pw-token'] === 'VOORBEELD-UITNODIGING-0000000000') return json({ gebruiker: { id: 'u2', naam: 'Els (vrijwilliger, voorbeeld)', rol: 'gebruiker' }, gebruik: null, oudeLink: true });
           if (route.request().headers()['x-pw-token'] === 'voorbeeldsessie') return json({ gebruiker: { id: 'u2', naam: 'Els (vrijwilliger, voorbeeld)', rol: 'gebruiker', gebruikersnaam: 'els' }, gebruik: null });
           return json({ gebruiker: opties.gebruiker || null, gebruik: opties.gebruik || null });
         }
