@@ -791,6 +791,8 @@ function tabGebruikers(inhoud) {
     } });
     s.appendChild(el('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px' }, [naam, rol, maak]));
     s.appendChild(nieuwVak);
+    var anoniemVak = el('div');
+    s.appendChild(anoniemVak);
     var lijst = el('div');
     s.appendChild(lijst);
     inhoud.appendChild(s);
@@ -798,6 +800,15 @@ function tabGebruikers(inhoud) {
     function tekenLijst(nieuwId, code) {
       api('gebruikers').then(function(d2) {
         lijst.innerHTML = '';
+        // Niet-ingelogde bezoekers: één gezamenlijk maximum
+        anoniemVak.innerHTML = '';
+        var an = el('div', { class: 'card anoniem-kaart' });
+        an.appendChild(el('div', { class: 'badges' }, [el('span', { class: 'badge', text: 'Zonder inlog' })]));
+        an.appendChild(el('div', { class: 'tekst', text: 'Niet-ingelogde bezoekers (samen)' }));
+        an.appendChild(el('div', { class: 'meta', text: 'Iedereen die de app gebruikt zonder persoonlijke link. Bij het maximum kunnen alleen ingelogde gebruikers deze maand nog vragen stellen.' }));
+        an.appendChild(maximumVak({ id: 'anoniem', naam: 'niet-ingelogde bezoekers', maxPerMaand: d2.anoniem && d2.anoniem.max, gebruik: d2.anoniem && d2.anoniem.gebruik },
+          d2.waarschuwing, function() { tekenLijst(); }, 'anoniem-maximum'));
+        anoniemVak.appendChild(an);
         if (d2.gebruikers.length === 0) lijst.appendChild(el('p', { class: 'leeg', text: 'Nog geen gebruikers.' }));
         d2.gebruikers.forEach(function(g) {
           var card = el('div', { class: 'card' + (g.ingetrokken ? ' ingetrokken' : '') });
@@ -829,15 +840,16 @@ function tabGebruikers(inhoud) {
 }
 // Maximum per maand voor één gebruiker, met het gebruik van deze maand
 function dollar(x) { return '$ ' + (x || 0).toFixed(2).replace('.', ','); }
-function maximumVak(g, grens, klaar) {
+function maximumVak(g, grens, klaar, actie) {
   var gb = g.gebruik || { kosten: 0, vragen: 0 };
   var pct = g.maxPerMaand ? Math.round(gb.kosten / g.maxPerMaand * 100) : null;
   var veld = el('input', { class: 'max-veld', inputmode: 'decimal', placeholder: 'geen', 'aria-label': 'Maximum per maand in dollar voor ' + g.naam });
   veld.value = g.maxPerMaand ? String(g.maxPerMaand).replace('.', ',') : '';
   var opslaan = el('button', { class: 'btn secundair klein', text: 'Opslaan', onclick: function() {
     opslaan.disabled = true;
-    api('gebruiker-maximum', { id: g.id, max: veld.value }).then(function(r) {
-      melding(r.gebruiker.maxPerMaand ? 'Maximum voor ' + g.naam + ': ' + dollar(r.gebruiker.maxPerMaand) + ' per maand' : 'Geen maximum meer voor ' + g.naam);
+    api(actie || 'gebruiker-maximum', { id: g.id, max: veld.value }).then(function(r) {
+      var max = r.gebruiker ? r.gebruiker.maxPerMaand : r.max;
+      melding(max ? 'Maximum voor ' + g.naam + ': ' + dollar(max) + ' per maand' : 'Geen maximum meer voor ' + g.naam);
       klaar();
     }).catch(function(e) { opslaan.disabled = false; fout(e); });
   } });

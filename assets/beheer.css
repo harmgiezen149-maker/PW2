@@ -272,3 +272,4 @@ html body .leaflet-container { font-family: 'Fira Sans', system-ui, sans-serif; 
 .gebruik-tabel tr.max-bijna td { background: #FFF4E5; }
 .gebruik-tabel tr.max-op td { background: #FDECEA; }
 .gebruik-tabel tr.totaal td { font-weight: 700; border-bottom: 0; }
+.anoniem-kaart { border-style: dashed; }

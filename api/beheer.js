@@ -314,7 +314,8 @@ module.exports = async function handler(req, res) {
         const lijst = Object.values(alle).map(auth.zonderGeheim)
           .sort((a, b) => (a.ingetrokken - b.ingetrokken) || a.naam.localeCompare(b.naam))
           .map(g => Object.assign(g, { gebruik: maand[g.id] || { kosten: 0, vragen: 0 } }));
-        return res.json({ gebruikers: lijst, waarschuwing: gebruik.WAARSCHUWING });
+        const anoniem = { max: await gebruik.maxAnoniem(), gebruik: maand.anoniem || { kosten: 0, vragen: 0 } };
+        return res.json({ gebruikers: lijst, anoniem, waarschuwing: gebruik.WAARSCHUWING });
       }
 
       // Maximum per maand (in dollars, zoals de API-kosten); leeg of 0 = geen maximum
@@ -331,14 +332,23 @@ module.exports = async function handler(req, res) {
         return res.json({ ok: true, gebruiker: auth.zonderGeheim(nieuw) });
       }
 
+      // Gezamenlijk maximum per maand voor niet-ingelogde bezoekers; leeg of 0 = geen maximum
+      case 'anoniem-maximum': {
+        const ruw = String(body.max == null ? '' : body.max).replace(',', '.').trim();
+        const max = ruw === '' ? 0 : Math.round(Number(ruw) * 100) / 100;
+        if (!Number.isFinite(max) || max < 0 || max > 10000) return res.status(400).json({ error: 'Vul een bedrag in tussen 0 en 10.000 (dollar), of laat het leeg voor geen maximum.' });
+        await gebruik.zetMaxAnoniem(max);
+        return res.json({ ok: true, max: max > 0 ? max : null });
+      }
+
       // Gebruik per gebruiker in een maand (Logboek): maandtotalen, geen losse vragen
       case 'gebruik-overzicht': {
         const maand = /^\d{4}-\d{2}$/.test(body.maand || '') ? body.maand : gebruik.huidigeMaand();
-        const [alle, per] = await Promise.all([auth.alleGebruikers(), gebruik.maandOverzicht(maand)]);
+        const [alle, per, maxAnoniem] = await Promise.all([auth.alleGebruikers(), gebruik.maandOverzicht(maand), gebruik.maxAnoniem()]);
         const rijen = Object.values(alle).map(g => Object.assign({ id: g.id, naam: g.naam, rol: g.rol, ingetrokken: !!g.ingetrokken, max: g.maxPerMaand || null },
           per[g.id] || { kosten: 0, vragen: 0 }));
         for (const [id, naam] of [['anoniem', 'Niet ingelogd (bezoekers)'], ['systeem', 'Wekelijkse controle (automatisch)']]) {
-          rijen.push(Object.assign({ id, naam, rol: id, max: null }, per[id] || { kosten: 0, vragen: 0 }));
+          rijen.push(Object.assign({ id, naam, rol: id, max: id === 'anoniem' ? maxAnoniem : null }, per[id] || { kosten: 0, vragen: 0 }));
         }
         rijen.sort((a, b) => b.kosten - a.kosten || a.naam.localeCompare(b.naam));
         // Maanden om uit te kiezen: deze en de elf ervoor

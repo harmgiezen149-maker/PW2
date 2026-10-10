@@ -345,7 +345,7 @@ async function installeer(context, opties) {
         if (body.actie === 'status') return json({ beheerderAanwezig: !!opties.bestaatBeheerder });
         return json({});
       case '/api/feedback': return json({ ok: true });
-      case '/api/chat': return route.fulfill({ status: 200, contentType: 'text/event-stream', body: chatAntwoord(body) });
+      case '/api/chat': return route.fulfill({ status: 200, contentType: 'text/event-stream', body: chatAntwoord(body) + (opties.chatNa || '') });
       case '/api/beheer': {
         const a = body.actie;
         if (a === 'overzicht') return json(OVERZICHT);
@@ -354,7 +354,12 @@ async function installeer(context, opties) {
         if (a === 'meldingen') return json({ meldingen: MELDINGEN });
         if (a === 'logboek') return json(LOGBOEK);
         if (a === 'backups') return json(BACKUPS);
-        if (a === 'gebruikers') return json({ gebruikers: GEBRUIKERS.map(g => Object.assign({ gebruik: GEBRUIK[g.id] || { kosten: 0, vragen: 0 } }, g)), waarschuwing: 0.75 });
+        if (a === 'gebruikers') return json({ gebruikers: GEBRUIKERS.map(g => Object.assign({ gebruik: GEBRUIK[g.id] || { kosten: 0, vragen: 0 } }, g)), anoniem: { max: MAX_ANONIEM, gebruik: GEBRUIK.anoniem }, waarschuwing: 0.75 });
+        if (a === 'anoniem-maximum') {
+          const max = Math.round(Number(String(body.max || '').replace(',', '.')) * 100) / 100;
+          MAX_ANONIEM = max > 0 ? max : null;
+          return json({ ok: true, max: MAX_ANONIEM });
+        }
         if (a === 'gebruiker-maximum') {
           const max = Math.round(Number(String(body.max || '').replace(',', '.')) * 100) / 100;
           GEBRUIKERS = GEBRUIKERS.map(g => g.id !== body.id ? g : Object.assign({}, g, { maxPerMaand: max > 0 ? max : undefined }));
@@ -382,6 +387,7 @@ const wacht = ms => new Promise(r => setTimeout(r, ms));
 const TEGEL = fs.readFileSync(path.join(__dirname, 'tegel.png'));
 
 // Gebruik deze maand per gebruiker (voorbeeld; dollars)
+let MAX_ANONIEM = 20;
 const GEBRUIK = { u1: { kosten: 3.42, vragen: 41 }, u2: { kosten: 7.86, vragen: 88 }, u3: { kosten: 0.51, vragen: 6 }, anoniem: { kosten: 12.3, vragen: 154 }, systeem: { kosten: 0.62, vragen: 0 } };
 function gebruikOverzicht(maand) {
   const nu = new Date(NU);
@@ -392,7 +398,7 @@ function gebruikOverzicht(maand) {
   const rijen = GEBRUIKERS.map(g => Object.assign({ id: g.id, naam: g.naam, rol: g.rol, ingetrokken: !!g.ingetrokken, max: g.maxPerMaand || null },
     { kosten: (GEBRUIK[g.id] || { kosten: 0 }).kosten * factor, vragen: Math.round((GEBRUIK[g.id] || { vragen: 0 }).vragen * factor) }))
     .concat([['anoniem', 'Niet ingelogd (bezoekers)'], ['systeem', 'Wekelijkse controle (automatisch)']].map(([id, naam]) =>
-      ({ id, naam, rol: id, max: null, kosten: GEBRUIK[id].kosten * factor, vragen: Math.round(GEBRUIK[id].vragen * factor) })))
+      ({ id, naam, rol: id, max: id === 'anoniem' ? MAX_ANONIEM : null, kosten: GEBRUIK[id].kosten * factor, vragen: Math.round(GEBRUIK[id].vragen * factor) })))
     .sort((a, b) => b.kosten - a.kosten);
   return { maand: deze, maanden, rijen, totaal: rijen.reduce((t, r) => t + r.kosten, 0), waarschuwing: 0.75 };
 }
