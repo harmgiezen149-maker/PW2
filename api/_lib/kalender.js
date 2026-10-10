@@ -22,8 +22,16 @@ const PER_ONDERWERP = { soorten: 'natuur', wolf: 'natuur', seizoen: 'natuur', ve
 const ONDERWERP_VOOR = { natuur: 'soorten', activiteit: 'nm', beheer: 'beheer', overig: 'seizoen', algemeen: 'seizoen' };
 const MAANDNAMEN = ['januari', 'februari', 'maart', 'april', 'mei', 'juni', 'juli', 'augustus', 'september', 'oktober', 'november', 'december'];
 
+// Een link naar de agenda van natuurmonumenten.nl: het overzicht (/agenda?…) of een activiteit (/agenda/…)
+function isAgendaLink(url) {
+  return /^https:\/\/www\.natuurmonumenten\.nl\/(agenda([/?#]|$)|natuurgebieden\/[^/]+\/agenda([/?#]|$))/.test(String(url || ''));
+}
+// Een tijdelijk feit met de agenda als bron is een activiteit, ook als het onderwerp anders is gekozen
+function isAgendaActiviteit(f) { return !!f && f.type === 'tijdelijk' && isAgendaLink(f.bronUrl); }
+
 function categorie(f) {
-  if (f.kalender && f.kalender !== 'geen') return f.kalender;
+  if (f.kalender && f.kalender !== 'geen' && !(f.kalender === 'overig' && isAgendaActiviteit(f))) return f.kalender;
+  if (isAgendaActiviteit(f)) return 'activiteit';
   return PER_ONDERWERP[f.onderwerp] || 'overig';
 }
 
@@ -96,4 +104,4 @@ function controleer(f) {
   return null;
 }
 
-module.exports = { CATEGORIEEN, KEUZES, ONDERWERP_VOOR, MAANDNAMEN, categorie, inKalender, periode, bouw, controleer };
+module.exports = { CATEGORIEEN, KEUZES, ONDERWERP_VOOR, MAANDNAMEN, isAgendaLink, isAgendaActiviteit, categorie, inKalender, periode, bouw, controleer };

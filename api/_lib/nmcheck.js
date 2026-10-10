@@ -163,6 +163,16 @@ const AGENDAREGELS = `- Agenda: elke komende activiteit in Planken Wambuis of de
 const JSON_VOORBEELD = '{"voorstellen":[{"soort":"nieuw","feitId":"","onderwerp":"","deelgebied":"heel","type":"tijdelijk","tekst":"","startdatum":"","einddatum":"","maanden":[],"kalender":"","titel":"","bronUrl":"","bronDatum":"","toelichting":""}]}';
 
 // Kalendervelden uit een voorstel van het model, gecontroleerd
+// Een voorstel uit de agenda (tijdelijk, met een agendalink als bron) is altijd een activiteit:
+// onderwerp Natuurmonumenten & activiteiten en kalender Activiteit, ook als de assistent iets anders koos
+function alsAgenda(v) {
+  if (v && v.type === 'tijdelijk' && require('./kalender').isAgendaLink(v.bronUrl)) {
+    v.onderwerp = 'nm';
+    if (!v.kalender || v.kalender === 'overig') v.kalender = 'activiteit';
+  }
+  return v;
+}
+
 function kalenderVelden(v) {
   const uit = {};
   if (['natuur', 'activiteit', 'beheer', 'overig', 'algemeen'].includes(v.kalender)) uit.kalender = v.kalender;
@@ -303,7 +313,7 @@ async function controleer() {
     status.kosten = require('./logboek').kosten(r.usage, r.model);
     const bestaandeTeksten = new Set(Object.values(voorstellen).map(v => v.tekst));
     const cmds = [];
-    for (const v of r.voorstellen) {
+    for (const v of r.voorstellen.map(alsAgenda)) {
       const tekst = String(v.tekst || '').trim();
       if (tekst.length < 5 || bestaandeTeksten.has(tekst)) continue;
       const wijziging = v.soort === 'wijziging' && v.feitId && feiten[v.feitId];
@@ -410,7 +420,7 @@ async function zoekKalender() {
   const bestaand = new Set(Object.values(voorstellen).map(v => v.tekst));
   const cmds = [];
   let kalenderItems = 0;
-  for (const v of lijst) {
+  for (const v of lijst.map(alsAgenda)) {
     const t = String(v.tekst || '').trim();
     if (t.length < 5 || bestaand.has(t) || !toegestaan(v.bronUrl)) continue;
     if (!kb.ONDERWERPEN.some(o => o.slug === v.onderwerp) || !kb.TYPES[v.type]) continue;

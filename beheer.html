@@ -681,9 +681,14 @@ function tabKennisbank(inhoud, opties) {
   }).catch(fout);
 }
 
-// Een activiteit uit de agenda: tijdelijk, in de kalender als activiteit (zelf gekozen of via onderwerp Natuurmonumenten)
+// Een activiteit uit de agenda: tijdelijk, in de kalender als activiteit (zelf gekozen, via onderwerp
+// Natuurmonumenten of met de agenda van natuurmonumenten.nl als bron); zelfde regel als api/_lib/kalender.js
+function isAgendaLink(url) {
+  return /^https:\/\/www\.natuurmonumenten\.nl\/(agenda([/?#]|$)|natuurgebieden\/[^/]+\/agenda([/?#]|$))/.test(String(url || ''));
+}
 function isActiviteit(f) {
-  return f.type === 'tijdelijk' && (f.kalender === 'activiteit' || (!f.kalender && f.onderwerp === 'nm'));
+  if (f.type !== 'tijdelijk' || f.kalender === 'geen') return false;
+  return f.kalender === 'activiteit' || isAgendaLink(f.bronUrl) || (!f.kalender && f.onderwerp === 'nm');
 }
 
 function feitKaart(f) {
