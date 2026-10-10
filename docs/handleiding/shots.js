@@ -85,6 +85,9 @@ async function knip(page, selector, naam, marge) {
   await page.waitForSelector('.aanvul-inline', { timeout: 10000 });
   await page.waitForSelector('.antwoord-kaart', { timeout: 10000 });
   await wacht(1200);
+  // Bronnen zijn standaard ingeklapt; voor de handleiding tonen we de lijst open
+  await page.click('.bronnen > summary');
+  await wacht(300);
   const berichten = await page.$$('#chatInhoud .msg');
   const eerste = await berichten[0].boundingBox();
   const laatste = await berichten[1].boundingBox();

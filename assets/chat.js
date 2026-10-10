@@ -272,6 +272,17 @@ function addBot(text, bronnen, logId) {
   b.appendChild(contentDiv);
   speakBtn.onclick = function() { speakText(speakBtn, contentDiv); };
   var bronEl = bronnen && bronnen.length > 0 ? b.appendChild(maakBronnenlijst(bronnen)) : null;
+  // Tik op een voetnootnummer: de (ingeklapte) bronnenlijst opent bij die bron
+  if (bronEl) {
+    var naarBron = function(e) {
+      var fn = e.target.closest && e.target.closest('.fn');
+      if (!fn || (e.type === 'keydown' && e.key !== 'Enter' && e.key !== ' ')) return;
+      e.preventDefault();
+      toonBron(bronEl, fn.textContent);
+    };
+    contentDiv.addEventListener('click', naarBron);
+    contentDiv.addEventListener('keydown', naarBron);
+  }
   var kloptEl = logId ? b.appendChild(maakKloptNiet(logId, text)) : null;
   if (soorten.length > 0) loadPhotos(soorten, b);
   var scrollBtn = PW.el('button', { type: 'button', class: 'terug-boven', html: '↑ Terug naar begin van antwoord' });
@@ -327,7 +338,7 @@ function hideTyping() {
 // ============================================================
 function fmt(line) {
   line = line.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  line = line.replace(/\s?⟦([^⟧]+)⟧/g, '<sup class="fn">$1</sup>');
+  line = line.replace(/\s?⟦([^⟧]+)⟧/g, '<sup class="fn" role="button" tabindex="0" title="Bron tonen">$1</sup>');
   line = line.replace(/\s*\*\([^)]+\)\*/g, '');
   return line.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
 }
@@ -563,8 +574,10 @@ function maakKloptNiet(logId, antwoord) {
 // ============================================================
 // Bronnenlijst onder een antwoord
 // ============================================================
+// Standaard ingeklapt: "Bronnen (3)"; tik om de lijst te tonen.
 function maakBronnenlijst(bronnen) {
-  var el = PW.el('div', { class: 'bronnen' }, [PW.el('div', { class: 'bronnen-kop', tekst: 'Bronnen' })]);
+  var lijst = PW.el('div', { class: 'bronnen-lijst' });
+  var el = PW.el('details', { class: 'bronnen' }, [PW.el('summary', { class: 'bronnen-kop', tekst: 'Bronnen (' + bronnen.length + ')' }), lijst]);
   bronnen.forEach(function(b) {
     var tekst = PW.el('span');
     if (b.soort === 'kb') {
@@ -585,9 +598,22 @@ function maakBronnenlijst(bronnen) {
       if (b.datum) tekst.appendChild(document.createTextNode(' · ' + b.datum));
       tekst.appendChild(PW.el('span', { class: 'web-label', tekst: ' · niet gecontroleerd door een boswachter' }));
     }
-    el.appendChild(PW.el('div', { class: 'bron' }, [PW.el('span', { class: 'bron-nr', tekst: String(b.nr) }), tekst]));
+    lijst.appendChild(PW.el('div', { class: 'bron', 'data-nr': String(b.nr) }, [PW.el('span', { class: 'bron-nr', tekst: String(b.nr) }), tekst]));
   });
   return el;
+}
+
+// Bronnenlijst openen en de bron(nen) van een voetnoot ("2" of "1,3") even oplichten
+function toonBron(bronEl, nummers) {
+  bronEl.open = true;
+  var eerste = null;
+  nummers.split(/[^0-9]+/).forEach(function(nr) {
+    var r = nr && bronEl.querySelector('.bron[data-nr="' + nr + '"]');
+    if (!r) return;
+    eerste = eerste || r;
+    r.classList.remove('bron-licht'); void r.offsetWidth; r.classList.add('bron-licht');
+  });
+  (eerste || bronEl).scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
 // ============================================================
@@ -724,7 +750,7 @@ function startAanvulling(q, mode, fase1Tekst, rendered) {
         '<span class="aanvul-tag">Aanvulling van websites · niet gecontroleerd</span><div>' + render(zonderVoetnoten(overig.join('\n'))) + '</div>' }), rendered.content.nextSibling);
     }
     if (r2.bronnen && r2.bronnen.length > 0) {
-      var bl = PW.el('div', { class: 'aanvul-blok' }, [PW.el('div', { class: 'aanvul-kop', tekst: 'Bronnen aanvulling · niet gecontroleerd door een boswachter' })]);
+      var bl = PW.el('details', { class: 'aanvul-blok aanvul-bronnen' }, [PW.el('summary', { class: 'aanvul-kop', tekst: 'Bronnen aanvulling (' + r2.bronnen.length + ') · niet gecontroleerd door een boswachter' })]);
       r2.bronnen.forEach(function(b) {
         bl.appendChild(PW.el('div', { class: 'bl' }, [PW.el('a', { href: b.url, target: '_blank', rel: 'noopener', tekst: b.titel || b.url }),
           b.datum ? document.createTextNode(' · ' + b.datum) : null]));
