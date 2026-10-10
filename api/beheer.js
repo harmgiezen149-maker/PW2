@@ -96,7 +96,7 @@ module.exports = async function handler(req, res) {
 
   const gebruiker = await auth.beheerder(req);
   if (!gebruiker) {
-    return res.status(401).json({ error: 'Geen toegang. Open je persoonlijke beheerderslink.' });
+    return res.status(401).json({ error: 'Geen toegang. Log in met je gebruikersnaam en wachtwoord als beheerder.' });
   }
 
   const body = req.body || {};

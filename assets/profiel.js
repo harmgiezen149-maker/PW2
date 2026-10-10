@@ -40,6 +40,113 @@ function openTekstgrootte() {
   });
 }
 
+// ---------------------------------------------------------------- inloggen
+function veld(label, invoer) { return PW.el('div', { class: 'veld' }, [PW.el('label', { for: invoer.id, tekst: label }), invoer]); }
+function invoer(id, type, auto, waarde) {
+  var i = PW.el('input', { id: id, type: type, autocomplete: auto, autocapitalize: 'none', spellcheck: 'false' });
+  if (waarde) i.value = waarde;
+  return i;
+}
+function foutregel() { var f = PW.el('p', { class: 'fout', role: 'alert' }); f.hidden = true; f.style.margin = '0 0 0.75rem'; return f; }
+function toonFoutIn(f, tekst) { f.textContent = tekst; f.hidden = !tekst; }
+
+PW.openInloggen = function() {
+  PW.openBlad(function(blad, sluit) {
+    blad.appendChild(PW.el('h2', { tekst: 'Inloggen' }));
+    blad.appendChild(PW.el('p', { class: 'uitleg', tekst: 'Voor boswachters en vrijwilligers. Ingelogd krijg je ook interne informatie.' }));
+    var form = PW.el('form', { class: 'inlog-form', novalidate: 'novalidate' });
+    var naam = invoer('inlogNaam', 'text', 'username');
+    var ww = invoer('inlogWw', 'password', 'current-password');
+    var f = foutregel();
+    var knop = PW.el('button', { type: 'submit', class: 'knop knop-oranje', style: 'width:100%', tekst: 'Inloggen' });
+    form.appendChild(veld('Gebruikersnaam', naam));
+    form.appendChild(veld('Wachtwoord', ww));
+    form.appendChild(f);
+    form.appendChild(knop);
+    form.onsubmit = function(e) {
+      e.preventDefault();
+      if (!naam.value.trim() || !ww.value) { toonFoutIn(f, 'Vul je gebruikersnaam en wachtwoord in.'); return; }
+      knop.disabled = true; toonFoutIn(f, '');
+      PW.inloggen(naam.value, ww.value).then(function(g) {
+        if (!g) throw new Error('Inloggen is niet gelukt. Probeer het opnieuw.');
+        sluit(); toon();
+      }).catch(function(err) { knop.disabled = false; toonFoutIn(f, err.message); ww.select(); });
+    };
+    blad.appendChild(form);
+    blad.appendChild(PW.el('p', { class: 'inlog-hint', tekst: 'Nog geen inlog, of wachtwoord vergeten? Vraag de beheerder om een uitnodigingslink; daarmee kies je zelf je gebruikersnaam en wachtwoord.' }));
+    blad.appendChild(PW.el('button', { type: 'button', class: 'knop knop-rand blad-sluit', tekst: 'Annuleren', onclick: sluit }));
+    setTimeout(function() { naam.focus(); }, 50);
+  });
+};
+
+// Met een uitnodigingslink: gebruikersnaam (eerste keer) en wachtwoord kiezen
+function openActiveren(code, info) {
+  PW.openBlad(function(blad, sluit) {
+    var voornaam = String(info.naam || '').replace(/\(.*?\)/g, '').trim().split(/\s+/)[0];
+    blad.appendChild(PW.el('h2', { tekst: info.herstel ? 'Nieuw wachtwoord kiezen' : 'Welkom' + (voornaam ? ', ' + voornaam : '') }));
+    blad.appendChild(PW.el('p', { class: 'uitleg', tekst: info.herstel
+      ? 'Kies een nieuw wachtwoord voor ' + info.gebruikersnaam + '. Op andere apparaten log je daarna opnieuw in.'
+      : 'Kies je gebruikersnaam en wachtwoord. Daarmee log je voortaan in, op elk apparaat. Deze link werkt maar één keer.' }));
+    var form = PW.el('form', { class: 'inlog-form', novalidate: 'novalidate' });
+    var naam = invoer('actNaam', 'text', 'username', info.gebruikersnaam);
+    if (info.herstel) naam.readOnly = true;
+    var ww = invoer('actWw', 'password', 'new-password');
+    var ww2 = invoer('actWw2', 'password', 'new-password');
+    var f = foutregel();
+    var knop = PW.el('button', { type: 'submit', class: 'knop knop-oranje', style: 'width:100%', tekst: 'Opslaan en inloggen' });
+    form.appendChild(veld('Gebruikersnaam', naam));
+    if (!info.herstel) form.appendChild(PW.el('p', { class: 'inlog-hint', style: 'margin:-0.375rem 0 0.75rem', tekst: 'Kleine letters, cijfers, punt of streepje (minstens 3 tekens).' }));
+    form.appendChild(veld('Wachtwoord (minstens 8 tekens)', ww));
+    form.appendChild(veld('Herhaal het wachtwoord', ww2));
+    form.appendChild(f);
+    form.appendChild(knop);
+    form.onsubmit = function(e) {
+      e.preventDefault();
+      if (ww.value.length < 8) { toonFoutIn(f, 'Kies een wachtwoord van minstens 8 tekens.'); return; }
+      if (ww.value !== ww2.value) { toonFoutIn(f, 'De twee wachtwoorden zijn niet gelijk.'); return; }
+      knop.disabled = true; toonFoutIn(f, '');
+      PW.activeren(code, naam.value, ww.value).then(function() { sluit(); if (PW.huidigeView === 'profiel') toon(); })
+        .catch(function(err) { knop.disabled = false; toonFoutIn(f, err.message); });
+    };
+    blad.appendChild(form);
+    blad.appendChild(PW.el('button', { type: 'button', class: 'knop knop-rand blad-sluit', tekst: 'Later', onclick: sluit }));
+  });
+}
+PW.op('uitnodiging', function(d) { openActiveren(d.code, d.info); });
+
+function openWachtwoordWijzigen() {
+  PW.openBlad(function(blad, sluit) {
+    blad.appendChild(PW.el('h2', { tekst: 'Wachtwoord wijzigen' }));
+    blad.appendChild(PW.el('p', { class: 'uitleg', tekst: 'Op andere apparaten log je daarna opnieuw in.' }));
+    var form = PW.el('form', { class: 'inlog-form', novalidate: 'novalidate' });
+    var verborgen = invoer('wwNaam', 'text', 'username', PW.gebruiker && PW.gebruiker.gebruikersnaam);
+    verborgen.hidden = true;
+    var oud = invoer('wwOud', 'password', 'current-password');
+    var nieuw = invoer('wwNieuw', 'password', 'new-password');
+    var nieuw2 = invoer('wwNieuw2', 'password', 'new-password');
+    var f = foutregel();
+    var knop = PW.el('button', { type: 'submit', class: 'knop knop-oranje', style: 'width:100%', tekst: 'Wachtwoord opslaan' });
+    form.appendChild(verborgen);
+    form.appendChild(veld('Huidig wachtwoord', oud));
+    form.appendChild(veld('Nieuw wachtwoord (minstens 8 tekens)', nieuw));
+    form.appendChild(veld('Herhaal het nieuwe wachtwoord', nieuw2));
+    form.appendChild(f);
+    form.appendChild(knop);
+    form.onsubmit = function(e) {
+      e.preventDefault();
+      if (nieuw.value.length < 8) { toonFoutIn(f, 'Kies een wachtwoord van minstens 8 tekens.'); return; }
+      if (nieuw.value !== nieuw2.value) { toonFoutIn(f, 'De twee nieuwe wachtwoorden zijn niet gelijk.'); return; }
+      knop.disabled = true; toonFoutIn(f, '');
+      PW.wachtwoordWijzigen(oud.value, nieuw.value).then(function() {
+        form.innerHTML = '';
+        form.appendChild(PW.el('p', { class: 'inlog-klaar', tekst: 'Je wachtwoord is gewijzigd.' }));
+      }).catch(function(err) { knop.disabled = false; toonFoutIn(f, err.message); });
+    };
+    blad.appendChild(form);
+    blad.appendChild(PW.el('button', { type: 'button', class: 'knop knop-rand blad-sluit', tekst: 'Sluiten', onclick: sluit }));
+  });
+}
+
 PW.uitlegBronnen = function() {
   PW.openBlad(function(blad, sluit) {
     blad.appendChild(PW.el('h2', { tekst: 'Waar komen de antwoorden vandaan?' }));
@@ -48,7 +155,7 @@ PW.uitlegBronnen = function() {
       ['Betrouwbare websites', 'Voor actuele informatie zoekt de assistent alleen op een vaste lijst websites, zoals natuurmonumenten.nl. Die informatie heet "niet gecontroleerd door een boswachter".'],
       ['Liever eerlijk dan gokken', 'Staat iets niet in de kennisbank, dan zegt de assistent dat het dat niet weet en verwijst naar de boswachter of natuurmonumenten.nl.'],
       ['Klopt er iets niet?', 'Meld het onder het antwoord of via Meldingen. De beheerder bekijkt het; niets komt in de app zonder goedkeuring.'],
-      ['Interne informatie', 'Wie is ingelogd met een persoonlijke link, krijgt ook interne informatie. Die is gemarkeerd als "Intern".'],
+      ['Interne informatie', 'Wie is ingelogd (boswachters en vrijwilligers), krijgt ook interne informatie. Die is gemarkeerd als "Intern".'],
       ['Privacy', 'Vragen en antwoorden worden 90 dagen bewaard om de antwoorden te verbeteren, zonder naam of IP-adres.']
     ];
     var lijst = PW.el('div', { class: 'uitleg-lijst' });
@@ -69,7 +176,7 @@ function toon() {
   var info = PW.el('div', { class: 'profiel-info' });
   if (g) {
     info.appendChild(PW.el('div', { class: 'profiel-naam', tekst: g.naam }));
-    info.appendChild(PW.el('div', { class: 'profiel-rol', tekst: g.rol === 'beheerder' ? 'Beheerder' : 'Boswachter / vrijwilliger' }));
+    info.appendChild(PW.el('div', { class: 'profiel-rol', tekst: (g.rol === 'beheerder' ? 'Beheerder' : 'Boswachter / vrijwilliger') + (g.gebruikersnaam ? ' · ' + g.gebruikersnaam : '') }));
     info.appendChild(PW.el('div', { class: 'gecontroleerd', html: PW.icoon('slot', { maat: 15, dikte: 2.2 }) + 'Ingelogd · je krijgt ook interne informatie' }));
     var st = PW.gebruik;
     if (st && st.max) {
@@ -81,7 +188,8 @@ function toon() {
     }
   } else {
     info.appendChild(PW.el('div', { class: 'profiel-naam', tekst: 'Niet ingelogd' }));
-    info.appendChild(PW.el('div', { class: 'profiel-rol', tekst: 'Boswachters en vrijwilligers loggen in met hun persoonlijke link van de beheerder. Daarna krijg je ook interne informatie.' }));
+    info.appendChild(PW.el('div', { class: 'profiel-rol', tekst: 'Boswachters en vrijwilligers loggen in met hun gebruikersnaam en wachtwoord. Daarna krijg je ook interne informatie.' }));
+    info.appendChild(PW.el('button', { type: 'button', class: 'knop knop-oranje knop-klein profiel-inlog', tekst: 'Inloggen', onclick: function() { PW.openInloggen(); } }));
   }
   kaart.appendChild(info);
   box.appendChild(kaart);
@@ -101,6 +209,7 @@ function toon() {
   hulp.appendChild(rij({ icoon: 'boek', titel: 'Handleiding', uitleg: 'Pdf, voor gebruikers en beheerders', href: '/docs/handleiding-boswachter-assistent.pdf', nieuwVenster: true }));
   hulp.appendChild(rij({ icoon: 'info', titel: 'Waar komen de antwoorden vandaan?', klik: PW.uitlegBronnen }));
   hulp.appendChild(rij({ icoon: 'meldingen', titel: 'Iets melden', uitleg: 'Iets klopt niet, of je hebt een suggestie', klik: function() { PW.ietsMelden(); } }));
+  if (g) hulp.appendChild(rij({ icoon: 'slot', titel: 'Wachtwoord wijzigen', klik: openWachtwoordWijzigen }));
   if (g && g.rol === 'beheerder') {
     hulp.appendChild(rij({ icoon: 'beheer', titel: 'Beheerpaneel', uitleg: 'Kennisbank, voorstellen en gebruikers', href: '/beheer.html' }));
   }
@@ -109,7 +218,7 @@ function toon() {
   if (g) {
     box.appendChild(PW.el('button', { type: 'button', class: 'knop uitlog-knop', html: PW.icoon('uitloggen', { maat: 20 }) + 'Uitloggen',
       onclick: function() {
-        if (!confirm('Uitloggen? Je hebt je persoonlijke link nodig om weer in te loggen.')) return;
+        if (!confirm('Uitloggen? Je logt weer in met je gebruikersnaam en wachtwoord.')) return;
         PW.uitloggen();
       } }));
   }

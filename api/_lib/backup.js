@@ -17,7 +17,7 @@ async function maakInhoud() {
   return {
     soort: 'planken-wambuis-backup', versie: 2, tijd: new Date().toISOString(),
     feiten, voorstellen, sites, nmPaginas, plekken, routes, gebieden, grenzen,
-    // Zonder codes: na terugzetten krijgen gebruikers eventueel een nieuwe link
+    // Zonder codes en wachtwoord-hashes: na terugzetten krijgen gebruikers eventueel een nieuwe uitnodiging
     gebruikers: Object.values(gebruikers).map(auth.zonderGeheim)
   };
 }

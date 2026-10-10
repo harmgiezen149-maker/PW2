@@ -102,7 +102,7 @@ PW.opslag = {
 };
 
 // ============================================================
-// Inloggen met een persoonlijke link (…/?login=<code>)
+// Inloggen met gebruikersnaam en wachtwoord (sessie per apparaat, token in X-PW-Token)
 // ============================================================
 PW.gebruiker = null;
 
@@ -126,25 +126,60 @@ PW.api = function(pad, body) {
     });
 };
 
+// Uitnodigingslink van de beheerder (…/?login=<code>): eenmalig, om een gebruikersnaam en
+// wachtwoord te kiezen (of een vergeten wachtwoord opnieuw in te stellen).
+var uitLink = false;
 (function leesLoginLink() {
   var m = location.search.match(/[?&]login=([A-Za-z0-9_-]{20,100})/);
   if (!m) return;
-  PW.opslag.schrijf('pw_token', m[1]);
+  PW.opslag.schrijf('pw_uitnodiging', m[1]);
+  uitLink = true;
   history.replaceState(null, '', location.pathname + location.hash);
 })();
 
 PW.controleerLogin = function() {
-  if (!PW.token()) { PW.gebruiker = null; PW.meld('login'); return Promise.resolve(null); }
-  return PW.api('/api/auth', { actie: 'wie' })
-    .then(function(d) {
-      PW.gebruiker = d.gebruiker || null;
-      PW.gebruik = d.gebruik || null;
-      // Ingetrokken of ongeldige link: code vergeten
-      if (!PW.gebruiker) PW.opslag.schrijf('pw_token', null);
-      PW.meld('login');
-      return PW.gebruiker;
-    })
-    .catch(function() { PW.meld('login'); return null; });
+  var stap = PW.token() ? PW.api('/api/auth', { actie: 'wie' }) : Promise.resolve({ gebruiker: null });
+  return stap.then(function(d) {
+    PW.gebruiker = d.gebruiker || null;
+    PW.gebruik = d.gebruik || null;
+    if (!PW.gebruiker && PW.token()) {
+      // Geen geldige sessie. Was het een oude persoonlijke link? Die werkt nog één keer als uitnodiging.
+      if (!PW.opslag.lees('pw_uitnodiging', null)) PW.opslag.schrijf('pw_uitnodiging', PW.token());
+      PW.opslag.schrijf('pw_token', null);
+    }
+    PW.meld('login');
+    PW.controleerUitnodiging();
+    return PW.gebruiker;
+  }).catch(function() { PW.meld('login'); return null; });
+};
+
+PW.controleerUitnodiging = function() {
+  var code = PW.opslag.lees('pw_uitnodiging', null);
+  if (!code) return;
+  PW.api('/api/auth', { actie: 'uitnodiging', code: code }).then(function(d) {
+    if (d.uitnodiging) { PW.meld('uitnodiging', { code: code, info: d.uitnodiging }); return; }
+    PW.opslag.schrijf('pw_uitnodiging', null);
+    if (uitLink && PW.toonFout) PW.toonFout('Deze link is niet (meer) geldig. Log in met je gebruikersnaam en wachtwoord, of vraag de beheerder om een nieuwe link.');
+    uitLink = false;
+  }).catch(function() {});
+};
+
+function naInloggen(d) {
+  PW.opslag.schrijf('pw_token', d.token);
+  return PW.controleerLogin();
+}
+PW.inloggen = function(gebruikersnaam, wachtwoord) {
+  return PW.api('/api/auth', { actie: 'inloggen', gebruikersnaam: gebruikersnaam, wachtwoord: wachtwoord }).then(naInloggen);
+};
+PW.activeren = function(code, gebruikersnaam, wachtwoord) {
+  return PW.api('/api/auth', { actie: 'activeren', code: code, gebruikersnaam: gebruikersnaam, wachtwoord: wachtwoord }).then(function(d) {
+    PW.opslag.schrijf('pw_uitnodiging', null);
+    uitLink = false;
+    return naInloggen(d);
+  });
+};
+PW.wachtwoordWijzigen = function(oud, nieuw) {
+  return PW.api('/api/auth', { actie: 'wachtwoord-wijzigen', oud: oud, nieuw: nieuw });
 };
 
 // Stand tegenover het maandmaximum (alleen als de beheerder er een instelde)
@@ -152,9 +187,8 @@ PW.gebruik = null;
 PW.zetGebruik = function(st) { PW.gebruik = st || null; PW.meld('gebruik'); };
 
 PW.uitloggen = function() {
-  PW.opslag.schrijf('pw_token', null);
-  PW.gebruiker = null;
-  PW.meld('login');
+  var klaar = function() { PW.opslag.schrijf('pw_token', null); PW.gebruiker = null; PW.gebruik = null; PW.meld('login'); };
+  return PW.api('/api/auth', { actie: 'uitloggen' }).then(klaar, klaar);
 };
 
 PW.voornaam = function() {

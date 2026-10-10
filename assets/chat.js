@@ -717,7 +717,7 @@ function gebruikMelding() {
   PW.opslag.schrijf('pw_gebruik_melding', sleutel);
   var tekst = st.anoniem
     ? (st.op
-      ? 'De assistent is deze maand niet meer beschikbaar voor bezoekers zonder inlog. Boswachters en vrijwilligers kunnen inloggen met hun persoonlijke link.'
+      ? 'De assistent is deze maand niet meer beschikbaar voor bezoekers zonder inlog. Boswachters en vrijwilligers kunnen inloggen (Profiel).'
       : 'Let op: de assistent is deze maand al voor ' + Math.min(st.procent, 99) + '% gebruikt door bezoekers zonder inlog. Daarna kun je deze maand alleen nog vragen stellen als je bent ingelogd.')
     : st.op
     ? 'Je hebt je maximum voor deze maand bereikt. Vanaf de eerste van de volgende maand kun je weer vragen stellen, of vraag de beheerder om je maximum te verhogen.'

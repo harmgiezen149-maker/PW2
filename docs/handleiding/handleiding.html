@@ -134,12 +134,12 @@
   <h2>1.2 Inloggen en voorkeuren (Profiel)</h2>
   <div class="naast">
     <div>
-      <p>Van de beheerder krijg je een persoonlijke link, via mail of WhatsApp. Open die link één keer op elk apparaat dat je gebruikt. Daarna blijf je ingelogd.</p>
+      <p>Van de beheerder krijg je een <b>uitnodigingslink</b>, via mail of WhatsApp. Open die en kies je eigen gebruikersnaam en wachtwoord (de link werkt één keer). Daarna log je op elk apparaat in via <i>Profiel</i> → <b>Inloggen</b>; je blijft ingelogd tot je uitlogt.</p>
       <ul>
         <li><b>Ingelogd</b> krijg je ook interne informatie, bijvoorbeeld uit Kiek; die herken je aan het label <span class="tag" style="color:#5B3A8A;background:#F1ECF8;border-color:#CDBDE6">Intern</span>. <b>Niet ingelogd</b> werkt de assistent ook, maar alleen met openbare informatie.</li>
         <li>Onder <b>Profiel</b> zie je of je bent ingelogd en kun je uitloggen. De begroeting in de chat gebruikt je voornaam. Heeft de beheerder een maximum per maand ingesteld, dan zie je daar hoeveel je ervan hebt gebruikt; bij 75% krijg je een waarschuwing en bij 100% kun je die maand geen vragen meer stellen.</li>
         <li><b>Voorkeuren:</b> <i>Verhaalmodus</i> (antwoorden als verhaal voor bezoekers), <i>Antwoorden voorlezen</i> (automatisch) en <i>Tekstgrootte</i> (normaal, groot, extra groot). Ze gelden alleen op dit apparaat.</li>
-        <li>Je link is persoonlijk: deel hem niet. Kwijt, of een nieuwe telefoon? Vraag de beheerder om een nieuwe link. De oude werkt dan niet meer.</li>
+        <li>Deel je wachtwoord niet. Wijzigen: <i>Profiel</i> → <i>Wachtwoord wijzigen</i>. Vergeten? Vraag de beheerder om een herstellink.</li>
         <li><b>Updates:</b> is er een nieuwe versie, dan verschijnt bovenin <i>Nieuwe versie van de app</i>; tik op <b>Bijwerken</b> (een lopend gesprek verdwijnt dan). Onderaan Profiel zie je je versie, wat er nieuw is en <i>Controleren op updates</i>.</li>
       </ul>
     </div>
@@ -271,11 +271,11 @@
     <div>
       <ul>
         <li>Ga naar <b>pwpb2.vercel.app/beheer.html</b>, of tik in de app op <i>Profiel</i> → <i>Beheerpaneel</i>; die regel zien alleen beheerders.</li>
-        <li>Je logt in met je <b>persoonlijke beheerderslink</b>.</li>
-        <li><b>De allereerste keer</b> is er nog geen beheerder. Vul dan je naam en het beheerwachtwoord in en klik op <i>Eerste beheerder aanmaken</i>. Je krijgt je persoonlijke link te zien: bewaar die goed, als bladwijzer of in een wachtwoordkluis. Het wachtwoord werkt daarna niet meer.</li>
+        <li>Je logt in met je <b>gebruikersnaam en wachtwoord</b>; ben je in de app al ingelogd als beheerder, dan hoeft dat niet opnieuw. Rechtsboven staat <i>Uitloggen</i>.</li>
+        <li><b>De allereerste keer</b> is er nog geen beheerder. Vul je naam, een gebruikersnaam, een wachtwoord (twee keer) en het beheerwachtwoord in en klik op <i>Eerste beheerder aanmaken</i>. Het beheerwachtwoord werkt daarna niet meer.</li>
         <li>Links staat het menu (op een telefoon bovenin, schuifbaar). Een oranje getal betekent dat er werk wacht.</li>
       </ul>
-      <div class="kader warn"><b>Tip:</b> geef minstens twee mensen de rol beheerder. Is iemand de link kwijt, dan kan de ander een nieuwe maken.</div>
+      <div class="kader warn"><b>Tip:</b> geef minstens twee mensen de rol beheerder. Is iemand het wachtwoord vergeten, dan kan de ander een herstellink maken.</div>
     </div>
     <div class="fig" style="width:50mm"><img src="shots/beheer-start.png" style="width:50mm"><div class="onder">Eerste beheerder aanmaken (eenmalig)</div></div>
   </div>
@@ -367,9 +367,9 @@
   <div class="naast">
     <div>
       <ul>
-        <li><b>Nieuwe gebruiker:</b> vul een naam in (de voornaam verschijnt in de begroeting), kies de rol (<i>Boswachter / vrijwilliger</i> of <i>Beheerder</i>) en klik op <b>+ Link maken</b>. De link verschijnt maar één keer. Kopieer hem en stuur hem zelf door, via mail of WhatsApp.</li>
-        <li><b>Nieuwe link:</b> bij een verloren link of nieuw apparaat. De oude werkt daarna niet meer.</li>
-        <li><b>Intrekken:</b> de toegang is direct weg, bijvoorbeeld als iemand stopt. De laatste beheerder kun je niet intrekken.</li>
+        <li><b>Uitnodigen:</b> vul een naam in (de voornaam verschijnt in de begroeting), kies de rol en klik op <b>+ Uitnodigen</b>. Stuur de link zelf door (mail of WhatsApp); daarmee kiest de gebruiker een gebruikersnaam en wachtwoord. De link werkt één keer en is 14 dagen geldig.</li>
+        <li><b>Wachtwoord herstellen:</b> geeft een herstellink voor een nieuw wachtwoord; andere apparaten worden dan uitgelogd.</li>
+        <li><b>Intrekken:</b> direct overal uitgelogd en geen toegang meer. De laatste beheerder kun je niet intrekken.</li>
         <li><b>Rollen:</b> gebruikers krijgen ook interne feiten te zien. Beheerders kunnen daarnaast het beheerpaneel gebruiken.</li>
         <li><b>Maximum per maand ($):</b> geschatte API-kosten per maand, ook voor de knoppen in het beheerpaneel. Vanaf 75% een waarschuwing, bij 100% geen vragen meer tot de volgende maand. Leeg = geen maximum. Bovenaan: één maximum voor alle <b>bezoekers zonder inlog samen</b>.</li>
       </ul>
@@ -460,7 +460,7 @@
     <tr><td>Niets live zonder goedkeuring, ook niet op de kaart</td><td>Eén beheerder is eindverantwoordelijk. Plekken zet een beheerder zelf op de kaart; er worden geen plekken automatisch overgenomen.</td></tr>
     <tr><td>Geen gevoelige plekken op de kaart</td><td>Wolven, nesten, burchten en rustgebieden beschermen. De server weigert zulke plekken en feiten over de wolf krijgen geen plek.</td></tr>
     <tr><td>Houdbaarheid per type; afgelopen tijdelijke feiten verdwijnen</td><td>Oude informatie wordt niet stilzwijgend als actueel gebracht, en goede informatie verdwijnt niet zomaar.</td></tr>
-    <tr><td>Persoonlijke links in plaats van wachtwoorden</td><td>Eenvoudig voor vrijwilligers en per persoon in te trekken. Alleen een hash van de code wordt opgeslagen.</td></tr>
+    <tr><td>Gebruikersnaam en wachtwoord (eenmalige uitnodiging)</td><td>Gedeelde links geven geen blijvende toegang. Wachtwoord als scrypt-hash, sessie als hash.</td></tr>
     <tr><td>"Mijn meldingen" zonder koppeling aan personen</td><td>Het apparaat onthoudt zelf de id's van eigen meldingen; de server kent alleen id → status. De beheerder ziet niet wie meldde.</td></tr>
     <tr><td>Logboek 90 dagen, zonder persoonsgegevens</td><td>Maakt steekproeven en foutanalyse mogelijk en is privacyvriendelijk.</td></tr>
     <tr><td>Leaflet, lettertype en kaartcode in de app zelf; PDOK als ondergrond</td><td>Werkt ook met slecht bereik (de app en de laatst geladen gegevens staan op het toestel). PDOK is de gratis, officiële Nederlandse kaart, zonder sleutel.</td></tr>

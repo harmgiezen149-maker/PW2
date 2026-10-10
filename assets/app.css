@@ -475,3 +475,10 @@ html body .leaflet-control-attribution { font-size: 0.6875rem; }
 .gebruik-balk span { display: block; height: 100%; background: var(--groen); }
 .gebruik-balk.bijna span { background: #D9822B; }
 .gebruik-balk.op span { background: #C0392B; }
+
+/* ---------------------------------------------------------------- inloggen */
+.inlog-form { margin-bottom: 0.25rem; }
+.inlog-form input[readonly] { background: #F3F5F7; color: var(--tekst-2); }
+.inlog-hint { font-size: 0.875rem; color: var(--tekst-3); margin: 0.75rem 0 0; }
+.inlog-klaar { font-weight: 600; color: var(--groen); margin: 0.5rem 0; }
+.profiel-inlog { margin-top: 0.75rem; }

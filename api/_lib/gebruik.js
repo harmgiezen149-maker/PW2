@@ -59,6 +59,6 @@ async function standAnoniem() {
 }
 
 const OP_MELDING = 'Je hebt je maximum voor deze maand bereikt. Vanaf de eerste van de volgende maand kun je weer vragen stellen, of vraag de beheerder om je maximum te verhogen.';
-const OP_MELDING_ANONIEM = 'De assistent is deze maand niet meer beschikbaar voor bezoekers zonder inlog. Boswachters en vrijwilligers kunnen inloggen met hun persoonlijke link; vanaf de eerste van de volgende maand kan iedereen weer vragen stellen.';
+const OP_MELDING_ANONIEM = 'De assistent is deze maand niet meer beschikbaar voor bezoekers zonder inlog. Boswachters en vrijwilligers kunnen inloggen (Profiel); vanaf de eerste van de volgende maand kan iedereen weer vragen stellen.';
 
 module.exports = { WAARSCHUWING, registreer, maandOverzicht, stand, huidigeMaand, OP_MELDING, OP_MELDING_ANONIEM, maxAnoniem, zetMaxAnoniem, standAnoniem };
