@@ -141,6 +141,7 @@ window.tabKalender = function(inhoud, opties) {
         zoekStatus.textContent = r.voorstellen
           ? r.voorstellen + ' voorstel(len) gevonden, waarvan ' + r.kalender + ' voor de kalender. Bekijk en keur ze goed bij Voorstellen.'
           : 'Niets nieuws gevonden.';
+        if (r.agenda && r.agenda.activiteiten) zoekStatus.textContent += ' (Agenda Natuurmonumenten: ' + r.agenda.activiteiten + ' activiteit(en), waarvan ' + (r.agenda.alBekend || 0) + ' al bekend; ' + r.agenda.gelezen + ' nieuwe gelezen.)';
         if (r.voorstellen) laadOverzicht();
       }).catch(function(e) { zoek.disabled = false; zoekStatus.textContent = ''; fout(e); });
     };

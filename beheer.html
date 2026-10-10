@@ -328,6 +328,7 @@ function cronKaart(cs) {
       el('div', null, [el('b', { text: String(nm.nieuweBerichten) }), el('span', { text: 'nieuwe berichten' })]),
       el('div', null, [el('b', { text: String(nm.voorstellen) }), el('span', { text: 'nieuwe voorstellen' + (nm.terugval ? ' (terugval)' : '') })])
     ]));
+    if (nm.agenda) s.appendChild(el('div', { class: 'meta', text: 'Agenda: ' + nm.agenda.activiteiten + ' activiteit(en) gevonden op ' + nm.agenda.paginas + ' agendapagina(\'s), waarvan ' + nm.agenda.gelezen + ' nieuw gelezen' + (nm.nogTeLezen ? '; nog ' + nm.nogTeLezen + ' te lezen bij de volgende controle' : '') + '.' }));
     (nm.fouten || []).forEach(function(f) { s.appendChild(el('div', { class: 'meta', text: 'Let op: ' + f })); });
   }
   if (cs.backup && cs.backup.id) s.appendChild(el('div', { class: 'meta', text: 'Back-up gemaakt: ' + cs.backup.id }));
@@ -744,7 +745,8 @@ function tabWebsites(inhoud) {
     // Pagina's voor de wekelijkse controle
     var s2 = el('div', { class: 'section' }, [
       el('h2', { text: 'Wekelijkse controle natuurmonumenten.nl' }),
-      el('p', { class: 'uitleg', text: 'Elke zaterdag om 07:00 worden deze pagina\'s gelezen. Is er iets gewijzigd of staat er een nieuw nieuws- of agendabericht, dan vergelijkt de assistent dat met de kennisbank en zet wat nieuw of anders is klaar als voorstel. Niets gaat live zonder jouw goedkeuring. Eén pagina per regel.' })
+      el('p', { class: 'uitleg', text: 'Elke zaterdag om 07:00 worden deze pagina\'s gelezen. Is er iets gewijzigd of staat er een nieuw nieuws- of agendabericht, dan vergelijkt de assistent dat met de kennisbank en zet wat nieuw of anders is klaar als voorstel. Niets gaat live zonder jouw goedkeuring. Eén pagina per regel.' }),
+      el('p', { class: 'hint', text: 'Agenda: een pagina zoals https://www.natuurmonumenten.nl/agenda?locatie=… wordt met al zijn pagina\'s gelezen, en van elke activiteit wordt de eigen pagina geopend (datum, tijd, startplek). De agenda van Planken Wambuis (locatie N_299) zit er altijd bij. Wil je ook een andere locatie, zoals de Reijerscamp, zet dan de link van de agenda met dat filter erbij.' })
     ]);
     var ta = el('textarea', { style: 'width:100%;min-height:90px;border:1.5px solid var(--b);border-radius:6px;padding:8px;font-family:monospace;font-size:0.78rem;' });
     ta.value = (d.nmPaginas || []).join('\n');
