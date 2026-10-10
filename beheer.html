@@ -840,6 +840,21 @@ function tabGebruikers(inhoud) {
         an.appendChild(el('div', { class: 'meta', text: 'Iedereen die de app gebruikt zonder in te loggen. Bij het maximum kunnen alleen ingelogde gebruikers deze maand nog vragen stellen.' }));
         an.appendChild(maximumVak({ id: 'anoniem', naam: 'niet-ingelogde bezoekers', maxPerMaand: d2.anoniem && d2.anoniem.max, gebruik: d2.anoniem && d2.anoniem.gebruik },
           d2.waarschuwing, function() { tekenLijst(); }, 'anoniem-maximum'));
+        // Per IP-adres per dag
+        var ipVeld = el('input', { class: 'max-veld', inputmode: 'numeric', placeholder: 'geen', 'aria-label': 'Maximaal aantal vragen per dag per IP-adres' });
+        ipVeld.value = d2.anoniem && d2.anoniem.vragenPerDag ? String(d2.anoniem.vragenPerDag) : '';
+        var ipKnop = el('button', { class: 'btn secundair klein', text: 'Opslaan', onclick: function() {
+          ipKnop.disabled = true;
+          api('ip-maximum', { max: ipVeld.value }).then(function(r) {
+            melding(r.max ? 'Bezoekers zonder inlog: maximaal ' + r.max + ' vragen per dag per IP-adres' : 'Geen maximum per IP-adres meer');
+            tekenLijst();
+          }).catch(function(e) { ipKnop.disabled = false; fout(e); });
+        } });
+        an.appendChild(el('div', { class: 'max-vak' }, [
+          el('label', { text: 'Maximaal aantal vragen per dag per IP-adres' }),
+          el('div', { class: 'max-rij' }, [ipVeld, ipKnop]),
+          el('div', { class: 'meta', text: 'Geldt voor iedereen die niet is ingelogd. Een gedeeld netwerk (bijv. wifi in een bezoekerscentrum) telt als één adres. Het IP-adres zelf wordt niet bewaard. Leeg = geen maximum.' })
+        ]));
         anoniemVak.appendChild(an);
         if (d2.gebruikers.length === 0) lijst.appendChild(el('p', { class: 'leeg', text: 'Nog geen gebruikers.' }));
         d2.gebruikers.forEach(function(g) {

@@ -367,7 +367,8 @@ async function installeer(context, opties) {
         if (a === 'meldingen') return json({ meldingen: MELDINGEN });
         if (a === 'logboek') return json(LOGBOEK);
         if (a === 'backups') return json(BACKUPS);
-        if (a === 'gebruikers') return json({ gebruikers: GEBRUIKERS.map(g => Object.assign({ gebruik: GEBRUIK[g.id] || { kosten: 0, vragen: 0 } }, g)), anoniem: { max: MAX_ANONIEM, gebruik: GEBRUIK.anoniem }, waarschuwing: 0.75 });
+        if (a === 'gebruikers') return json({ gebruikers: GEBRUIKERS.map(g => Object.assign({ gebruik: GEBRUIK[g.id] || { kosten: 0, vragen: 0 } }, g)), anoniem: { max: MAX_ANONIEM, vragenPerDag: MAX_IP, gebruik: GEBRUIK.anoniem }, waarschuwing: 0.75 });
+        if (a === 'ip-maximum') { MAX_IP = Number(body.max) > 0 ? Number(body.max) : null; return json({ ok: true, max: MAX_IP }); }
         if (a === 'anoniem-maximum') {
           const max = Math.round(Number(String(body.max || '').replace(',', '.')) * 100) / 100;
           MAX_ANONIEM = max > 0 ? max : null;
@@ -401,6 +402,7 @@ const TEGEL = fs.readFileSync(path.join(__dirname, 'tegel.png'));
 
 // Gebruik deze maand per gebruiker (voorbeeld; dollars)
 let MAX_ANONIEM = 20;
+let MAX_IP = 10;
 const GEBRUIK = { u1: { kosten: 3.42, vragen: 41 }, u2: { kosten: 7.86, vragen: 88 }, u3: { kosten: 0.51, vragen: 6 }, anoniem: { kosten: 12.3, vragen: 154 }, systeem: { kosten: 0.62, vragen: 0 } };
 function gebruikOverzicht(maand) {
   const nu = new Date(NU);
