@@ -465,3 +465,13 @@ html body .leaflet-control-attribution { font-size: 0.6875rem; }
 .versie-details { font-size: 0.875rem; color: var(--tekst-2); text-align: center; }
 .versie-details summary { cursor: pointer; color: var(--blauw); font-weight: 600; }
 .versie-nieuw { text-align: left; margin: 0.5rem auto 0; max-width: 26rem; padding-left: 1.25rem; line-height: 1.5; }
+
+/* ---------------------------------------------------------------- maandmaximum */
+.gebruik-melding { display: flex; gap: 0.625rem; align-items: flex-start; margin: 0.5rem 0 1rem; padding: 0.75rem 0.875rem; border-radius: 0.875rem; background: #FFF4E5; border: 1.5px solid #F2B266; color: #7A3E06; font-size: 0.9375rem; line-height: 1.45; }
+.gebruik-melding svg { flex: none; margin-top: 0.125rem; }
+.gebruik-melding.op { background: #FDECEA; border-color: #E59A8F; color: #8A1F12; }
+.profiel-gebruik { margin-top: 0.625rem; font-size: 0.875rem; color: var(--tekst-2); }
+.gebruik-balk { margin-top: 0.375rem; height: 0.5rem; border-radius: 0.25rem; background: #E3E6EA; overflow: hidden; }
+.gebruik-balk span { display: block; height: 100%; background: var(--groen); }
+.gebruik-balk.bijna span { background: #D9822B; }
+.gebruik-balk.op span { background: #C0392B; }

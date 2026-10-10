@@ -35,7 +35,7 @@ async function gebruiker(req) {
     if (!id) return null;
     const g = kv.parse(await kv.cmd('HGET', K_GEBRUIKERS, id));
     if (!g || g.ingetrokken) return null;
-    return { id: g.id, naam: g.naam, rol: g.rol };
+    return { id: g.id, naam: g.naam, rol: g.rol, maxPerMaand: g.maxPerMaand || null };
   } catch (e) {
     return null;
   }

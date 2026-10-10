@@ -205,10 +205,15 @@ async function knip(page, selector, naam, marge) {
   }
 
   await tab('Gebruikers');
-  await page.fill('#inhoud input', 'Joris (vrijwilliger, voorbeeld)');
-  await page.click('text=+ Link maken');
-  await wacht(700);
-  await knip(page, '#inhoud .section', 'beheer-gebruikers.png', 0);
+  await wacht(500);
+  {
+    // Kop, formulier en de eerste twee gebruikers (met het maximum per maand)
+    const sec = await (await page.$('#inhoud .section')).boundingBox();
+    const kaarten = await page.$$('#inhoud .section .card');
+    const k = await kaarten[1].boundingBox();
+    await page.screenshot({ path: path.join(OUT, 'beheer-gebruikers.png'), fullPage: true,
+      clip: { x: sec.x, y: sec.y, width: sec.width, height: k.y + k.height - sec.y + 12 } });
+  }
 
   await ctx.close();
   await browser.close();

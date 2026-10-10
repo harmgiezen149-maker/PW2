@@ -138,6 +138,7 @@ PW.controleerLogin = function() {
   return PW.api('/api/auth', { actie: 'wie' })
     .then(function(d) {
       PW.gebruiker = d.gebruiker || null;
+      PW.gebruik = d.gebruik || null;
       // Ingetrokken of ongeldige link: code vergeten
       if (!PW.gebruiker) PW.opslag.schrijf('pw_token', null);
       PW.meld('login');
@@ -145,6 +146,10 @@ PW.controleerLogin = function() {
     })
     .catch(function() { PW.meld('login'); return null; });
 };
+
+// Stand tegenover het maandmaximum (alleen als de beheerder er een instelde)
+PW.gebruik = null;
+PW.zetGebruik = function(st) { PW.gebruik = st || null; PW.meld('gebruik'); };
 
 PW.uitloggen = function() {
   PW.opslag.schrijf('pw_token', null);
