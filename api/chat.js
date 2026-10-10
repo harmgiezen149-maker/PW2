@@ -49,6 +49,12 @@ module.exports = async function handler(req, res) {
     standAnoniem = await gebruik.standAnoniem();
     if (standAnoniem.op) return res.status(429).json({ error: gebruik.OP_MELDING_ANONIEM, gebruik: standAnoniem });
   }
+  // Zonder inlog: maximaal aantal vragen per dag per IP-adres (de aanvulling telt niet als vraag)
+  let ipTeller = null;
+  if (!gebruiker && phase === 1) {
+    ipTeller = await gebruik.telIpVraag(req);
+    if (ipTeller.op) return res.status(429).json({ error: gebruik.IP_OP_MELDING(ipTeller.max), ipVragen: { max: ipTeller.max, over: 0 } });
+  }
   const vraag = messages[0].content;
 
   let feiten, sites, routes;
@@ -56,6 +62,7 @@ module.exports = async function handler(req, res) {
     // De routes op de kaart horen ook bij de kennis; lukt dat ophalen niet, dan zonder
     [feiten, sites, routes] = await Promise.all([kb.alleFeiten(), kb.getSites(), kaart.routes().catch(() => ({}))]);
   } catch (e) {
+    await gebruik.ipVraagTerug(ipTeller);
     return res.status(503).json({ error: 'De kennisbank is even niet bereikbaar. Probeer het zo opnieuw.' });
   }
   // Ook activiteiten en werkzaamheden die binnen 90 dagen beginnen (gemarkeerd met "begint …")
@@ -164,9 +171,13 @@ module.exports = async function handler(req, res) {
     // Stand tegenover het maandmaximum, zodat de app bij 75% kan waarschuwen
     if (gebruiker && gebruiker.maxPerMaand) stuur({ type: 'pw_gebruik', gebruik: await gebruik.stand(gebruiker) });
     else if (standAnoniem && standAnoniem.max) stuur({ type: 'pw_gebruik', gebruik: await gebruik.standAnoniem() });
+    if (ipTeller && ipTeller.max) stuur({ type: 'pw_ipvragen', max: ipTeller.max, over: ipTeller.over });
   } catch (err) {
     const status = err instanceof Anthropic.APIError && err.status ? err.status : 502;
-    if (!gestart) return res.status(status === 429 ? 429 : 502).json({ error: 'De assistent is even niet bereikbaar: ' + err.message });
+    if (!gestart) {
+      await gebruik.ipVraagTerug(ipTeller);
+      return res.status(status === 429 ? 429 : 502).json({ error: 'De assistent is even niet bereikbaar: ' + err.message });
+    }
     stuur({ type: 'pw_error', message: 'Het antwoord werd onderbroken. Probeer het opnieuw.' });
   }
   res.end();

@@ -96,7 +96,7 @@ module.exports = async function handler(req, res) {
 
   const gebruiker = await auth.beheerder(req);
   if (!gebruiker) {
-    return res.status(401).json({ error: 'Geen toegang. Open je persoonlijke beheerderslink.' });
+    return res.status(401).json({ error: 'Geen toegang. Log in met je gebruikersnaam en wachtwoord als beheerder.' });
   }
 
   const body = req.body || {};
@@ -314,7 +314,7 @@ module.exports = async function handler(req, res) {
         const lijst = Object.values(alle).map(auth.zonderGeheim)
           .sort((a, b) => (a.ingetrokken - b.ingetrokken) || a.naam.localeCompare(b.naam))
           .map(g => Object.assign(g, { gebruik: maand[g.id] || { kosten: 0, vragen: 0 } }));
-        const anoniem = { max: await gebruik.maxAnoniem(), gebruik: maand.anoniem || { kosten: 0, vragen: 0 } };
+        const anoniem = { max: await gebruik.maxAnoniem(), vragenPerDag: await gebruik.maxVragenIp(), gebruik: maand.anoniem || { kosten: 0, vragen: 0 } };
         return res.json({ gebruikers: lijst, anoniem, waarschuwing: gebruik.WAARSCHUWING });
       }
 
@@ -339,6 +339,15 @@ module.exports = async function handler(req, res) {
         if (!Number.isFinite(max) || max < 0 || max > 10000) return res.status(400).json({ error: 'Vul een bedrag in tussen 0 en 10.000 (dollar), of laat het leeg voor geen maximum.' });
         await gebruik.zetMaxAnoniem(max);
         return res.json({ ok: true, max: max > 0 ? max : null });
+      }
+
+      // Maximaal aantal vragen per dag per IP-adres voor bezoekers zonder inlog; leeg of 0 = geen maximum
+      case 'ip-maximum': {
+        const ruw = String(body.max == null ? '' : body.max).trim();
+        const n = ruw === '' ? 0 : Number(ruw);
+        if (!Number.isInteger(n) || n < 0 || n > 1000) return res.status(400).json({ error: 'Vul een heel getal in tussen 0 en 1000, of laat het leeg voor geen maximum.' });
+        await gebruik.zetMaxVragenIp(n);
+        return res.json({ ok: true, max: n > 0 ? n : null });
       }
 
       // Gebruik per gebruiker in een maand (Logboek): maandtotalen, geen losse vragen

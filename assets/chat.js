@@ -480,6 +480,7 @@ function runChat(payload, onDelta, onSearch) {
       if (evt.type === 'pw_meta') { meta = evt.docs || []; return; }
       if (evt.type === 'pw_log') { logId = evt.id; return; }
       if (evt.type === 'pw_gebruik') { PW.zetGebruik(evt.gebruik); return; }
+      if (evt.type === 'pw_ipvragen') { PW.ipVragen = evt; return; }
       if (evt.type === 'content_block_start' && evt.content_block) {
         var cb = evt.content_block;
         blokken[evt.index] = { type: cb.type, cit: [] };
@@ -657,6 +658,7 @@ function ask(q, label) {
     PW.meld('antwoord', { vraag: q, feiten: r1.feiten, rendered: rendered });
     aanvulKnop(q, mode, fase1Tekst, rendered);
     gebruikMelding();
+    ipMelding();
   })
   .catch(function(e) {
     bezig = false;
@@ -708,6 +710,19 @@ function maakAanvulBlok(bodyTekst) {
   return PW.el('div', { class: 'aanvul-inline', html: '<span class="aanvul-tag">Van website · niet gecontroleerd</span><div>' + render(zonderVoetnoten(bodyTekst)) + '</div>' });
 }
 
+// Zonder inlog: nog maar een paar vragen over vandaag (maximum per dag per IP-adres)
+function ipMelding() {
+  var st = PW.ipVragen;
+  PW.ipVragen = null;
+  if (PW.gebruiker || !st || !st.max || st.over > 2) return;
+  var tekst = st.over === 0
+    ? 'Dit was je laatste vraag voor vandaag zonder in te loggen. Morgen kun je weer vragen stellen.'
+    : 'Je kunt vandaag nog ' + st.over + (st.over === 1 ? ' vraag' : ' vragen') + ' stellen zonder in te loggen.';
+  var w = PW.el('div', { class: 'gebruik-melding' + (st.over === 0 ? ' op' : ''), role: 'status',
+    html: PW.icoon('info', { maat: 20, dikte: 2.2 }) + '<span>' + PW.esc(tekst) + '</span>' });
+  $('chatInhoud').appendChild(w);
+}
+
 // Maandmaximum (ingesteld door de beheerder): één keer per maand een melding bij 75%, en bij 100%
 function gebruikMelding() {
   var st = PW.gebruik;
@@ -717,7 +732,7 @@ function gebruikMelding() {
   PW.opslag.schrijf('pw_gebruik_melding', sleutel);
   var tekst = st.anoniem
     ? (st.op
-      ? 'De assistent is deze maand niet meer beschikbaar voor bezoekers zonder inlog. Boswachters en vrijwilligers kunnen inloggen met hun persoonlijke link.'
+      ? 'De assistent is deze maand niet meer beschikbaar voor bezoekers zonder inlog. Boswachters en vrijwilligers kunnen inloggen (Profiel).'
       : 'Let op: de assistent is deze maand al voor ' + Math.min(st.procent, 99) + '% gebruikt door bezoekers zonder inlog. Daarna kun je deze maand alleen nog vragen stellen als je bent ingelogd.')
     : st.op
     ? 'Je hebt je maximum voor deze maand bereikt. Vanaf de eerste van de volgende maand kun je weer vragen stellen, of vraag de beheerder om je maximum te verhogen.'

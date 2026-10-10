@@ -76,9 +76,9 @@ const LOGBOEK = {
 };
 
 let GEBRUIKERS = [
-  { id: 'u1', naam: 'Beheerder (voorbeeld)', rol: 'beheerder', linkGemaakt: '2026-09-26' },
-  { id: 'u2', naam: 'Els (vrijwilliger, voorbeeld)', rol: 'gebruiker', linkGemaakt: '2026-09-26', linkGemaaktDoor: 'Beheerder (voorbeeld)', maxPerMaand: 10 },
-  { id: 'u3', naam: 'Tom (oud-vrijwilliger, voorbeeld)', rol: 'gebruiker', linkGemaakt: '2026-09-26', linkGemaaktDoor: 'Beheerder (voorbeeld)', ingetrokken: true, ingetrokkenOp: '2026-09-26' }
+  { id: 'u1', naam: 'Beheerder (voorbeeld)', rol: 'beheerder', gebruikersnaam: 'beheerder', wachtwoordIngesteld: true, linkGemaakt: '2026-09-26' },
+  { id: 'u2', naam: 'Els (vrijwilliger, voorbeeld)', rol: 'gebruiker', gebruikersnaam: 'els', wachtwoordIngesteld: true, linkGemaakt: '2026-09-26', linkGemaaktDoor: 'Beheerder (voorbeeld)', maxPerMaand: 10 },
+  { id: 'u3', naam: 'Tom (oud-vrijwilliger, voorbeeld)', rol: 'gebruiker', gebruikersnaam: 'tom', wachtwoordIngesteld: true, linkGemaakt: '2026-09-26', linkGemaaktDoor: 'Beheerder (voorbeeld)', ingetrokken: true, ingetrokkenOp: '2026-09-26' }
 ];
 
 const BACKUPS = { laatste: NU, backups: ['2026-09-26', '2026-09-19', '2026-09-12'] };
@@ -341,8 +341,21 @@ async function installeer(context, opties) {
     switch (url.pathname) {
       case '/api/weather': return json(WEER);
       case '/api/auth':
-        if (body.actie === 'wie') return json({ gebruiker: opties.gebruiker || null, gebruik: opties.gebruik || null });
+        if (body.actie === 'wie') {
+          if (route.request().headers()['x-pw-token'] === 'voorbeeldsessie') return json({ gebruiker: { id: 'u2', naam: 'Els (vrijwilliger, voorbeeld)', rol: 'gebruiker', gebruikersnaam: 'els' }, gebruik: null });
+          return json({ gebruiker: opties.gebruiker || null, gebruik: opties.gebruik || null });
+        }
         if (body.actie === 'status') return json({ beheerderAanwezig: !!opties.bestaatBeheerder });
+        // Inloggen (voorbeeld): elke gebruikersnaam met wachtwoord "voorbeeld-ww" werkt
+        if (body.actie === 'inloggen') return body.wachtwoord === 'voorbeeld-ww'
+          ? json({ ok: true, token: 'voorbeeldsessie', gebruiker: { id: 'u2', naam: 'Els (vrijwilliger, voorbeeld)', rol: 'gebruiker', gebruikersnaam: body.gebruikersnaam } })
+          : route.fulfill({ status: 401, contentType: 'application/json', body: JSON.stringify({ error: 'Gebruikersnaam of wachtwoord klopt niet.' }) });
+        if (body.actie === 'uitloggen') return json({ ok: true });
+        if (body.actie === 'start') return json({ ok: true, token: 'voorbeeldsessie', gebruiker: { id: 'u1', naam: body.naam, rol: 'beheerder', gebruikersnaam: body.gebruikersnaam } });
+        if (body.actie === 'uitnodiging') return json({ uitnodiging: body.code === 'VOORBEELD-UITNODIGING-0000000000' ? { naam: 'Joris (vrijwilliger, voorbeeld)', rol: 'gebruiker', gebruikersnaam: 'joris', herstel: false } : null });
+        if (body.actie === 'activeren') return json({ ok: true, token: 'voorbeeldsessie', gebruiker: { id: 'u5', naam: 'Joris (vrijwilliger, voorbeeld)', rol: 'gebruiker', gebruikersnaam: body.gebruikersnaam } });
+        if (body.actie === 'wachtwoord-wijzigen') return body.oud === 'voorbeeld-ww' ? json({ ok: true })
+          : route.fulfill({ status: 401, contentType: 'application/json', body: JSON.stringify({ error: 'Je huidige wachtwoord klopt niet.' }) });
         return json({});
       case '/api/feedback': return json({ ok: true });
       case '/api/chat': return route.fulfill({ status: 200, contentType: 'text/event-stream', body: chatAntwoord(body) + (opties.chatNa || '') });
@@ -354,7 +367,8 @@ async function installeer(context, opties) {
         if (a === 'meldingen') return json({ meldingen: MELDINGEN });
         if (a === 'logboek') return json(LOGBOEK);
         if (a === 'backups') return json(BACKUPS);
-        if (a === 'gebruikers') return json({ gebruikers: GEBRUIKERS.map(g => Object.assign({ gebruik: GEBRUIK[g.id] || { kosten: 0, vragen: 0 } }, g)), anoniem: { max: MAX_ANONIEM, gebruik: GEBRUIK.anoniem }, waarschuwing: 0.75 });
+        if (a === 'gebruikers') return json({ gebruikers: GEBRUIKERS.map(g => Object.assign({ gebruik: GEBRUIK[g.id] || { kosten: 0, vragen: 0 } }, g)), anoniem: { max: MAX_ANONIEM, vragenPerDag: MAX_IP, gebruik: GEBRUIK.anoniem }, waarschuwing: 0.75 });
+        if (a === 'ip-maximum') { MAX_IP = Number(body.max) > 0 ? Number(body.max) : null; return json({ ok: true, max: MAX_IP }); }
         if (a === 'anoniem-maximum') {
           const max = Math.round(Number(String(body.max || '').replace(',', '.')) * 100) / 100;
           MAX_ANONIEM = max > 0 ? max : null;
@@ -367,7 +381,7 @@ async function installeer(context, opties) {
         }
         if (a === 'gebruik-overzicht') return json(gebruikOverzicht(body.maand));
         if (a === 'gebruiker-maken') {
-          const g = { id: 'u4', naam: body.naam, rol: body.rol, linkGemaakt: NU, linkGemaaktDoor: 'Beheerder (voorbeeld)' };
+          const g = { id: 'u4', naam: body.naam, rol: body.rol, linkGemaakt: NU, linkGemaaktDoor: 'Beheerder (voorbeeld)', uitnodigingOpen: true, codeVerloopt: '2026-10-10' };
           GEBRUIKERS = GEBRUIKERS.concat([g]);
           return json({ gebruiker: g, code: 'VOORBEELDCODE-niet-echt-0000000000' });
         }
@@ -388,6 +402,7 @@ const TEGEL = fs.readFileSync(path.join(__dirname, 'tegel.png'));
 
 // Gebruik deze maand per gebruiker (voorbeeld; dollars)
 let MAX_ANONIEM = 20;
+let MAX_IP = 10;
 const GEBRUIK = { u1: { kosten: 3.42, vragen: 41 }, u2: { kosten: 7.86, vragen: 88 }, u3: { kosten: 0.51, vragen: 6 }, anoniem: { kosten: 12.3, vragen: 154 }, systeem: { kosten: 0.62, vragen: 0 } };
 function gebruikOverzicht(maand) {
   const nu = new Date(NU);
