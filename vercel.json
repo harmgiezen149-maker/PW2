@@ -1,0 +1,8 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "git": {
+    "deploymentEnabled": {
+      "claude/dumb-phone-launcher-blocker-dh6ag9": false
+    }
+  }
+}
