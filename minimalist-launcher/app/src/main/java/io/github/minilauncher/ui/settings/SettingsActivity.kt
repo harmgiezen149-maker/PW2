@@ -1,10 +1,12 @@
 package io.github.minilauncher.ui.settings
 
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import io.github.minilauncher.App
 import io.github.minilauncher.R
@@ -219,6 +221,59 @@ class SettingsActivity : BaseActivity() {
                 startActivity(PermissionChecks.requestDefaultHomeIntent(this))
             }
         }
+
+        section(container, getString(R.string.settings_section_backup))
+        row(container, getString(R.string.settings_export), "") {
+            exportDocument.launch(getString(R.string.backup_file_name))
+        }
+        row(container, getString(R.string.settings_import), "") {
+            // Any type: file managers label .json files inconsistently.
+            importDocument.launch(arrayOf("*/*"))
+        }
+    }
+
+    // ---- backup ----
+
+    private val exportDocument =
+        registerForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
+            if (uri != null) exportTo(uri)
+        }
+
+    private val importDocument =
+        registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+            if (uri != null) confirmImport(uri)
+        }
+
+    private fun exportTo(uri: Uri) {
+        val written = runCatching {
+            val out = contentResolver.openOutputStream(uri) ?: error("no output stream")
+            out.use { it.write(prefs.exportAll().toByteArray(Charsets.UTF_8)) }
+        }.isSuccess
+        toast(if (written) R.string.backup_export_done else R.string.backup_export_failed)
+    }
+
+    private fun confirmImport(uri: Uri) {
+        val text = runCatching {
+            contentResolver.openInputStream(uri)?.use { it.readBytes().toString(Charsets.UTF_8) }
+        }.getOrNull()
+        AlertDialog.Builder(this)
+            .setTitle(R.string.backup_import_title)
+            .setMessage(R.string.backup_import_message)
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                if (text != null && prefs.importAll(text)) {
+                    App.applyNightMode(prefs.theme)
+                    toast(R.string.backup_import_done)
+                    recreate()
+                } else {
+                    toast(R.string.backup_import_failed)
+                }
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun toast(message: Int) {
+        android.widget.Toast.makeText(this, message, android.widget.Toast.LENGTH_SHORT).show()
     }
 
     private fun themeLabel(): String = when (prefs.theme) {

@@ -162,6 +162,16 @@
     <string name="settings_stats">Screen time today</string>
     <string name="settings_permissions">Permissions</string>
     <string name="settings_set_default_home">Set as default launcher</string>
+    <string name="settings_section_backup">Backup</string>
+    <string name="settings_export">Export settings to a file</string>
+    <string name="settings_import">Import settings from a file</string>
+    <string name="backup_file_name" translatable="false">minimalist-launcher-settings.json</string>
+    <string name="backup_export_done">Settings exported</string>
+    <string name="backup_export_failed">Could not write the settings file</string>
+    <string name="backup_import_title">Replace all settings?</string>
+    <string name="backup_import_message">Your current launcher settings are replaced by the ones in this file. Permissions are not part of the file; grant them again under Permissions.</string>
+    <string name="backup_import_done">Settings imported</string>
+    <string name="backup_import_failed">This is not a launcher settings file</string>
     <string name="state_on">On</string>
     <string name="state_off">Off</string>
     <string name="theme_light">Light</string>

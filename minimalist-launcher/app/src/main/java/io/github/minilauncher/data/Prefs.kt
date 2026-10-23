@@ -322,6 +322,34 @@ class Prefs(context: Context) {
         get() = sp.getBoolean(KEY_ONBOARDING_DONE, false)
         set(value) = sp.edit().putBoolean(KEY_ONBOARDING_DONE, value).apply()
 
+    // ---- backup ----
+
+    /** Every stored setting as one JSON document; see [PrefsBackup]. */
+    fun exportAll(): String = PrefsBackup.encode(sp.all)
+
+    /**
+     * Replaces the stored settings with the ones in [json]. Device-only state
+     * such as onboarding progress is kept. Returns false, and changes nothing,
+     * when [json] is not a valid launcher backup.
+     */
+    fun importAll(json: String): Boolean {
+        val values = runCatching { PrefsBackup.decode(json) }.getOrNull() ?: return false
+        val editor = sp.edit()
+        sp.all.keys.filterNot { it in PrefsBackup.EXCLUDED_KEYS }.forEach { editor.remove(it) }
+        values.forEach { (key, value) ->
+            when (value) {
+                is String -> editor.putString(key, value)
+                is Boolean -> editor.putBoolean(key, value)
+                is Int -> editor.putInt(key, value)
+                is Long -> editor.putLong(key, value)
+                is Float -> editor.putFloat(key, value)
+                is Set<*> -> editor.putStringSet(key, value.filterIsInstance<String>().toSet())
+            }
+        }
+        // commit, not apply: the caller recreates the screen right after.
+        return editor.commit()
+    }
+
     // ---- helpers ----
 
     private fun todayString(): String =
